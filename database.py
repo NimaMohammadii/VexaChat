@@ -65,11 +65,14 @@ def pop_state(state: str) -> Optional[int]:
         conn.execute("DELETE FROM auth_states WHERE state=?", (state,))
         return int(row[0])
 
-def save_ig_tokens(user_id: int, fb_user_id: str, page_id: str, ig_id: str, short_token: str, long_token: str, expires_at: int):
+def save_ig_tokens(user_id: int, fb_user_id: str, page_id: str, ig_id: str,
+                   short_token: str, long_token: str, expires_at: int):
     with closing(_conn()) as conn, conn:
-        conn.execute("""INSERT OR REPLACE INTO ig_links(user_id, fb_user_id, page_id, ig_id, short_token, long_token, token_expires_at)
-                        VALUES(?,?,?,?,?,?,?)""", (user_id, fb_user_id, page_id, ig_id, short_token, long_token, expires_at))
+        conn.execute("""INSERT OR REPLACE INTO ig_links(
+            user_id, fb_user_id, page_id, ig_id, short_token, long_token, token_expires_at
+        ) VALUES(?,?,?,?,?,?,?)""", (user_id, fb_user_id, page_id, ig_id, short_token, long_token, expires_at))
 
 def get_ig(user_id: int):
     with closing(_conn()) as conn:
-        return conn.execute("SELECT fb_user_id,page_id,ig_id,long_token,token_expires_at FROM ig_links WHERE user_id=?", (user_id,)).fetchone()
+        return conn.execute("SELECT fb_user_id,page_id,ig_id,long_token,token_expires_at FROM ig_links WHERE user_id=?",
+                            (user_id,)).fetchone()
