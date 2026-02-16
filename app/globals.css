@@ -52,9 +52,67 @@ body {
   transition: all 0.4s ease;
 }
 
-.card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 20px 60px rgba(168, 85, 247, 0.35);
+.profile-card {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  will-change: transform, box-shadow;
+}
+
+.profile-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, rgba(168, 85, 247, 0.4), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: scale(0.8);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.profile-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(168, 85, 247, 0.25);
+}
+
+.profile-card:hover::before {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.profile-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
+}
+
+.profile-card:focus-visible {
+  outline: 2px solid #a855f7;
+  outline-offset: 4px;
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 0 rgba(168, 85, 247, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(168, 85, 247, 0.35);
+  }
+
+  100% {
+    box-shadow: 0 0 0 rgba(168, 85, 247, 0);
+  }
+}
+
+.profile-card.selected {
+  animation: glowPulse 1.2s ease-out;
 }
 
 .image-wrapper {
