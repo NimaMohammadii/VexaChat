@@ -29,3 +29,80 @@ body {
     @apply inline-flex items-center justify-center rounded-xl border border-line px-4 py-2 text-sm text-paper transition hover:border-paper;
   }
 }
+
+.hero-background {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 70% 20%, rgba(168, 85, 247, 0.25), transparent 40%),
+    radial-gradient(circle at 30% 80%, rgba(236, 72, 153, 0.18), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.12), transparent 60%),
+    #000;
+  filter: blur(80px);
+  z-index: -1;
+}
+
+.highlight {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card {
+  transition: all 0.4s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 60px rgba(168, 85, 247, 0.35);
+}
+
+.image-wrapper {
+  position: relative;
+}
+
+.image-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4));
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+  animation: float 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.orb-1 {
+  background: #a855f7;
+  top: -100px;
+  right: -50px;
+}
+
+.orb-2 {
+  background: #ec4899;
+  bottom: -120px;
+  left: -60px;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-25px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
