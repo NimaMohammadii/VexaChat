@@ -12,10 +12,14 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-ink text-paper">
       <PublicHeader />
-      <section className="mx-auto w-full max-w-7xl px-4 py-12 md:py-16">
+      <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-12 md:py-16">
+        <div className="hero-background" aria-hidden="true" />
+        <div className="orb orb-1" aria-hidden="true" />
+        <div className="orb orb-2" aria-hidden="true" />
+
         <div className="mx-auto max-w-4xl space-y-7 border-b border-line pb-12 md:space-y-9 md:pb-16">
-          <h1 className="max-w-3xl text-3xl font-bold tracking-tight md:text-5xl">
-            Premium Private Companion Directory
+          <h1 className="max-w-3xl text-3xl font-bold tracking-[0.01em] md:text-5xl md:tracking-[0.02em]">
+            <span className="highlight">Premium</span> Private <span className="highlight">Companion</span> Directory
           </h1>
           <p className="max-w-2xl whitespace-pre-line text-base text-paper md:text-xl md:leading-relaxed">
             {`A curated selection of verified independent companions.

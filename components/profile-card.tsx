@@ -6,13 +6,13 @@ export function ProfileCard({ profile }: { profile: Profile }) {
   const primaryImage = profile.images?.[0] || null;
 
   return (
-    <article className="relative overflow-hidden rounded-xl bg-slate shadow-sm">
+    <article className="card relative overflow-hidden rounded-xl bg-slate shadow-sm">
       {profile.isTop ? (
         <span className="absolute right-3 top-3 z-10 rounded-full border border-violet-300/35 bg-[linear-gradient(135deg,rgba(0,0,0,0.92),rgba(88,28,135,0.5))] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/95 backdrop-blur-sm shadow-[0_0_12px_rgba(168,85,247,0.38)]">
           TOP
         </span>
       ) : null}
-      <div className="aspect-[3/4] w-full overflow-hidden">
+      <div className="image-wrapper aspect-[3/4] w-full overflow-hidden">
         {primaryImage ? (
           <Image
             src={primaryImage}
