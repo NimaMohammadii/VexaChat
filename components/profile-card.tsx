@@ -14,7 +14,6 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             alt={profile.name}
             width={600}
             height={800}
-            unoptimized
             className="h-full w-full object-cover"
           />
         ) : (
