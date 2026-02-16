@@ -3,12 +3,9 @@ import { ProfileCard } from "@/components/profile-card";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default async function HomePage() {
-  const profiles = await prisma.profile.findMany({
-    orderBy: { createdAt: "desc" }
-  });
+  const profiles = await prisma.profile.findMany();
 
   return (
     <main className="min-h-screen bg-ink text-paper">
