@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browse Profiles — NOIR Directory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a href="index.html" class="logo">NOIR</a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="listings.html">Browse</a>
+          <a href="listings.html">Cities</a>
+          <a href="listings.html">Join</a>
+          <a href="listings.html">Login</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container listings-page">
+      <section class="page-header">
+        <p class="eyebrow">Directory</p>
+        <h1>Browse premium profiles</h1>
+      </section>
+
+      <section class="filters" aria-label="Listing filters">
+        <label>
+          <span>City</span>
+          <select>
+            <option>All cities</option>
+            <option>Paris</option>
+            <option>London</option>
+            <option>Milan</option>
+            <option>Dubai</option>
+          </select>
+        </label>
+        <label>
+          <span>Price Range</span>
+          <select>
+            <option>Any budget</option>
+            <option>€700 - €1,000</option>
+            <option>€1,000 - €1,500</option>
+            <option>€1,500+</option>
+          </select>
+        </label>
+        <label>
+          <span>Age Range</span>
+          <select>
+            <option>Any age</option>
+            <option>21 - 25</option>
+            <option>26 - 30</option>
+            <option>31+</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card-grid listings-grid">
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80" alt="Nora in London" loading="lazy" />
+          <div class="card-content">
+            <h3>Nora Ellison</h3>
+            <p class="meta">London</p>
+            <p class="price">£1,450 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=1200&q=80" alt="Maya in Dubai" loading="lazy" />
+          <div class="card-content">
+            <h3>Maya Sterling</h3>
+            <p class="meta">Dubai</p>
+            <p class="price">$1,600 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80" alt="Aria in Paris" loading="lazy" />
+          <div class="card-content">
+            <h3>Aria Moreau</h3>
+            <p class="meta">Paris</p>
+            <p class="price">€1,200 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1200&q=80" alt="Lina in Milan" loading="lazy" />
+          <div class="card-content">
+            <h3>Lina Voss</h3>
+            <p class="meta">Milan</p>
+            <p class="price">€980 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=80" alt="Elise in Vienna" loading="lazy" />
+          <div class="card-content">
+            <h3>Elise Novak</h3>
+            <p class="meta">Vienna</p>
+            <p class="price">€1,150 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+        <article class="profile-card">
+          <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=1200&q=80" alt="Sofia in Madrid" loading="lazy" />
+          <div class="card-content">
+            <h3>Sofia Renard</h3>
+            <p class="meta">Madrid</p>
+            <p class="price">€890 / evening</p>
+            <a class="button-subtle" href="profile.html">View Profile</a>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
