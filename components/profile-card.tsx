@@ -5,8 +5,14 @@ import { Profile } from "@/lib/types";
 export function ProfileCard({ profile }: { profile: Profile }) {
   return (
     <article className="overflow-hidden rounded-xl bg-slate shadow-sm">
-      <div className="relative aspect-[3/4] w-full">
-        <Image src={profile.images[0]} alt={profile.name} fill className="object-cover" />
+      <div className="aspect-[3/4] w-full overflow-hidden">
+        <Image
+          src={profile.images[0]}
+          alt={profile.name}
+          width={600}
+          height={800}
+          className="h-full w-full object-cover"
+        />
       </div>
       <div className="space-y-3 px-3 pb-3 pt-2">
         <div className="space-y-1">
