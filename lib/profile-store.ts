@@ -10,10 +10,7 @@ const initialProfiles: Profile[] = [
     description:
       "A refined and discreet companion focused on premium city experiences with clean communication and calm presence.",
     services: ["Dinner Companion", "Travel Companion", "Private Events"],
-    images: [
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "2",
@@ -24,10 +21,7 @@ const initialProfiles: Profile[] = [
     description:
       "Minimal, elegant and well-traveled. Built for clients who value discretion and intelligent conversation.",
     services: ["Luxury Evenings", "Weekend Travel", "Business Events"],
-    images: [
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "3",
@@ -38,10 +32,7 @@ const initialProfiles: Profile[] = [
     description:
       "Polished, warm and effortless. Designed for high-end social events and private curated experiences.",
     services: ["Private Bookings", "Social Events", "Fine Dining"],
-    images: [
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "4",
@@ -52,10 +43,7 @@ const initialProfiles: Profile[] = [
     description:
       "Confident and composed with a modern approach to private bookings and social companionship.",
     services: ["Private Events", "City Tours", "Dinner Dates"],
-    images: [
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "5",
@@ -65,10 +53,7 @@ const initialProfiles: Profile[] = [
     price: "$410/hr",
     description: "Poised, conversational, and discreet for private evening engagements.",
     services: ["Dinner Companion", "Gala Events", "Travel Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1485893086445-ed75865251e0?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "6",
@@ -78,10 +63,7 @@ const initialProfiles: Profile[] = [
     price: "$390/hr",
     description: "Elegant and approachable with a focus on refined, relaxed company.",
     services: ["Private Bookings", "Fine Dining", "Weekend Escapes"],
-    images: [
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "7",
@@ -91,10 +73,7 @@ const initialProfiles: Profile[] = [
     price: "$420/hr",
     description: "Known for seamless communication, punctuality, and a polished presence.",
     services: ["Business Events", "Dinner Companion", "Travel Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "8",
@@ -104,10 +83,7 @@ const initialProfiles: Profile[] = [
     price: "$400/hr",
     description: "Sophisticated yet relaxed, ideal for clients seeking effortless company.",
     services: ["Private Bookings", "Social Events", "Weekend Travel"],
-    images: [
-      "https://images.unsplash.com/photo-1506863530036-1efeddceb993?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1512310604669-443f26c35f52?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "9",
@@ -117,10 +93,7 @@ const initialProfiles: Profile[] = [
     price: "$560/hr",
     description: "Discreet and attentive for premium travel and private city evenings.",
     services: ["Luxury Evenings", "Travel Companion", "Private Events"],
-    images: [
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "10",
@@ -130,10 +103,7 @@ const initialProfiles: Profile[] = [
     price: "$380/hr",
     description: "Warm and articulate with a minimalist, professional booking style.",
     services: ["Dinner Companion", "City Experiences", "Fine Dining"],
-    images: [
-      "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "11",
@@ -143,10 +113,7 @@ const initialProfiles: Profile[] = [
     price: "$470/hr",
     description: "A calm, upscale companion with exceptional etiquette and reliability.",
     services: ["Private Events", "Business Dinners", "Travel Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1526080676457-4544bf0ebba9?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "12",
@@ -156,10 +123,7 @@ const initialProfiles: Profile[] = [
     price: "$440/hr",
     description: "Refined, cultured, and attentive to detail for premium bookings.",
     services: ["Opera Nights", "Fine Dining", "Private Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "13",
@@ -169,10 +133,7 @@ const initialProfiles: Profile[] = [
     price: "$360/hr",
     description: "Stylish and conversational for sophisticated city meetings.",
     services: ["Dinner Companion", "Museum Evenings", "Social Events"],
-    images: [
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "14",
@@ -182,10 +143,7 @@ const initialProfiles: Profile[] = [
     price: "$510/hr",
     description: "Executive-level professionalism with discreet private coordination.",
     services: ["Corporate Events", "Travel Companion", "Private Bookings"],
-    images: [
-      "https://images.unsplash.com/photo-1512310604669-443f26c35f52?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "15",
@@ -195,10 +153,7 @@ const initialProfiles: Profile[] = [
     price: "$430/hr",
     description: "Chic and discreet with a balanced, natural social presence.",
     services: ["Fine Dining", "Private Events", "Weekend Travel"],
-    images: [
-      "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1506863530036-1efeddceb993?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "16",
@@ -208,10 +163,7 @@ const initialProfiles: Profile[] = [
     price: "$540/hr",
     description: "Effortless company for premium evenings and private travel.",
     services: ["Luxury Evenings", "Business Travel", "Private Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "17",
@@ -221,10 +173,7 @@ const initialProfiles: Profile[] = [
     price: "$370/hr",
     description: "Friendly, polished, and easy to coordinate for short-notice bookings.",
     services: ["City Companion", "Dinner Dates", "Private Events"],
-    images: [
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1526080676457-4544bf0ebba9?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "18",
@@ -234,10 +183,7 @@ const initialProfiles: Profile[] = [
     price: "$405/hr",
     description: "Modern, discreet companionship tailored to private schedules.",
     services: ["Private Bookings", "Yacht Events", "Evening Company"],
-    images: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1509967419530-da38b4704bc6?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "19",
@@ -247,10 +193,7 @@ const initialProfiles: Profile[] = [
     price: "$590/hr",
     description: "Premium private companion for exclusive social calendars.",
     services: ["Luxury Events", "Travel Companion", "Fine Dining"],
-    images: [
-      "https://images.unsplash.com/photo-1485893086445-ed75865251e0?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   },
   {
     id: "20",
@@ -260,10 +203,7 @@ const initialProfiles: Profile[] = [
     price: "$500/hr",
     description: "Quiet confidence, elegant presentation, and exceptional privacy standards.",
     services: ["Private Events", "Cultural Evenings", "Business Companion"],
-    images: [
-      "https://images.unsplash.com/photo-1512310604669-443f26c35f52?auto=format&fit=crop&w=900&q=80",
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=80"
-    ]
+    images: []
   }
 ];
 
