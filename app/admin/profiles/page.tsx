@@ -20,7 +20,7 @@ export default async function AdminProfilesPage() {
                     src={profile.images[0]}
                     alt={profile.name}
                     fill
-                    unoptimized={profile.images[0].startsWith("data:")}
+                    unoptimized
                     className="object-cover"
                   />
                 ) : null}
