@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { Profile } from "@/lib/types";
 
 export function EditProfileForm({ profile }: { profile: Profile }) {
@@ -11,9 +12,57 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   const [price, setPrice] = useState(profile.price);
   const [description, setDescription] = useState(profile.description);
   const [services, setServices] = useState(profile.services.join(", "));
-  const [images, setImages] = useState(profile.images.join(", "));
+  const [images, setImages] = useState(profile.images);
   const [status, setStatus] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
+
+  async function onFilesSelected(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+
+    if (!files?.length) {
+      return;
+    }
+
+    setStatus(null);
+    setIsUploading(true);
+
+    try {
+      const uploadedImages = await Promise.all(
+        Array.from(files).map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+
+              reader.onload = () => {
+                if (typeof reader.result === "string") {
+                  resolve(reader.result);
+                  return;
+                }
+
+                reject(new Error("Invalid file data"));
+              };
+
+              reader.onerror = () => reject(reader.error ?? new Error("Unable to read image"));
+
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+
+      setImages((currentImages) => [...currentImages, ...uploadedImages]);
+      setStatus(`${uploadedImages.length} image(s) added.`);
+    } catch {
+      setStatus("Unable to upload images. Please try again.");
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
+  }
+
+  function onRemoveImage(indexToRemove: number) {
+    setImages((currentImages) => currentImages.filter((_, index) => index !== indexToRemove));
+  }
 
   async function onSave() {
     const response = await fetch(`/api/profiles/${profile.id}`, {
@@ -26,7 +75,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         price,
         description,
         services: services.split(",").map((service) => service.trim()).filter(Boolean),
-        images: images.split(",").map((image) => image.trim()).filter(Boolean)
+        images
       })
     });
 
@@ -83,10 +132,36 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         <input className="bw-input" value={services} onChange={(event) => setServices(event.target.value)} />
       </label>
 
-      <label className="space-y-2 text-sm">
-        <span>Image upload URLs (comma separated)</span>
-        <input className="bw-input" value={images} onChange={(event) => setImages(event.target.value)} />
-      </label>
+      <div className="space-y-3 text-sm">
+        <span className="block">Images</span>
+
+        <input className="bw-input" type="file" accept="image/*" multiple onChange={onFilesSelected} />
+
+        {isUploading ? <p className="text-xs text-white/60">Uploading images...</p> : null}
+
+        {images.length ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {images.map((image, index) => (
+              <div key={`${image.slice(0, 20)}-${index}`} className="rounded-lg border border-line bg-black/30 p-3">
+                <div className="relative h-32 w-full overflow-hidden rounded-md">
+                  <Image
+                    src={image}
+                    alt={`Uploaded preview ${index + 1}`}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+                <button type="button" className="bw-button-muted mt-3 w-full" onClick={() => onRemoveImage(index)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-white/60">No images uploaded yet.</p>
+        )}
+      </div>
 
       {status ? <p className="text-sm text-white/70">{status}</p> : null}
 
