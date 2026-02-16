@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminProfilesPage() {
   const profiles = await prisma.profile.findMany({
     orderBy: { createdAt: "desc" }

@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -17,6 +18,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }
     });
 
+    revalidatePath("/");
+    revalidatePath("/admin/profiles");
+
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
@@ -28,6 +32,9 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     await prisma.profile.delete({
       where: { id: params.id }
     });
+
+    revalidatePath("/");
+    revalidatePath("/admin/profiles");
 
     return NextResponse.json({ ok: true });
   } catch {
@@ -42,6 +49,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await prisma.profile.delete({
       where: { id: params.id }
     }).catch(() => null);
+
+    revalidatePath("/");
+    revalidatePath("/admin/profiles");
   }
 
   return NextResponse.redirect(new URL("/admin/profiles", request.url));
