@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: #000000;
+  color: #ffffff;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+@layer components {
+  .bw-card {
+    @apply rounded-xl border border-line bg-slate;
+  }
+
+  .bw-input {
+    @apply w-full rounded-xl border border-line bg-slate px-4 py-3 text-sm text-paper outline-none transition focus:border-paper;
+  }
+
+  .bw-button {
+    @apply inline-flex items-center justify-center rounded-xl border border-paper px-4 py-2 text-sm font-medium text-paper transition hover:bg-paper hover:text-ink;
+  }
+
+  .bw-button-muted {
+    @apply inline-flex items-center justify-center rounded-xl border border-line px-4 py-2 text-sm text-paper transition hover:border-paper;
+  }
+}
