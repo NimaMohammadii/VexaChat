@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const profiles = await prisma.profile.findMany();
+  const profiles = await prisma.profile.findMany({
+    orderBy: { createdAt: "desc" }
+  });
 
   return (
     <main className="min-h-screen bg-ink text-paper">

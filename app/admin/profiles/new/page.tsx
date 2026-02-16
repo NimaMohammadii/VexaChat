@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +22,9 @@ async function createProfile(formData: FormData) {
       images: []
     }
   });
+
+  revalidatePath("/");
+  revalidatePath("/admin/profiles");
 
   redirect("/admin/profiles");
 }
