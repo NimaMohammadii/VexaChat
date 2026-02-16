@@ -60,9 +60,8 @@ body {
 }
 
 .profile-card.top {
-  box-shadow:
-    0 0 0 1px rgba(168, 85, 247, 0.4),
-    0 10px 30px rgba(168, 85, 247, 0.25);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .profile-card:hover {
@@ -76,8 +75,7 @@ body {
 }
 
 .profile-card:focus-visible {
-  outline: 2px solid #a855f7;
-  outline-offset: 4px;
+  outline: none;
 }
 
 @keyframes glowPulse {
