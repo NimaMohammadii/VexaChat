@@ -23,6 +23,7 @@ async function createProfile(formData: FormData) {
   const experienceYears = Number(formData.get("experienceYears") ?? 0);
   const rating = Number(formData.get("rating") ?? 0);
   const verified = formData.get("verified") === "on";
+  const isTop = formData.get("isTop") === "on";
   const languages = splitCommaSeparated(String(formData.get("languages") ?? ""));
   const services = splitCommaSeparated(String(formData.get("services") ?? ""));
 
@@ -39,6 +40,7 @@ async function createProfile(formData: FormData) {
       experienceYears,
       rating,
       verified,
+      isTop,
       languages,
       services
     }
@@ -100,10 +102,21 @@ export default function NewProfilePage() {
             </label>
           </div>
 
-          <label className="flex items-center gap-3 text-sm">
-            <input type="checkbox" name="verified" className="h-4 w-4 accent-white" />
-            <span>Verified profile</span>
-          </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="flex items-center gap-3 text-sm">
+              <input type="checkbox" name="verified" className="h-4 w-4 accent-white" />
+              <span>Verified profile</span>
+            </label>
+
+            <label className="flex items-center justify-between rounded-xl border border-line bg-black/30 px-4 py-3 text-sm">
+              <span>Top Profile</span>
+              <span className="relative inline-flex cursor-pointer items-center">
+                <input type="checkbox" name="isTop" className="peer sr-only" />
+                <span className="h-6 w-11 rounded-full border border-white/20 bg-white/10 transition peer-checked:border-violet-300/70 peer-checked:bg-violet-500/25" />
+                <span className="pointer-events-none absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-[0_0_10px_rgba(168,85,247,0.35)] transition-transform peer-checked:translate-x-5" />
+              </span>
+            </label>
+          </div>
 
           <label className="space-y-2 text-sm">
             <span>Languages (comma separated)</span>
