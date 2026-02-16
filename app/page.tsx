@@ -2,6 +2,9 @@ import { PublicHeader } from "@/components/public-header";
 import { ProfileCard } from "@/components/profile-card";
 import { getProfiles } from "@/lib/profile-store";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function HomePage() {
   const profiles = getProfiles();
 
