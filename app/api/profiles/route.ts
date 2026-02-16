@@ -19,7 +19,14 @@ export async function POST(request: Request) {
       city: body.city,
       price: Number(body.price),
       description: body.description,
-      images: body.images ?? []
+      images: body.images ?? [],
+      height: body.height ?? "",
+      languages: body.languages ?? [],
+      availability: body.availability ?? "Unavailable",
+      verified: Boolean(body.verified),
+      experienceYears: Number(body.experienceYears ?? 0),
+      rating: Number(body.rating ?? 0),
+      services: body.services ?? []
     }
   });
 

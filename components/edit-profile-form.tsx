@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import { Profile } from "@/lib/types";
 
+function splitCommaSeparated(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function EditProfileForm({ profile }: { profile: Profile }) {
   const [name, setName] = useState(profile.name);
   const [age, setAge] = useState(profile.age);
@@ -12,6 +19,13 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   const [price, setPrice] = useState(profile.price);
   const [description, setDescription] = useState(profile.description);
   const [images, setImages] = useState(profile.images);
+  const [height, setHeight] = useState(profile.height);
+  const [languages, setLanguages] = useState(profile.languages.join(", "));
+  const [availability, setAvailability] = useState(profile.availability);
+  const [verified, setVerified] = useState(profile.verified);
+  const [experienceYears, setExperienceYears] = useState(profile.experienceYears);
+  const [rating, setRating] = useState(profile.rating);
+  const [services, setServices] = useState(profile.services.join(", "));
   const [status, setStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
@@ -73,7 +87,14 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         city,
         price,
         description,
-        images
+        images,
+        height,
+        languages: splitCommaSeparated(languages),
+        availability,
+        verified,
+        experienceYears,
+        rating,
+        services: splitCommaSeparated(services)
       })
     });
 
@@ -99,6 +120,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
           <input
             className="bw-input"
             type="number"
+            min={18}
             value={age}
             onChange={(event) => setAge(Number(event.target.value))}
           />
@@ -115,11 +137,68 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
           <input
             className="bw-input"
             type="number"
+            min={0}
             value={price}
             onChange={(event) => setPrice(Number(event.target.value))}
           />
         </label>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm">
+          <span>Height</span>
+          <input className="bw-input" value={height} onChange={(event) => setHeight(event.target.value)} />
+        </label>
+        <label className="space-y-2 text-sm">
+          <span>Availability</span>
+          <input className="bw-input" value={availability} onChange={(event) => setAvailability(event.target.value)} />
+        </label>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm">
+          <span>Experience (years)</span>
+          <input
+            className="bw-input"
+            type="number"
+            min={0}
+            value={experienceYears}
+            onChange={(event) => setExperienceYears(Number(event.target.value))}
+          />
+        </label>
+        <label className="space-y-2 text-sm">
+          <span>Rating</span>
+          <input
+            className="bw-input"
+            type="number"
+            min={0}
+            max={5}
+            step={0.1}
+            value={rating}
+            onChange={(event) => setRating(Number(event.target.value))}
+          />
+        </label>
+      </div>
+
+      <label className="flex items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-white"
+          checked={verified}
+          onChange={(event) => setVerified(event.target.checked)}
+        />
+        <span>Verified profile</span>
+      </label>
+
+      <label className="space-y-2 text-sm">
+        <span>Languages (comma separated)</span>
+        <input className="bw-input" value={languages} onChange={(event) => setLanguages(event.target.value)} />
+      </label>
+
+      <label className="space-y-2 text-sm">
+        <span>Services (comma separated)</span>
+        <input className="bw-input" value={services} onChange={(event) => setServices(event.target.value)} />
+      </label>
 
       <label className="space-y-2 text-sm">
         <span>Description</span>
