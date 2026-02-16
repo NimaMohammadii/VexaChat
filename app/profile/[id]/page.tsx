@@ -16,7 +16,7 @@ export default async function ProfilePage({ params }: { params: { id: string } }
       <section className="grid gap-4 md:grid-cols-2">
         {profile.images.map((img, index) => (
           <div key={`${profile.id}-${index}`} className="relative h-80 overflow-hidden rounded-xl border border-line bg-slate">
-            <Image src={img} alt={`${profile.name} ${index + 1}`} fill unoptimized className="object-cover" />
+            <Image src={img} alt={`${profile.name} ${index + 1}`} fill className="object-cover" />
           </div>
         ))}
       </section>
