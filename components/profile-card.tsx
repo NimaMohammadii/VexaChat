@@ -36,7 +36,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
 
   return (
     <div
-      className={`profile-card card relative overflow-hidden rounded-xl bg-slate shadow-sm ${isSelected ? "selected" : ""}`}
+      className={`profile-card card relative overflow-hidden rounded-xl bg-slate shadow-sm ${profile.isTop ? "top" : ""} ${isSelected ? "selected" : ""}`}
       onClick={navigateToProfile}
       onKeyDown={handleKeyDown}
       role="link"
@@ -48,14 +48,14 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           TOP
         </span>
       ) : null}
-      <div className="image-wrapper aspect-[3/4] w-full overflow-hidden">
+      <div className="profile-image-wrapper aspect-[3/4] w-full">
         {primaryImage ? (
           <Image
             src={primaryImage}
             alt={profile.name}
             width={600}
             height={800}
-            className="h-full w-full object-cover"
+            className="h-full w-full"
           />
         ) : (
           <div className="w-full aspect-[3/4] bg-[#111111] flex items-center justify-center text-[#333] text-sm" />
