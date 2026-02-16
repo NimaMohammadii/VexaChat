@@ -1,7 +1,7 @@
-import { getProfiles } from "@/lib/profile-store";
+import { prisma } from "@/lib/prisma";
 
-export default function AdminDashboardPage() {
-  const profiles = getProfiles();
+export default async function AdminDashboardPage() {
+  const profiles = await prisma.profile.findMany();
 
   return (
     <section className="space-y-6">

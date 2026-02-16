@@ -11,7 +11,6 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   const [city, setCity] = useState(profile.city);
   const [price, setPrice] = useState(profile.price);
   const [description, setDescription] = useState(profile.description);
-  const [services, setServices] = useState(profile.services.join(", "));
   const [images, setImages] = useState(profile.images);
   const [status, setStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -74,7 +73,6 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         city,
         price,
         description,
-        services: services.split(",").map((service) => service.trim()).filter(Boolean),
         images
       })
     });
@@ -113,8 +111,13 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
           <input className="bw-input" value={city} onChange={(event) => setCity(event.target.value)} />
         </label>
         <label className="space-y-2 text-sm">
-          <span>Price</span>
-          <input className="bw-input" value={price} onChange={(event) => setPrice(event.target.value)} />
+          <span>Price (hourly)</span>
+          <input
+            className="bw-input"
+            type="number"
+            value={price}
+            onChange={(event) => setPrice(Number(event.target.value))}
+          />
         </label>
       </div>
 
@@ -125,11 +128,6 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
-      </label>
-
-      <label className="space-y-2 text-sm">
-        <span>Services (comma separated)</span>
-        <input className="bw-input" value={services} onChange={(event) => setServices(event.target.value)} />
       </label>
 
       <div className="space-y-3 text-sm">

@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getProfiles } from "@/lib/profile-store";
+import { prisma } from "@/lib/prisma";
 
-export default function AdminProfilesPage() {
-  const profiles = getProfiles();
+export default async function AdminProfilesPage() {
+  const profiles = await prisma.profile.findMany({
+    orderBy: { createdAt: "desc" }
+  });
 
   return (
     <section className="space-y-6">
@@ -13,12 +15,12 @@ export default function AdminProfilesPage() {
           <article key={profile.id} className="bw-card flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-line">
-                <Image src={profile.images[0]} alt={profile.name} fill className="object-cover" />
+                {profile.images[0] ? <Image src={profile.images[0]} alt={profile.name} fill className="object-cover" /> : null}
               </div>
               <div>
                 <p className="font-medium">{profile.name}</p>
                 <p className="text-sm text-white/70">
-                  {profile.city} · {profile.price}
+                  {profile.city} · ${profile.price}/hr
                 </p>
               </div>
             </div>

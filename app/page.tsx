@@ -1,12 +1,14 @@
 import { PublicHeader } from "@/components/public-header";
 import { ProfileCard } from "@/components/profile-card";
-import { getProfiles } from "@/lib/profile-store";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function HomePage() {
-  const profiles = getProfiles();
+export default async function HomePage() {
+  const profiles = await prisma.profile.findMany({
+    orderBy: { createdAt: "desc" }
+  });
 
   return (
     <main className="min-h-screen bg-ink text-paper">

@@ -3,8 +3,8 @@ export type Profile = {
   name: string;
   age: number;
   city: string;
-  price: string;
+  price: number;
   description: string;
-  services: string[];
   images: string[];
+  createdAt: Date;
 };

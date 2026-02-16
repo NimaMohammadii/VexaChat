@@ -24,7 +24,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
         <div className="space-y-1">
           <h2 className="text-sm font-semibold leading-tight text-paper">{profile.name}</h2>
           <p className="text-xs text-[#AAAAAA]">{profile.city}</p>
-          <p className="text-xs text-[#AAAAAA]">{profile.price}</p>
+          <p className="text-xs text-[#AAAAAA]">${profile.price}/hr</p>
         </div>
         <Link
           href={`/profile/${profile.id}`}

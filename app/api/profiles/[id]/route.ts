@@ -1,38 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteProfile, getProfile, updateProfile } from "@/lib/profile-store";
+import { prisma } from "@/lib/prisma";
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const body = await request.json();
-  const updated = updateProfile(params.id, body);
 
-  if (!updated) {
+  try {
+    const updated = await prisma.profile.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        age: Number(body.age),
+        city: body.city,
+        price: Number(body.price),
+        description: body.description,
+        images: body.images ?? []
+      }
+    });
+
+    return NextResponse.json(updated);
+  } catch {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
-
-  return NextResponse.json(updated);
 }
 
 export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
-  const deleted = deleteProfile(params.id);
+  try {
+    await prisma.profile.delete({
+      where: { id: params.id }
+    });
 
-  if (!deleted) {
+    return NextResponse.json({ ok: true });
+  } catch {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
-
-  return NextResponse.json({ ok: true });
 }
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const formData = await request.formData();
+
   if (formData.get("_method") === "DELETE") {
-    deleteProfile(params.id);
+    await prisma.profile.delete({
+      where: { id: params.id }
+    }).catch(() => null);
   }
 
   return NextResponse.redirect(new URL("/admin/profiles", request.url));
 }
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const profile = getProfile(params.id);
+  const profile = await prisma.profile.findUnique({
+    where: { id: params.id }
+  });
 
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
