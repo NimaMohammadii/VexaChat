@@ -12,9 +12,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-7xl space-y-8 px-4 py-8">
       <section className="grid gap-4 md:grid-cols-2">
-        {profile.images.map((image, index) => (
+        {profile.images.map((img, index) => (
           <div key={`${profile.id}-${index}`} className="relative h-80 overflow-hidden rounded-xl border border-line bg-slate">
-            <Image src={image} alt={`${profile.name} ${index + 1}`} fill className="object-cover" />
+            <Image src={img} alt={`${profile.name} ${index + 1}`} fill className="object-cover" />
           </div>
         ))}
       </section>
