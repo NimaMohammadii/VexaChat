@@ -19,6 +19,7 @@ model Profile {
   languages       String[] @default([])
   availability    String   @default("Unavailable")
   verified        Boolean  @default(false)
+  isTop           Boolean  @default(false)
   experienceYears Int      @default(0)
   rating          Float    @default(0)
   services        String[] @default([])

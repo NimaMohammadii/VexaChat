@@ -10,6 +10,7 @@ export type Profile = {
   languages: string[];
   availability: string;
   verified: boolean;
+  isTop: boolean;
   experienceYears: number;
   rating: number;
   services: string[];

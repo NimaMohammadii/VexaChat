@@ -19,6 +19,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         languages: body.languages ?? [],
         availability: body.availability ?? "Unavailable",
         verified: Boolean(body.verified),
+        isTop: Boolean(body.isTop),
         experienceYears: Number(body.experienceYears ?? 0),
         rating: Number(body.rating ?? 0),
         services: body.services ?? []

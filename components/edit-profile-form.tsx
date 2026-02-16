@@ -23,6 +23,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   const [languages, setLanguages] = useState(profile.languages.join(", "));
   const [availability, setAvailability] = useState(profile.availability);
   const [verified, setVerified] = useState(profile.verified);
+  const [isTop, setIsTop] = useState(profile.isTop);
   const [experienceYears, setExperienceYears] = useState(profile.experienceYears);
   const [rating, setRating] = useState(profile.rating);
   const [services, setServices] = useState(profile.services.join(", "));
@@ -92,6 +93,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         languages: splitCommaSeparated(languages),
         availability,
         verified,
+        isTop,
         experienceYears,
         rating,
         services: splitCommaSeparated(services)
@@ -180,15 +182,31 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
         </label>
       </div>
 
-      <label className="flex items-center gap-3 text-sm">
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-white"
-          checked={verified}
-          onChange={(event) => setVerified(event.target.checked)}
-        />
-        <span>Verified profile</span>
-      </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-white"
+            checked={verified}
+            onChange={(event) => setVerified(event.target.checked)}
+          />
+          <span>Verified profile</span>
+        </label>
+
+        <label className="flex items-center justify-between rounded-xl border border-line bg-black/30 px-4 py-3 text-sm">
+          <span>Top Profile</span>
+          <span className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              className="peer sr-only"
+              checked={isTop}
+              onChange={(event) => setIsTop(event.target.checked)}
+            />
+            <span className="h-6 w-11 rounded-full border border-white/20 bg-white/10 transition peer-checked:border-violet-300/70 peer-checked:bg-violet-500/25" />
+            <span className="pointer-events-none absolute left-0.5 h-5 w-5 rounded-full bg-white shadow-[0_0_10px_rgba(168,85,247,0.35)] transition-transform peer-checked:translate-x-5" />
+          </span>
+        </label>
+      </div>
 
       <label className="space-y-2 text-sm">
         <span>Languages (comma separated)</span>
