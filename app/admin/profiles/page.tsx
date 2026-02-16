@@ -15,7 +15,15 @@ export default async function AdminProfilesPage() {
           <article key={profile.id} className="bw-card flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-line">
-                {profile.images[0] ? <Image src={profile.images[0]} alt={profile.name} fill className="object-cover" /> : null}
+                {profile.images[0] ? (
+                  <Image
+                    src={profile.images[0]}
+                    alt={profile.name}
+                    fill
+                    unoptimized={profile.images[0].startsWith("data:")}
+                    className="object-cover"
+                  />
+                ) : null}
               </div>
               <div>
                 <p className="font-medium">{profile.name}</p>
