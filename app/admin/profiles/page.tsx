@@ -9,7 +9,12 @@ export default async function AdminProfilesPage() {
 
   return (
     <section className="space-y-6">
-      <h1 className="text-3xl font-semibold">Profiles</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold">Profiles</h1>
+        <Link href="/admin/profiles/new" className="bw-button">
+          New Profile
+        </Link>
+      </div>
       <div className="space-y-3">
         {profiles.map((profile) => (
           <article key={profile.id} className="bw-card flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
