@@ -4,6 +4,7 @@ import { Profile } from "@/lib/types";
 
 export function ProfileCard({ profile }: { profile: Profile }) {
   const primaryImage = profile.images?.[0] || null;
+  const isDataUrl = primaryImage?.startsWith("data:") ?? false;
 
   return (
     <article className="overflow-hidden rounded-xl bg-slate shadow-sm">
@@ -14,6 +15,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             alt={profile.name}
             width={600}
             height={800}
+            unoptimized={isDataUrl}
             className="h-full w-full object-cover"
           />
         ) : (
