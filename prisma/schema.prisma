@@ -8,12 +8,19 @@ datasource db {
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  name        String
-  age         Int
-  city        String
-  price       Int
-  description String
-  images      String[]
-  createdAt   DateTime @default(now())
+  id              String   @id @default(uuid())
+  name            String
+  age             Int
+  city            String
+  price           Int
+  description     String
+  images          String[]
+  height          String   @default("")
+  languages       String[] @default([])
+  availability    String   @default("Unavailable")
+  verified        Boolean  @default(false)
+  experienceYears Int      @default(0)
+  rating          Float    @default(0)
+  services        String[] @default([])
+  createdAt       DateTime @default(now())
 }

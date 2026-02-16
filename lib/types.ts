@@ -6,5 +6,12 @@ export type Profile = {
   price: number;
   description: string;
   images: string[];
+  height: string;
+  languages: string[];
+  availability: string;
+  verified: boolean;
+  experienceYears: number;
+  rating: number;
+  services: string[];
   createdAt: Date;
 };
