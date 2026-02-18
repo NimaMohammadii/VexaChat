@@ -21,13 +21,13 @@ enum KycStatus {
 }
 
 model User {
-  id             String         @id
-  email          String         @unique
+  id             String          @id
+  email          String          @unique
   name           String?
   image          String?
-  role           UserRole       @default(USER)
-  kycStatus      KycStatus      @default(NONE)
-  createdAt      DateTime       @default(now())
+  role           UserRole        @default(USER)
+  kycStatus      KycStatus       @default(NONE)
+  createdAt      DateTime        @default(now())
   creatorProfile CreatorProfile?
 }
 
@@ -48,6 +48,7 @@ model CreatorProfile {
 
 model Profile {
   id              String   @id @default(uuid())
+  slug            String   @unique
   name            String
   age             Int
   city            String

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { createUniqueProfileSlug } from "@/lib/profile-slug";
 
 function splitCommaSeparated(value: string) {
   return value
@@ -26,9 +27,19 @@ async function createProfile(formData: FormData) {
   const isTop = formData.get("isTop") === "on";
   const languages = splitCommaSeparated(String(formData.get("languages") ?? ""));
   const services = splitCommaSeparated(String(formData.get("services") ?? ""));
+  const slugInput = String(formData.get("slug") ?? "").trim();
+  const slug = await createUniqueProfileSlug(slugInput || name, async (candidate) => {
+    const existing = await prisma.profile.findUnique({
+      where: { slug: candidate },
+      select: { id: true }
+    });
+
+    return Boolean(existing);
+  });
 
   await prisma.profile.create({
     data: {
+      slug,
       name,
       age,
       city,
@@ -62,6 +73,10 @@ export default function NewProfilePage() {
             <label className="space-y-2 text-sm">
               <span>Name</span>
               <input className="bw-input" name="name" required />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span>Slug (optional)</span>
+              <input className="bw-input" name="slug" placeholder="e.g. jane-doe" />
             </label>
             <label className="space-y-2 text-sm">
               <span>Age</span>

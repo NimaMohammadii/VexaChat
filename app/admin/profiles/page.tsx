@@ -29,6 +29,7 @@ export default async function AdminProfilesPage() {
                 <p className="text-sm text-white/70">
                   {profile.city} · ${profile.price}/hr
                 </p>
+                <p className="text-xs text-white/50">/profile/{profile.slug}</p>
               </div>
             </div>
             <div className="flex gap-2">
