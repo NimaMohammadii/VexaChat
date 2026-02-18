@@ -31,72 +31,113 @@ function GoogleIcon() {
   );
 }
 
+type AuthSession = { user?: { email?: string | null; user_metadata?: Record<string, unknown> } } | null;
+
+function mapUserSession(authSession: AuthSession): UserSession | null {
+  const user = authSession?.user;
+
+  if (!user) {
+    return null;
+  }
+
+  const metadata = user.user_metadata ?? {};
+  const fullName = typeof metadata.full_name === "string" ? metadata.full_name : null;
+  const name = typeof metadata.name === "string" ? metadata.name : null;
+  const avatarUrl = typeof metadata.avatar_url === "string" ? metadata.avatar_url : null;
+
+  return {
+    avatarUrl,
+    displayName: fullName ?? name ?? user.email ?? "User"
+  };
+}
+
 export function GoogleAuthControl() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        console.error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
-        setSession(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-      const {
-        data: { session: authSession }
-      } = await supabase.auth.getSession();
-
-      const user = authSession?.user;
-
-      if (!user) {
-        setSession(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const displayName =
-        user.user_metadata.full_name ??
-        user.user_metadata.name ??
-        user.email ??
-        "User";
-
-      setSession({
-        avatarUrl: user.user_metadata.avatar_url ?? null,
-        displayName
-      });
-      setIsLoading(false);
-    };
-
-    void loadSession();
-  }, []);
-
-  const handleGoogleLogin = async () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+      setSession(null);
+      setIsLoading(false);
       return;
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    let isMounted = true;
 
-    const { data } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+    const syncSession = (authSession: AuthSession) => {
+      if (!isMounted) {
+        return;
       }
+
+      setSession(mapUserSession(authSession));
+      setIsLoading(false);
+    };
+
+    const loadSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Failed to load Supabase session", error);
+          syncSession(null);
+          return;
+        }
+
+        syncSession(data.session);
+      } catch (error) {
+        console.error("Unexpected error while loading Supabase session", error);
+        syncSession(null);
+      }
+    };
+
+    void loadSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event: unknown, authSession: unknown) => {
+      syncSession((authSession as AuthSession) ?? null);
     });
 
-    if (data.url) {
-      window.location.href = data.url;
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+        return;
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        console.error("Failed to sign in with Google", error);
+        return;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Unexpected error during Google login", error);
     }
   };
 
