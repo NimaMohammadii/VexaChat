@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Profile"
-ADD COLUMN "isTop" BOOLEAN NOT NULL DEFAULT false;
