@@ -1,16 +1,16 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveKycFile } from "@/lib/kyc-storage";
 import { NextResponse } from "next/server";
+import { getOrCreateCurrentUserRecord } from "@/lib/current-user";
 
 function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
+  const user = await getOrCreateCurrentUserRecord();
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -38,14 +38,14 @@ export async function POST(request: Request) {
 
   try {
     const [profileImagePath, idCardPath, selfiePath] = await Promise.all([
-      saveKycFile(profileImage, session.user.id, "profile"),
-      saveKycFile(idCardImage, session.user.id, "id-card"),
-      saveKycFile(selfieWithIdImage, session.user.id, "selfie-with-id")
+      saveKycFile(profileImage, user.id, "profile"),
+      saveKycFile(idCardImage, user.id, "id-card"),
+      saveKycFile(selfieWithIdImage, user.id, "selfie-with-id")
     ]);
 
     await prisma.$transaction([
       prisma.creatorProfile.upsert({
-        where: { userId: session.user.id },
+        where: { userId: user.id },
         update: {
           displayName,
           bio,
@@ -54,10 +54,10 @@ export async function POST(request: Request) {
           profileImageUrl: profileImagePath,
           idCardUrl: idCardPath,
           selfieWithIdUrl: selfiePath,
-          isApproved: false
+          approved: false
         },
         create: {
-          userId: session.user.id,
+          userId: user.id,
           displayName,
           bio,
           price,
@@ -65,11 +65,11 @@ export async function POST(request: Request) {
           profileImageUrl: profileImagePath,
           idCardUrl: idCardPath,
           selfieWithIdUrl: selfiePath,
-          isApproved: false
+          approved: false
         }
       }),
       prisma.user.update({
-        where: { id: session.user.id },
+        where: { id: user.id },
         data: { kycStatus: "PENDING", role: "USER" }
       })
     ]);

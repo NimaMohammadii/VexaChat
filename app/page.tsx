@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const creators = await prisma.creatorProfile.findMany({
-    where: { isApproved: true },
+    where: { approved: true },
     orderBy: { createdAt: "desc" }
   });
 
