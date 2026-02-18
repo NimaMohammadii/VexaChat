@@ -1,4 +1,10 @@
-export function PublicHeader() {
+import { ReactNode } from "react";
+
+type PublicHeaderProps = {
+  rightSlot?: ReactNode;
+};
+
+export function PublicHeader({ rightSlot }: PublicHeaderProps) {
   return (
     <header className="border-b border-line">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-6">
@@ -10,7 +16,7 @@ export function PublicHeader() {
             className="w-full bg-transparent text-sm text-paper outline-none placeholder:text-white/50"
           />
         </div>
-        <div aria-hidden className="w-10" />
+        <div className="justify-self-end">{rightSlot ?? <div aria-hidden className="h-10 w-10" />}</div>
       </div>
     </header>
   );
