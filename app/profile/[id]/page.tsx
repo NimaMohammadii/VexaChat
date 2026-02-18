@@ -1,40 +1,6 @@
 import Image from "next/image";
-import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-
-async function getProfileByIdentifier(rawId: string) {
-  const identifier = rawId.trim().toLowerCase();
-
-  if (!identifier) {
-    return null;
-  }
-
-  return prisma.profile.findFirst({
-    where: {
-      OR: [{ slug: identifier }, { id: identifier }]
-    }
-  });
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  const profile = await getProfileByIdentifier(id);
-
-  if (!profile) {
-    return {
-      title: "Profile not found"
-    };
-  }
-
-  return {
-    title: `${profile.name} | Profile`,
-    description: profile.description,
-    alternates: {
-      canonical: `/profile/${profile.slug}`
-    }
-  };
-}
 
 function StarRating({ rating }: { rating: number }) {
   const normalized = Math.max(0, Math.min(5, rating));
@@ -64,16 +30,13 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const profile = await getProfileByIdentifier(id);
+export default async function ProfilePage({ params }: { params: { id: string } }) {
+  const profile = await prisma.profile.findUnique({
+    where: { id: params.id }
+  });
 
   if (!profile) {
     notFound();
-  }
-
-  if (id.trim().toLowerCase() !== profile.slug) {
-    redirect(`/profile/${profile.slug}`);
   }
 
   return (
