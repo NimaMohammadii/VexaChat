@@ -38,6 +38,12 @@ export function GoogleAuthControl() {
 
   useEffect(() => {
     const loadSession = async () => {
+      if (!supabase) {
+        setSession(null);
+        setIsLoading(false);
+        return;
+      }
+
       const {
         data: { session: authSession }
       } = await supabase.auth.getSession();
@@ -67,6 +73,10 @@ export function GoogleAuthControl() {
   }, []);
 
   const handleGoogleLogin = async () => {
+    if (!supabase) {
+      return;
+    }
+
     const { data } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
