@@ -1,8 +1,7 @@
 "use client";
 
+import { createClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-
-import { supabase } from "@/lib/supabase-client";
 
 type UserSession = {
   avatarUrl: string | null;
@@ -38,11 +37,17 @@ export function GoogleAuthControl() {
 
   useEffect(() => {
     const loadSession = async () => {
-      if (!supabase) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
         setSession(null);
         setIsLoading(false);
         return;
       }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
       const {
         data: { session: authSession }
@@ -73,9 +78,15 @@ export function GoogleAuthControl() {
   }, []);
 
   const handleGoogleLogin = async () => {
-    if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
       return;
     }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     const { data } = await supabase.auth.signInWithOAuth({
       provider: "google",
