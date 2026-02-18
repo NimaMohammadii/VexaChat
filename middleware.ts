@@ -1,6 +1,16 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_COOKIE, isAdminTokenValid } from "@/lib/auth";
 
-export function middleware(_request: NextRequest) {
+export function middleware(request: NextRequest) {
+  const cookieValue = request.cookies.get(ADMIN_COOKIE)?.value;
+
+  if (!isAdminTokenValid(cookieValue)) {
+    return NextResponse.redirect(new URL("/admin-login", request.url));
+  }
+
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/admin", "/admin/:path*"]
+};
