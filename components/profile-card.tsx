@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { KeyboardEvent, useCallback, useRef, useState } from "react";
 import { Profile } from "@/lib/types";
@@ -50,12 +49,11 @@ export function ProfileCard({ profile }: { profile: Profile }) {
       ) : null}
       <div className="profile-image-wrapper aspect-[3/4] w-full">
         {primaryImage ? (
-          <Image
+          <img
             src={primaryImage}
             alt={profile.name}
-            width={600}
-            height={800}
-            className="h-full w-full"
+            className="h-full w-full object-cover"
+            loading="lazy"
           />
         ) : (
           <div className="w-full aspect-[3/4] bg-[#111111] flex items-center justify-center text-[#333] text-sm" />
