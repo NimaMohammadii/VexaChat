@@ -23,7 +23,7 @@ export async function PublicHeader() {
           <Link href="/apply" className="bw-button-muted">
             Apply
           </Link>
-          {authUser ? <LogoutButton className="bw-button" /> : <GoogleLoginButton className="bw-button" redirectTo="/auth/callback?next=/apply" />}
+          {authUser ? <LogoutButton className="bw-button" /> : <GoogleLoginButton className="bw-button" />}
         </div>
       </div>
     </header>

@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabaseServer";
 import { prisma } from "@/lib/prisma";
 
+function getSafeNextPath(nextValue: string | null) {
+  if (!nextValue || !nextValue.startsWith("/")) {
+    return "/apply";
+  }
+
+  return nextValue;
+}
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  const next = request.nextUrl.searchParams.get("next") ?? "/apply";
+  const nextPath = getSafeNextPath(request.nextUrl.searchParams.get("next"));
 
   if (!code) {
     return NextResponse.redirect(new URL("/", request.url));
@@ -38,5 +46,5 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  return NextResponse.redirect(new URL(next, request.url));
+  return NextResponse.redirect(new URL(nextPath, request.url));
 }
