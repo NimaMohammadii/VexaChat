@@ -20,9 +20,9 @@ export function ProfileCard({ profile }: { profile: Profile }) {
     setIsSelected(true);
 
     window.setTimeout(() => {
-      router.push(`/profile/${profile.id}`);
+      router.push(`/profile/${profile.slug}`);
     }, 180);
-  }, [profile.id, router]);
+  }, [profile.slug, router]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {

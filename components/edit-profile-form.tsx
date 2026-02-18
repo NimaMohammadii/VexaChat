@@ -14,6 +14,7 @@ function splitCommaSeparated(value: string) {
 
 export function EditProfileForm({ profile }: { profile: Profile }) {
   const [name, setName] = useState(profile.name);
+  const [slug, setSlug] = useState(profile.slug);
   const [age, setAge] = useState(profile.age);
   const [city, setCity] = useState(profile.city);
   const [price, setPrice] = useState(profile.price);
@@ -84,6 +85,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
+        slug,
         age,
         city,
         price,
@@ -126,6 +128,13 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
             value={age}
             onChange={(event) => setAge(Number(event.target.value))}
           />
+        </label>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm">
+          <span>Slug</span>
+          <input className="bw-input" value={slug} onChange={(event) => setSlug(event.target.value)} />
         </label>
       </div>
 

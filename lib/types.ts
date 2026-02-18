@@ -1,5 +1,6 @@
 export type Profile = {
   id: string;
+  slug: string;
   name: string;
   age: number;
   city: string;
