@@ -32,6 +32,14 @@ function randomVerifier() {
   return encodeBase64Url(crypto.getRandomValues(new Uint8Array(64)));
 }
 
+function shouldUseSecureCookie() {
+  if (typeof window !== "undefined") {
+    return window.location.protocol === "https:";
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 async function codeChallenge(verifier: string) {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
   return encodeBase64Url(new Uint8Array(hash));
@@ -50,7 +58,8 @@ export function createBrowserClient(supabaseUrl: string, supabaseAnonKey: string
         const challenge = await codeChallenge(verifier);
         const redirectTo = options?.redirectTo ?? `${window.location.origin}/auth/callback`;
 
-        document.cookie = `sb-code-verifier=${encodeURIComponent(verifier)}; Path=/; SameSite=Lax; Secure; Max-Age=600`;
+        const secureFlag = shouldUseSecureCookie() ? "; Secure" : "";
+        document.cookie = `sb-code-verifier=${encodeURIComponent(verifier)}; Path=/; SameSite=Lax${secureFlag}; Max-Age=600`;
 
         const authorizeUrl = new URL("/auth/v1/authorize", url);
         authorizeUrl.searchParams.set("provider", "google");
@@ -118,16 +127,18 @@ export function createServerClient(supabaseUrl: string, supabaseAnonKey: string,
         }
 
         const payload = await response.json();
+        const secure = shouldUseSecureCookie();
+
         cookieHandlers.setAll([
           {
             name: "sb-access-token",
             value: payload.access_token,
-            options: { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: payload.expires_in }
+            options: { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: payload.expires_in }
           },
           {
             name: "sb-refresh-token",
             value: payload.refresh_token,
-            options: { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 60 * 60 * 24 * 30 }
+            options: { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 60 * 24 * 30 }
           },
           {
             name: "sb-code-verifier",
