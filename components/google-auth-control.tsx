@@ -80,7 +80,14 @@ export function GoogleAuthControl() {
 
     const loadSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const result = await supabase.auth.getSession();
+
+        if (!result) {
+          syncSession(null);
+          return;
+        }
+
+        const error = result.error;
 
         if (error) {
           console.error("Failed to load Supabase session", error);
@@ -88,7 +95,9 @@ export function GoogleAuthControl() {
           return;
         }
 
-        syncSession(data.session);
+        const data = result.data;
+        const authSession = data ? (data.session as AuthSession) : null;
+        syncSession(authSession);
       } catch (error) {
         console.error("Unexpected error while loading Supabase session", error);
         syncSession(null);
@@ -97,15 +106,18 @@ export function GoogleAuthControl() {
 
     void loadSession();
 
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event: unknown, authSession: unknown) => {
+    const authStateResult = supabase.auth.onAuthStateChange((_event: unknown, authSession: unknown) => {
       syncSession((authSession as AuthSession) ?? null);
     });
 
+    const authStateData = authStateResult?.data;
+    const subscription = authStateData?.subscription;
+
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
