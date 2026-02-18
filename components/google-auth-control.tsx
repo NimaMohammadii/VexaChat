@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { isSupabaseConfigured, supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase-client";
 
 type UserSession = {
   avatarUrl: string | null;
@@ -37,12 +37,6 @@ export function GoogleAuthControl() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!supabase) {
-      setSession(null);
-      setIsLoading(false);
-      return;
-    }
-
     const loadSession = async () => {
       const {
         data: { session: authSession }
@@ -73,10 +67,6 @@ export function GoogleAuthControl() {
   }, []);
 
   const handleGoogleLogin = async () => {
-    if (!supabase) {
-      return;
-    }
-
     const { data } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -88,11 +78,6 @@ export function GoogleAuthControl() {
       window.location.href = data.url;
     }
   };
-
-
-  if (!isSupabaseConfigured) {
-    return null;
-  }
 
   if (isLoading) {
     return <div className="h-10 w-10 animate-pulse rounded-full border border-line bg-white/5" aria-hidden />;
