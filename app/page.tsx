@@ -1,41 +1,41 @@
 import { PublicHeader } from "@/components/public-header";
-import { ProfileCard } from "@/components/profile-card";
+import { ApprovedCreatorCard } from "@/components/approved-creator-card";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const profiles = await prisma.profile.findMany({
+  const creators = await prisma.creatorProfile.findMany({
+    where: { isApproved: true },
     orderBy: { createdAt: "desc" }
   });
 
   return (
-    <main className="min-h-screen bg-ink text-paper">
+    <main className="min-h-screen bg-black text-white">
       <PublicHeader />
-      <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-12 md:py-16">
-        <div className="hero-background" aria-hidden="true" />
-        <div className="orb orb-1" aria-hidden="true" />
-        <div className="orb orb-2" aria-hidden="true" />
-
-        <div className="mx-auto max-w-4xl space-y-7 border-b border-line pb-12 md:space-y-9 md:pb-16">
-          <h1 className="max-w-3xl text-3xl font-bold tracking-[0.01em] md:text-5xl md:tracking-[0.02em]">
-            <span className="highlight">Premium</span> Private <span className="highlight">Companion</span> Directory
-          </h1>
-          <p className="max-w-2xl whitespace-pre-line text-base text-paper md:text-xl md:leading-relaxed">
-            {`A curated selection of verified independent companions.
-Discreet. Professional. Effortless.`}
-          </p>
-          <p className="max-w-xl text-sm leading-relaxed text-[#AAAAAA] md:text-base">
-            Browse profiles by city, availability, and service. Connect directly and privately.
+      <section className="mx-auto w-full max-w-7xl px-4 py-12 md:py-16">
+        <div className="mx-auto max-w-4xl space-y-6 border-b border-gray-800 pb-12">
+          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">Approved Creators</h1>
+          <p className="max-w-2xl text-base text-gray-400 md:text-lg">
+            Discover vetted creators with verified profiles, discreet service, and a premium black-label experience.
           </p>
         </div>
 
         <div className="pt-10 md:pt-12">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-5">
-            {profiles.map((profile) => (
-              <ProfileCard key={profile.id} profile={profile} />
+          <div className="grid grid-cols-2 gap-4 md:gap-5">
+            {creators.map((creator) => (
+              <ApprovedCreatorCard
+                key={creator.id}
+                id={creator.id}
+                displayName={creator.displayName}
+                city={creator.city}
+                price={creator.price}
+              />
             ))}
           </div>
+          {creators.length === 0 ? (
+            <p className="mt-10 text-sm text-gray-500">No approved creators available yet.</p>
+          ) : null}
         </div>
       </section>
     </main>
