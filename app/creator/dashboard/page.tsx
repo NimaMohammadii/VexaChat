@@ -1,11 +1,13 @@
-import { auth } from "@/auth";
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
+import { getOrCreateCurrentUserRecord } from "@/lib/current-user";
 
 export default async function CreatorDashboardPage() {
-  const session = await auth();
+  const user = await getOrCreateCurrentUserRecord();
 
-  if (!session?.user) {
-    redirect("/apply");
+  if (!user || user.kycStatus !== "APPROVED") {
+    redirect("/");
   }
 
   return (

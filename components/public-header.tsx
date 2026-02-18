@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { auth, signIn, signOut } from "@/auth";
+import { getCurrentAuthUser } from "@/lib/current-user";
+import { GoogleLoginButton } from "@/components/google-login-button";
+import { LogoutButton } from "@/components/logout-button";
 
 export async function PublicHeader() {
-  const session = await auth();
+  const authUser = await getCurrentAuthUser();
 
   return (
     <header className="border-b border-gray-800 bg-black/90 backdrop-blur">
@@ -21,25 +23,7 @@ export async function PublicHeader() {
           <Link href="/apply" className="bw-button-muted">
             Apply
           </Link>
-          {session?.user ? (
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button className="bw-button">Sign out</button>
-            </form>
-          ) : (
-            <form
-              action={async () => {
-                "use server";
-                await signIn("google", { redirectTo: "/apply" });
-              }}
-            >
-              <button className="bw-button">Google Login</button>
-            </form>
-          )}
+          {authUser ? <LogoutButton className="bw-button" /> : <GoogleLoginButton className="bw-button" redirectTo="/auth/callback?next=/apply" />}
         </div>
       </div>
     </header>

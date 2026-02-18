@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   await prisma.$transaction([
-    prisma.creatorProfile.update({ where: { id: params.id }, data: { isApproved: true } }),
+    prisma.creatorProfile.update({ where: { id: params.id }, data: { approved: true } }),
     prisma.user.update({ where: { id: creator.userId }, data: { role: "CREATOR", kycStatus: "APPROVED" } })
   ]);
 

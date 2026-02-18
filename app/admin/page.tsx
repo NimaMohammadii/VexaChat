@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 
@@ -5,6 +7,7 @@ export default async function AdminDashboardPage() {
   const [profiles, applications] = await Promise.all([
     prisma.profile.findMany(),
     prisma.creatorProfile.findMany({
+      where: { user: { kycStatus: "PENDING" } },
       include: { user: true },
       orderBy: { createdAt: "desc" }
     })
@@ -21,7 +24,7 @@ export default async function AdminDashboardPage() {
       <section className="bw-card p-6">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold">Creator Applications</h2>
-          <span className="text-sm text-gray-400">{applications.length} total</span>
+          <span className="text-sm text-gray-400">{applications.length} pending</span>
         </div>
         <div className="space-y-4">
           {applications.map((application) => {
@@ -87,7 +90,7 @@ export default async function AdminDashboardPage() {
             );
           })}
 
-          {applications.length === 0 ? <p className="text-sm text-gray-400">No creator applications yet.</p> : null}
+          {applications.length === 0 ? <p className="text-sm text-gray-400">No pending creator applications.</p> : null}
         </div>
       </section>
     </section>

@@ -14,7 +14,7 @@ const MIME_BY_EXT: Record<string, string> = {
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const creator = await prisma.creatorProfile.findUnique({ where: { id: params.id } });
 
-  if (!creator?.isApproved) {
+  if (!creator?.approved) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
