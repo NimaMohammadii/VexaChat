@@ -1,7 +1,14 @@
-import { cookies } from "next/headers";
+export const ADMIN_COOKIE = "admin_auth";
 
-export const ADMIN_COOKIE = "vexa_admin";
+export function getAdminToken(secret: string) {
+  return secret.split("").reverse().join("") + "::admin";
+}
 
-export function isAdminLoggedIn() {
-  return cookies().get(ADMIN_COOKIE)?.value === "1";
+export function isAdminTokenValid(cookieValue?: string | null) {
+  const secret = process.env.SECRET_KEY;
+  if (!secret || !cookieValue) {
+    return false;
+  }
+
+  return cookieValue === getAdminToken(secret);
 }
