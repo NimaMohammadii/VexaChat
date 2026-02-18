@@ -56,14 +56,16 @@ export function GoogleAuthControl() {
         return;
       }
 
+      const userMetadata = user.user_metadata ?? {};
+
       const displayName =
-        user.user_metadata.full_name ??
-        user.user_metadata.name ??
+        userMetadata.full_name ??
+        userMetadata.name ??
         user.email ??
         "User";
 
       setSession({
-        avatarUrl: user.user_metadata.avatar_url ?? null,
+        avatarUrl: userMetadata.avatar_url ?? null,
         displayName
       });
       setIsLoading(false);
