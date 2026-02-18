@@ -36,7 +36,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
 
   return (
     <div
-      className={`profile-card card relative overflow-hidden rounded-xl bg-slate shadow-sm ${profile.isTop ? "top" : ""} ${isSelected ? "selected" : ""}`}
+      className={`profile-card group card relative overflow-hidden rounded-xl bg-slate shadow-sm ${profile.isTop ? "top" : ""} ${isSelected ? "selected" : ""}`}
       onClick={navigateToProfile}
       onKeyDown={handleKeyDown}
       role="link"
@@ -55,7 +55,8 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             alt={profile.name}
             width={600}
             height={800}
-            className="h-full w-full"
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="h-full w-full object-cover object-center"
           />
         ) : (
           <div className="w-full aspect-[3/4] bg-[#111111] flex items-center justify-center text-[#333] text-sm" />
@@ -67,7 +68,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           <p className="text-xs text-[#AAAAAA]">{profile.city}</p>
           <p className="text-xs text-[#AAAAAA]">${profile.price}/hr</p>
         </div>
-        <span className="inline-flex w-full items-center justify-center rounded-lg border border-line px-3 py-1.5 text-xs text-paper transition hover:border-paper">
+        <span className="inline-flex w-full items-center justify-center rounded-lg border border-line px-3 py-1.5 text-xs text-paper transition group-hover:border-violet-300/75">
           View
         </span>
       </div>
