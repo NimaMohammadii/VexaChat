@@ -25,27 +25,26 @@ export function GoogleAuthControl() {
     const callbackUrl = new URL("/auth/callback", window.location.origin);
     callbackUrl.searchParams.set("next", nextPath);
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: callbackUrl.toString(),
-        skipBrowserRedirect: true
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl.toString()
+        }
+      });
+
+      if (error) {
+        throw error;
       }
-    });
 
-    if (error) {
-      setErrorMessage(error.message);
+      if (data.url) {
+        window.location.assign(data.url);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to start Google sign-in.";
+      setErrorMessage(message);
       setIsLoading(false);
-      return;
     }
-
-    if (!data.url) {
-      setErrorMessage("Failed to start Google sign-in.");
-      setIsLoading(false);
-      return;
-    }
-
-    window.location.assign(data.url);
   };
 
   return (
