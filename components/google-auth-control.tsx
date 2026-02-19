@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase-client";
 
 export function GoogleAuthControl() {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,16 +11,6 @@ export function GoogleAuthControl() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setErrorMessage("Google sign-in is not configured.");
-      setIsLoading(false);
-      return;
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const nextPath = `${window.location.pathname}${window.location.search}`;
     const callbackUrl = new URL("/auth/callback", window.location.origin);
     callbackUrl.searchParams.set("next", nextPath);
