@@ -97,8 +97,9 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
       setDescription("");
       setMessage("Listing published successfully.");
     } catch (error) {
-      const nextError = error instanceof Error ? error.message : "Failed to publish listing.";
-      setErrorMessage(nextError);
+  console.error("SUPABASE INSERT ERROR:", error);
+  const nextError = error instanceof Error ? error.message : "Failed to publish listing.";
+  setErrorMessage(nextError);
     } finally {
       setIsSubmitting(false);
     }
