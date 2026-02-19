@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { supabase } from "@/lib/supabase-client";
+import { createSupabaseClient } from "@/lib/supabase-client";
 
 type ProfilePageClientProps = {
   userId: string;
@@ -23,6 +23,7 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
     setErrorMessage(null);
 
     try {
+      const supabase = createSupabaseClient();
       const { error } = await supabase.from("listings").insert({
         user_id: userId,
         name,
