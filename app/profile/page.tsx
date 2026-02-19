@@ -28,13 +28,14 @@ export default async function ProfilePage() {
 
   const { data: profileData } = await supabase
     .from("profiles")
-    .select("email, role")
+    .select("email, role, image_url")
     .eq("id", user.id)
     .single();
 
   const avatarUrl = (user.user_metadata.avatar_url as string | undefined) ?? null;
   const email = profileData?.email ?? user.email ?? "No email";
   const role = profileData?.role ?? "user";
+  const initialImageUrl = (profileData?.image_url as string | null | undefined) ?? null;
   const fallback = email.charAt(0).toUpperCase();
 
   return (
@@ -66,7 +67,7 @@ export default async function ProfilePage() {
           </div>
         </section>
 
-        <ProfilePageClient userId={user.id} />
+        <ProfilePageClient userId={user.id} initialImageUrl={initialImageUrl} />
       </div>
     </main>
   );
