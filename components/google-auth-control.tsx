@@ -12,26 +12,16 @@ export function GoogleAuthControl() {
       return;
     }
 
-    try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      const result = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (result && result.error) {
-        console.error("Google OAuth sign-in error", result.error);
-        return;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
       }
+    });
 
-      const oauthUrl = result && result.data ? result.data.url : null;
-      if (oauthUrl) {
-        window.location.href = oauthUrl;
-      }
-    } catch (error) {
-      console.error("Google OAuth sign-in failed", error);
+    if (error) {
+      console.error(error.message);
     }
   };
 
