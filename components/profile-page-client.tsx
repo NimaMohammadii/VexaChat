@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { FormEvent, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
 type ProfilePageClientProps = {
@@ -12,20 +12,12 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
   const [city, setCity] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [isReadingImage, setIsReadingImage] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!imageUrl) {
-      setErrorMessage("Please upload an image.");
-      return;
-    }
-
     setIsSubmitting(true);
     setMessage(null);
     setErrorMessage(null);
@@ -49,52 +41,12 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
       setCity("");
       setDescription("");
       setImageUrl("");
-      setSelectedFileName(null);
       setMessage("Listing published successfully.");
     } catch (error) {
       const nextError = error instanceof Error ? error.message : "Failed to publish listing.";
       setErrorMessage(nextError);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const onImageSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      setImageUrl("");
-      setSelectedFileName(null);
-      return;
-    }
-
-    setIsReadingImage(true);
-    setErrorMessage(null);
-
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result !== "string") {
-            reject(new Error("Unable to process image."));
-            return;
-          }
-          resolve(reader.result);
-        };
-        reader.onerror = () => reject(reader.error ?? new Error("Unable to process image."));
-        reader.readAsDataURL(file);
-      });
-
-      setImageUrl(dataUrl);
-      setSelectedFileName(file.name);
-    } catch (error) {
-      setImageUrl("");
-      setSelectedFileName(null);
-      const nextError = error instanceof Error ? error.message : "Unable to process image.";
-      setErrorMessage(nextError);
-    } finally {
-      setIsReadingImage(false);
-      event.target.value = "";
     }
   };
 
@@ -123,18 +75,13 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
           placeholder="Description"
           className="min-h-28 w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white outline-none focus:border-white"
         />
-        <label className="block space-y-2">
-          <span className="text-sm text-white/80">Profile image</span>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={onImageSelected}
-            className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-black"
-          />
-          {isReadingImage ? <p className="text-xs text-white/60">Processing image…</p> : null}
-          {selectedFileName ? <p className="text-xs text-white/60">Selected: {selectedFileName}</p> : null}
-        </label>
+        <input
+          required
+          value={imageUrl}
+          onChange={(event) => setImageUrl(event.target.value)}
+          placeholder="Image URL"
+          className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white outline-none focus:border-white"
+        />
 
         <button
           type="submit"
