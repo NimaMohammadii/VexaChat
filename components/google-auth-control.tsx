@@ -25,14 +25,13 @@ export function GoogleAuthControl() {
       // create browser client configured with PKCE (from lib)
       const supabase = createSupabaseClient();
 
+      const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      const appOrigin = configuredSiteUrl ?? window.location.origin;
+
       // build callback that returns user to our /auth/callback route with a next param
       const nextPath = `${window.location.pathname}${window.location.search}`;
-      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      const callbackUrl = new URL("/auth/callback", appOrigin);
       callbackUrl.searchParams.set("next", nextPath);
-
-      // Debug logs — remove after verifying production behaviour
-      console.log("DEBUG: window.location.origin =", window.location.origin);
-      console.log("DEBUG: callbackUrl =", callbackUrl.toString());
 
       // Start OAuth flow; using redirectTo ensures provider returns to our callback
       // skipBrowserRedirect true makes SDK return a URL which we then assign (works in all browsers)
@@ -43,8 +42,6 @@ export function GoogleAuthControl() {
           skipBrowserRedirect: true
         }
       });
-
-      console.log("DEBUG: signInWithOAuth result:", { data, error });
 
       if (error) {
         throw error;
