@@ -79,14 +79,15 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
     setErrorMessage(null);
 
     try {
-      const { error } = await supabase.from("listings").insert({
+      const insertResult = await supabase.from("listings").insert({
         user_id: userId,
         name,
         city,
         description,
         image_url: imageUrl,
-        verified: false
+        is_published: true
       });
+      const { error } = insertResult;
 
       if (error) {
         throw error;
