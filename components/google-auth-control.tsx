@@ -29,7 +29,8 @@ export function GoogleAuthControl() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: callbackUrl.toString()
+          redirectTo: callbackUrl.toString(),
+          skipBrowserRedirect: true
         }
       });
 
@@ -37,9 +38,11 @@ export function GoogleAuthControl() {
         throw error;
       }
 
-      if (data.url) {
-        window.location.assign(data.url);
+      if (!data.url) {
+        throw new Error("Google sign-in redirect URL was not provided.");
       }
+
+      window.location.assign(data.url);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to start Google sign-in.";
       setErrorMessage(message);
