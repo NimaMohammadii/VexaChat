@@ -1,6 +1,5 @@
 import { PublicHeader } from "@/components/public-header";
 import { ProfileCard } from "@/components/profile-card";
-import { GoogleAuthControl } from "@/components/google-auth-control";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-ink text-paper">
-      <PublicHeader rightSlot={<GoogleAuthControl />} />
+      <PublicHeader />
       <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-12 md:py-16">
         <div className="hero-background" aria-hidden="true" />
         <div className="orb orb-1" aria-hidden="true" />

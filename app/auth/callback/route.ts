@@ -40,5 +40,23 @@ export async function GET(request: NextRequest) {
 
   await supabase.auth.exchangeCodeForSession(code);
 
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        email: user.email,
+        role: "user"
+      },
+      {
+        onConflict: "id",
+        ignoreDuplicates: true
+      }
+    );
+  }
+
   return response;
 }
