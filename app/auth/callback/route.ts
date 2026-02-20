@@ -45,11 +45,21 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    await supabase.from("profiles").upsert(
+    const name =
+      (user.user_metadata.full_name as string | undefined) ??
+      (user.user_metadata.name as string | undefined) ??
+      user.email?.split("@")[0] ??
+      "User";
+
+    await supabase.from("listings").upsert(
       {
         id: user.id,
-        email: user.email,
-        role: "user"
+        user_id: user.id,
+        name,
+        city: "",
+        description: "",
+        image_url: null,
+        is_published: false
       },
       {
         onConflict: "id",

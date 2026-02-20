@@ -44,7 +44,7 @@ export async function uploadProfileImage(params: {
   }
 
   const { error: profileUpdateError } = await supabase
-    .from("profiles")
+    .from("listings")
     .update({ image_url: publicUrl })
     .eq("id", userId);
 
