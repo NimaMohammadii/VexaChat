@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
 import { EditProfileForm } from "@/components/edit-profile-form";
-import { prisma } from "@/lib/prisma";
+import { getProfileById } from "@/lib/profiles";
 
 export default async function EditProfilePage({ params }: { params: { id: string } }) {
-  const profile = await prisma.profile.findUnique({
-    where: { id: params.id }
-  });
+  const profile = await getProfileById(params.id);
 
   if (!profile) {
     notFound();

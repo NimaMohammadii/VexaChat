@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { createProfile } from "@/lib/profiles";
 
 function splitCommaSeparated(value: string) {
   return value
@@ -10,7 +10,7 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
-async function createProfile(formData: FormData) {
+async function createProfileAction(formData: FormData) {
   "use server";
 
   const name = String(formData.get("name") ?? "").trim();
@@ -27,23 +27,21 @@ async function createProfile(formData: FormData) {
   const languages = splitCommaSeparated(String(formData.get("languages") ?? ""));
   const services = splitCommaSeparated(String(formData.get("services") ?? ""));
 
-  await prisma.profile.create({
-    data: {
-      name,
-      age,
-      city,
-      price,
-      description,
-      images: [],
-      height,
-      availability,
-      experienceYears,
-      rating,
-      verified,
-      isTop,
-      languages,
-      services
-    }
+  await createProfile({
+    name,
+    age,
+    city,
+    price,
+    description,
+    images: [],
+    height,
+    availability,
+    experienceYears,
+    rating,
+    verified,
+    isTop,
+    languages,
+    services
   });
 
   revalidatePath("/");
@@ -57,7 +55,7 @@ export default function NewProfilePage() {
     <section className="space-y-6">
       <h1 className="text-3xl font-semibold">New Profile</h1>
       <div className="bw-card p-6">
-        <form action={createProfile} className="space-y-4">
+        <form action={createProfileAction} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm">
               <span>Name</span>

@@ -1,2 +1,2 @@
-// In-memory profile store removed. Use Prisma via `@/lib/prisma`.
+// In-memory profile store removed. Use Supabase via `@/lib/profiles`.
 export {};

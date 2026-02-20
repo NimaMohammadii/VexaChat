@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { listProfiles } from "@/lib/profiles";
 
 export default async function AdminDashboardPage() {
-  const profiles = await prisma.profile.findMany();
+  const profiles = await listProfiles();
 
   return (
     <section className="space-y-6">
