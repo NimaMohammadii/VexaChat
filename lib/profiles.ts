@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { Profile } from "@/lib/types";
 
 const PUBLIC_PROFILE_COLUMNS = "id,name,city,description,image_url,is_published,created_at";
@@ -77,7 +78,7 @@ function toAdminProfile(row: AdminProfileRow): Profile {
 }
 
 export async function listProfiles() {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
   const { data, error } = await supabase
     .from("listings")
     .select(PUBLIC_PROFILE_COLUMNS)
@@ -92,7 +93,7 @@ export async function listProfiles() {
 }
 
 export async function getProfileById(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
   const { data, error } = await supabase
     .from("listings")
     .select(PUBLIC_PROFILE_COLUMNS)
