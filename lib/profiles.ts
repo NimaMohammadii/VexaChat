@@ -1,10 +1,21 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Profile } from "@/lib/types";
 
-const PROFILE_COLUMNS =
+const PUBLIC_PROFILE_COLUMNS = "id,name,city,description,image_url,is_published,created_at";
+const ADMIN_PROFILE_COLUMNS =
   "id,name,age,city,price,description,images,height,languages,availability,verified,isTop,experienceYears,rating,services,createdAt";
 
-type ProfileRow = {
+type PublicProfileRow = {
+  id: string;
+  name: string;
+  city: string;
+  description: string;
+  image_url: string | null;
+  is_published: boolean | null;
+  created_at: string;
+};
+
+type AdminProfileRow = {
   id: string;
   name: string;
   age: number;
@@ -23,7 +34,28 @@ type ProfileRow = {
   createdAt: string;
 };
 
-function toProfile(row: ProfileRow): Profile {
+function toPublicProfile(row: PublicProfileRow): Profile {
+  return {
+    id: row.id,
+    name: row.name,
+    age: 0,
+    city: row.city,
+    price: 0,
+    description: row.description,
+    images: row.image_url ? [row.image_url] : [],
+    height: "",
+    languages: [],
+    availability: "Available",
+    verified: false,
+    isTop: false,
+    experienceYears: 0,
+    rating: 0,
+    services: [],
+    createdAt: row.created_at
+  };
+}
+
+function toAdminProfile(row: AdminProfileRow): Profile {
   return {
     id: row.id,
     name: row.name,
@@ -47,37 +79,43 @@ function toProfile(row: ProfileRow): Profile {
 export async function listProfiles() {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("profiles")
-    .select(PROFILE_COLUMNS)
-    .order("createdAt", { ascending: false });
+    .from("listings")
+    .select(PUBLIC_PROFILE_COLUMNS)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map((row) => toProfile(row as ProfileRow));
+  return (data ?? []).map((row) => toPublicProfile(row as PublicProfileRow));
 }
 
 export async function getProfileById(id: string) {
   const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", id).maybeSingle();
+  const { data, error } = await supabase
+    .from("listings")
+    .select(PUBLIC_PROFILE_COLUMNS)
+    .eq("id", id)
+    .eq("is_published", true)
+    .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  return data ? toProfile(data as ProfileRow) : null;
+  return data ? toPublicProfile(data as PublicProfileRow) : null;
 }
 
 export async function createProfile(data: Omit<Profile, "id" | "createdAt">) {
   const supabase = createSupabaseServerClient();
-  const { data: created, error } = await supabase.from("profiles").insert(data).select(PROFILE_COLUMNS).single();
+  const { data: created, error } = await supabase.from("profiles").insert(data).select(ADMIN_PROFILE_COLUMNS).single();
 
   if (error) {
     throw error;
   }
 
-  return toProfile(created as ProfileRow);
+  return toAdminProfile(created as AdminProfileRow);
 }
 
 export async function updateProfile(id: string, data: Omit<Profile, "id" | "createdAt">) {
@@ -86,14 +124,14 @@ export async function updateProfile(id: string, data: Omit<Profile, "id" | "crea
     .from("profiles")
     .update(data)
     .eq("id", id)
-    .select(PROFILE_COLUMNS)
+    .select(ADMIN_PROFILE_COLUMNS)
     .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  return updated ? toProfile(updated as ProfileRow) : null;
+  return updated ? toAdminProfile(updated as AdminProfileRow) : null;
 }
 
 export async function deleteProfile(id: string) {
