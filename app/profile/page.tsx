@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ProfilePageClient } from "@/components/profile-page-client";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { LogoutButton } from "@/components/logout-button";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,9 @@ export default async function ProfilePage() {
                     Admin
                   </span>
                 ) : null}
+              </div>
+              <div>
+                <LogoutButton />
               </div>
             </div>
           </div>
