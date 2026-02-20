@@ -2,12 +2,11 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { Profile } from "@/lib/types";
 
-const PUBLIC_PROFILE_COLUMNS = "id,name,city,description,image_url,is_published,created_at";
-const ADMIN_PROFILE_COLUMNS =
-  "id,name,age,city,price,description,images,height,languages,availability,verified,isTop,experienceYears,rating,services,createdAt";
+const LISTING_COLUMNS = "id,user_id,name,city,description,image_url,is_published,created_at";
 
-type PublicProfileRow = {
+type ListingRow = {
   id: string;
+  user_id: string | null;
   name: string;
   city: string;
   description: string;
@@ -16,26 +15,7 @@ type PublicProfileRow = {
   created_at: string;
 };
 
-type AdminProfileRow = {
-  id: string;
-  name: string;
-  age: number;
-  city: string;
-  price: number;
-  description: string;
-  images: string[] | null;
-  height: string | null;
-  languages: string[] | null;
-  availability: string | null;
-  verified: boolean | null;
-  isTop: boolean | null;
-  experienceYears: number | null;
-  rating: number | null;
-  services: string[] | null;
-  createdAt: string;
-};
-
-function toPublicProfile(row: PublicProfileRow): Profile {
+function toProfile(row: ListingRow): Profile {
   return {
     id: row.id,
     name: row.name,
@@ -46,7 +26,7 @@ function toPublicProfile(row: PublicProfileRow): Profile {
     images: row.image_url ? [row.image_url] : [],
     height: "",
     languages: [],
-    availability: "Available",
+    availability: row.is_published ? "Available" : "Unavailable",
     verified: false,
     isTop: false,
     experienceYears: 0,
@@ -56,24 +36,14 @@ function toPublicProfile(row: PublicProfileRow): Profile {
   };
 }
 
-function toAdminProfile(row: AdminProfileRow): Profile {
+function toListingPayload(data: Omit<Profile, "id" | "createdAt">) {
   return {
-    id: row.id,
-    name: row.name,
-    age: row.age,
-    city: row.city,
-    price: row.price,
-    description: row.description,
-    images: row.images ?? [],
-    height: row.height ?? "",
-    languages: row.languages ?? [],
-    availability: row.availability ?? "Unavailable",
-    verified: row.verified ?? false,
-    isTop: row.isTop ?? false,
-    experienceYears: row.experienceYears ?? 0,
-    rating: row.rating ?? 0,
-    services: row.services ?? [],
-    createdAt: row.createdAt
+    user_id: null,
+    name: data.name,
+    city: data.city,
+    description: data.description,
+    image_url: data.images[0] ?? null,
+    is_published: true
   };
 }
 
@@ -81,7 +51,7 @@ export async function listProfiles() {
   const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
   const { data, error } = await supabase
     .from("listings")
-    .select(PUBLIC_PROFILE_COLUMNS)
+    .select("*")
     .eq("is_published", true)
     .order("created_at", { ascending: false });
 
@@ -89,14 +59,14 @@ export async function listProfiles() {
     throw error;
   }
 
-  return (data ?? []).map((row) => toPublicProfile(row as PublicProfileRow));
+  return (data ?? []).map((row) => toProfile(row as ListingRow));
 }
 
 export async function getProfileById(id: string) {
   const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
   const { data, error } = await supabase
     .from("listings")
-    .select(PUBLIC_PROFILE_COLUMNS)
+    .select(LISTING_COLUMNS)
     .eq("id", id)
     .eq("is_published", true)
     .maybeSingle();
@@ -105,39 +75,43 @@ export async function getProfileById(id: string) {
     throw error;
   }
 
-  return data ? toPublicProfile(data as PublicProfileRow) : null;
+  return data ? toProfile(data as ListingRow) : null;
 }
 
 export async function createProfile(data: Omit<Profile, "id" | "createdAt">) {
   const supabase = createSupabaseServerClient();
-  const { data: created, error } = await supabase.from("profiles").insert(data).select(ADMIN_PROFILE_COLUMNS).single();
+  const { data: created, error } = await supabase
+    .from("listings")
+    .insert(toListingPayload(data))
+    .select(LISTING_COLUMNS)
+    .single();
 
   if (error) {
     throw error;
   }
 
-  return toAdminProfile(created as AdminProfileRow);
+  return toProfile(created as ListingRow);
 }
 
 export async function updateProfile(id: string, data: Omit<Profile, "id" | "createdAt">) {
   const supabase = createSupabaseServerClient();
   const { data: updated, error } = await supabase
-    .from("profiles")
-    .update(data)
+    .from("listings")
+    .update(toListingPayload(data))
     .eq("id", id)
-    .select(ADMIN_PROFILE_COLUMNS)
+    .select(LISTING_COLUMNS)
     .maybeSingle();
 
   if (error) {
     throw error;
   }
 
-  return updated ? toAdminProfile(updated as AdminProfileRow) : null;
+  return updated ? toProfile(updated as ListingRow) : null;
 }
 
 export async function deleteProfile(id: string) {
   const supabase = createSupabaseServerClient();
-  const { error } = await supabase.from("profiles").delete().eq("id", id);
+  const { error } = await supabase.from("listings").delete().eq("id", id);
 
   if (error) {
     throw error;

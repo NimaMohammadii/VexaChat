@@ -14,11 +14,21 @@ export default async function ProfilePage() {
     redirect("/");
   }
 
-  await supabase.from("profiles").upsert(
+  const defaultName =
+    (user.user_metadata.full_name as string | undefined) ??
+    (user.user_metadata.name as string | undefined) ??
+    user.email?.split("@")[0] ??
+    "User";
+
+  await supabase.from("listings").upsert(
     {
       id: user.id,
-      email: user.email,
-      role: "user"
+      user_id: user.id,
+      name: defaultName,
+      city: "",
+      description: "",
+      image_url: null,
+      is_published: false
     },
     {
       onConflict: "id",
@@ -27,16 +37,16 @@ export default async function ProfilePage() {
   );
 
   const { data: profileData } = await supabase
-    .from("profiles")
-    .select("email, role, image_url")
+    .from("listings")
+    .select("name, image_url")
     .eq("id", user.id)
     .single();
 
   const avatarUrl = (user.user_metadata.avatar_url as string | undefined) ?? null;
-  const email = profileData?.email ?? user.email ?? "No email";
-  const role = profileData?.role ?? "user";
+  const email = user.email ?? "No email";
+  const role: string = "user";
   const initialImageUrl = (profileData?.image_url as string | null | undefined) ?? null;
-  const fallback = email.charAt(0).toUpperCase();
+  const fallback = (profileData?.name ?? email).charAt(0).toUpperCase();
 
   return (
     <main className="min-h-screen bg-black px-4 py-10 text-white">
