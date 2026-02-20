@@ -38,7 +38,6 @@ function toProfile(row: ListingRow): Profile {
 
 function toListingPayload(data: Omit<Profile, "id" | "createdAt">) {
   return {
-    user_id: null,
     name: data.name,
     city: data.city,
     description: data.description,
@@ -80,9 +79,25 @@ export async function getProfileById(id: string) {
 
 export async function createProfile(data: Omit<Profile, "id" | "createdAt">) {
   const supabase = createSupabaseServerClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  const userId = userData.user?.id;
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
   const { data: created, error } = await supabase
     .from("listings")
-    .insert(toListingPayload(data))
+    .insert({
+      ...toListingPayload(data),
+      user_id: userId,
+      is_published: true
+    })
     .select(LISTING_COLUMNS)
     .single();
 
@@ -95,10 +110,26 @@ export async function createProfile(data: Omit<Profile, "id" | "createdAt">) {
 
 export async function updateProfile(id: string, data: Omit<Profile, "id" | "createdAt">) {
   const supabase = createSupabaseServerClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  const userId = userData.user?.id;
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
   const { data: updated, error } = await supabase
     .from("listings")
-    .update(toListingPayload(data))
+    .update({
+      ...toListingPayload(data),
+      is_published: true
+    })
     .eq("id", id)
+    .eq("user_id", userId)
     .select(LISTING_COLUMNS)
     .maybeSingle();
 
