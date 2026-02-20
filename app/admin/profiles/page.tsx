@@ -1,13 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { listProfiles } from "@/lib/profiles";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminProfilesPage() {
-  const profiles = await prisma.profile.findMany({
-    orderBy: { createdAt: "desc" }
-  });
+  const profiles = await listProfiles();
 
   return (
     <section className="space-y-6">

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getProfileById } from "@/lib/profiles";
 
 function StarRating({ rating }: { rating: number }) {
   const normalized = Math.max(0, Math.min(5, rating));
@@ -31,9 +31,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default async function ProfilePage({ params }: { params: { id: string } }) {
-  const profile = await prisma.profile.findUnique({
-    where: { id: params.id }
-  });
+  const profile = await getProfileById(params.id);
 
   if (!profile) {
     notFound();

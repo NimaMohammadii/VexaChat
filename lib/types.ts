@@ -14,5 +14,5 @@ export type Profile = {
   experienceYears: number;
   rating: number;
   services: string[];
-  createdAt: Date;
+  createdAt: string;
 };

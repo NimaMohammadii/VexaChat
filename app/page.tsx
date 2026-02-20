@@ -1,15 +1,13 @@
 import { PublicHeader } from "@/components/public-header";
 import { ProfileCard } from "@/components/profile-card";
-import { prisma } from "@/lib/prisma";
+import { listProfiles } from "@/lib/profiles";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const profiles = await (async () => {
     try {
-      return await prisma.profile.findMany({
-        orderBy: { createdAt: "desc" }
-      });
+      return await listProfiles();
     } catch (error) {
       console.error("Failed to load profiles", error);
       return [];
