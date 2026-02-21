@@ -15,8 +15,8 @@ type UpdateProfilePayload = {
   languages?: string[] | string | null;
   availability?: string;
   verified?: boolean;
-  isTop?: boolean;
-  experienceYears?: number | string | null;
+  is_top?: boolean;
+  experience_years?: number | string | null;
   rating?: number | string | null;
   services?: string[] | string | null;
 };
@@ -75,7 +75,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       languages: toStringArray(body.languages),
       availability: body.availability ?? "Unavailable",
       verified: Boolean(body.verified),
-      is_top: Boolean(body.isTop),
+      is_top: Boolean(body.is_top),
       services: toStringArray(body.services),
       is_published: (body.availability ?? "Unavailable").toLowerCase() === "available"
     };
@@ -86,7 +86,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const price = toNumOrNull(body.price);
     if (price !== null) payload.price = price;
 
-    const experienceYears = toIntOrNull(body.experienceYears);
+    const experienceYears = toIntOrNull(body.experience_years);
     if (experienceYears !== null) payload.experience_years = experienceYears;
 
     const rating = toNumOrNull(body.rating);

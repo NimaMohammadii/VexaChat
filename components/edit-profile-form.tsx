@@ -126,7 +126,7 @@ export function EditProfileForm({
         languages: splitCommaSeparated(languages),
         availability,
         verified,
-        isTop,
+        is_top: isTop,
         services: splitCommaSeparated(services)
       };
 
@@ -134,7 +134,7 @@ export function EditProfileForm({
       if (ageVal !== null) payload.age = ageVal;
 
       const experienceYearsVal = toIntOrNull(experienceYears);
-      if (experienceYearsVal !== null) payload.experienceYears = experienceYearsVal;
+      if (experienceYearsVal !== null) payload.experience_years = experienceYearsVal;
 
       const priceVal = toNumOrNull(price);
       if (priceVal !== null) payload.price = priceVal;
