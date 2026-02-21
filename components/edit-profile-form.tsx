@@ -19,20 +19,37 @@ export function EditProfileForm({
   profile: Profile;
   isAdminContext?: boolean;
 }) {
-  const [name, setName] = useState(profile.name);
-  const [age, setAge] = useState(profile.age);
-  const [city, setCity] = useState(profile.city);
-  const [price, setPrice] = useState(profile.price);
-  const [description, setDescription] = useState(profile.description);
-  const [images, setImages] = useState(profile.images);
-  const [height, setHeight] = useState(profile.height);
-  const [languages, setLanguages] = useState(profile.languages.join(", "));
-  const [availability, setAvailability] = useState(profile.availability);
-  const [verified, setVerified] = useState(profile.verified);
-  const [isTop, setIsTop] = useState(profile.isTop);
-  const [experienceYears, setExperienceYears] = useState(profile.experienceYears);
-  const [rating, setRating] = useState(profile.rating);
-  const [services, setServices] = useState(profile.services.join(", "));
+  const safeProfile = {
+    ...profile,
+    age: profile.age ?? "",
+    availability: profile.availability ?? "",
+    city: profile.city ?? "",
+    description: profile.description ?? "",
+    experienceYears: profile.experienceYears ?? "",
+    height: profile.height ?? "",
+    images: profile.images ?? [],
+    isTop: profile.isTop ?? false,
+    languages: profile.languages ?? [],
+    price: profile.price ?? "",
+    rating: profile.rating ?? 0,
+    services: profile.services ?? [],
+    verified: profile.verified ?? false
+  };
+
+  const [name, setName] = useState(safeProfile.name);
+  const [age, setAge] = useState<number | "">(safeProfile.age);
+  const [city, setCity] = useState(safeProfile.city);
+  const [price, setPrice] = useState<number | "">(safeProfile.price);
+  const [description, setDescription] = useState(safeProfile.description);
+  const [images, setImages] = useState<string[]>(safeProfile.images);
+  const [height, setHeight] = useState(safeProfile.height);
+  const [languages, setLanguages] = useState(safeProfile.languages?.join(", ") ?? "");
+  const [availability, setAvailability] = useState(safeProfile.availability);
+  const [verified, setVerified] = useState(safeProfile.verified);
+  const [isTop, setIsTop] = useState(safeProfile.isTop);
+  const [experienceYears, setExperienceYears] = useState<number | "">(safeProfile.experienceYears);
+  const [rating, setRating] = useState(safeProfile.rating);
+  const [services, setServices] = useState(safeProfile.services?.join(", ") ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
@@ -85,7 +102,7 @@ export function EditProfileForm({
   }
 
   async function onSave() {
-    const endpoint = isAdminContext ? `/api/admin/profiles/${profile.id}` : `/api/profiles/${profile.id}`;
+    const endpoint = isAdminContext ? `/api/admin/profiles/${safeProfile.id}` : `/api/profiles/${safeProfile.id}`;
 
     try {
       const payload = {
@@ -125,7 +142,7 @@ export function EditProfileForm({
       }
 
       setStatus("Saved.");
-      router.push(isAdminContext ? "/admin/profiles" : `/profiles/${profile.id}`);
+      router.push(isAdminContext ? "/admin/profiles" : `/profiles/${safeProfile.id}`);
       router.refresh();
     } catch {
       setStatus("Unable to save profile.");
