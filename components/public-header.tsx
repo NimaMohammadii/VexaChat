@@ -1,4 +1,10 @@
-export function PublicHeader() {
+import Link from "next/link";
+import { getAuthSession } from "@/lib/auth";
+import { LogoutButton } from "@/components/logout-button";
+
+export async function PublicHeader() {
+  const session = await getAuthSession();
+
   return (
     <header className="border-b border-line">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-6">
@@ -10,7 +16,19 @@ export function PublicHeader() {
             className="w-full bg-transparent text-sm text-paper outline-none placeholder:text-white/50"
           />
         </div>
-        <div aria-hidden className="w-10" />
+        <div className="flex items-center gap-2">
+          {session?.user ? (
+            <>
+              <Link href="/profile" className="bw-button-muted">My profile</Link>
+              <LogoutButton />
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" className="bw-button-muted">Sign in</Link>
+              <Link href="/sign-up" className="bw-button">Sign up</Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

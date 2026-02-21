@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, isAdminTokenValid } from "@/lib/auth";
+import { ADMIN_COOKIE, isAdminTokenValid } from "@/lib/admin-auth";
 
 export function middleware(request: NextRequest) {
   const cookieValue = request.cookies.get(ADMIN_COOKIE)?.value;
