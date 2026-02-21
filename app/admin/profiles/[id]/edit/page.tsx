@@ -13,7 +13,7 @@ export default async function EditProfilePage({ params }: { params: { id: string
     <section className="space-y-6">
       <h1 className="text-3xl font-semibold">Edit Profile</h1>
       <div className="bw-card p-6">
-        <EditProfileForm profile={profile} />
+        <EditProfileForm profile={profile} isAdminContext />
       </div>
     </section>
   );
