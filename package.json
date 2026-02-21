@@ -6,17 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:migrate": "prisma migrate deploy",
-    "db:generate": "prisma generate",
-    "db:seed": "node prisma/seed.js"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@supabase/ssr": "^0.5.2",
-    "@prisma/client": "^6.4.1"
+    "@prisma/client": "^6.3.1"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
@@ -28,6 +25,6 @@
     "postcss": "8.4.39",
     "tailwindcss": "3.4.4",
     "typescript": "5.5.3",
-    "prisma": "^6.4.1"
+    "prisma": "^6.3.1"
   }
 }
