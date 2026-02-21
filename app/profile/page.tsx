@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function MyProfilePage() {
-  const session = await auth();
+  const session = await getAuthSession();
 
   if (!session?.user?.email) {
     redirect("/sign-in");
