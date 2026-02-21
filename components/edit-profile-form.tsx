@@ -12,6 +12,18 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
+const toIntOrNull = (v: unknown) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+};
+
+const toNumOrNull = (v: unknown) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
 export function EditProfileForm({
   profile,
   isAdminContext = false
@@ -31,7 +43,7 @@ export function EditProfileForm({
     isTop: profile.isTop ?? false,
     languages: profile.languages ?? [],
     price: profile.price ?? "",
-    rating: profile.rating ?? 0,
+    rating: profile.rating ?? "",
     services: profile.services ?? [],
     verified: profile.verified ?? false
   };
@@ -48,7 +60,7 @@ export function EditProfileForm({
   const [verified, setVerified] = useState(safeProfile.verified);
   const [isTop, setIsTop] = useState(safeProfile.isTop);
   const [experienceYears, setExperienceYears] = useState<number | "">(safeProfile.experienceYears);
-  const [rating, setRating] = useState(safeProfile.rating);
+  const [rating, setRating] = useState<number | "">(safeProfile.rating);
   const [services, setServices] = useState(safeProfile.services?.join(", ") ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -105,22 +117,30 @@ export function EditProfileForm({
     const endpoint = isAdminContext ? `/api/admin/profiles/${safeProfile.id}` : `/api/profiles/${safeProfile.id}`;
 
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name,
-        age,
         city,
-        price,
         description,
-        images,
+        images: images ?? [],
         height,
         languages: splitCommaSeparated(languages),
         availability,
         verified,
         isTop,
-        experienceYears,
-        rating,
         services: splitCommaSeparated(services)
       };
+
+      const ageVal = toIntOrNull(age);
+      if (ageVal !== null) payload.age = ageVal;
+
+      const experienceYearsVal = toIntOrNull(experienceYears);
+      if (experienceYearsVal !== null) payload.experienceYears = experienceYearsVal;
+
+      const priceVal = toNumOrNull(price);
+      if (priceVal !== null) payload.price = priceVal;
+
+      const ratingVal = toNumOrNull(rating);
+      if (ratingVal !== null) payload.rating = ratingVal;
 
       const response = await fetch(endpoint, {
         method: "PUT",
@@ -163,7 +183,7 @@ export function EditProfileForm({
             type="number"
             min={18}
             value={age}
-            onChange={(event) => setAge(Number(event.target.value))}
+            onChange={(event) => setAge(event.target.value === "" ? "" : Number(event.target.value))}
           />
         </label>
       </div>
@@ -180,7 +200,7 @@ export function EditProfileForm({
             type="number"
             min={0}
             value={price}
-            onChange={(event) => setPrice(Number(event.target.value))}
+            onChange={(event) => setPrice(event.target.value === "" ? "" : Number(event.target.value))}
           />
         </label>
       </div>
@@ -204,7 +224,7 @@ export function EditProfileForm({
             type="number"
             min={0}
             value={experienceYears}
-            onChange={(event) => setExperienceYears(Number(event.target.value))}
+            onChange={(event) => setExperienceYears(event.target.value === "" ? "" : Number(event.target.value))}
           />
         </label>
         <label className="space-y-2 text-sm">
@@ -216,7 +236,7 @@ export function EditProfileForm({
             max={5}
             step={0.1}
             value={rating}
-            onChange={(event) => setRating(Number(event.target.value))}
+            onChange={(event) => setRating(event.target.value === "" ? "" : Number(event.target.value))}
           />
         </label>
       </div>

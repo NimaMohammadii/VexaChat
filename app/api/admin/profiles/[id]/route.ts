@@ -6,19 +6,46 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 type UpdateProfilePayload = {
   name?: string;
-  age?: number;
+  age?: number | string | null;
   city?: string;
-  price?: number;
+  price?: number | string | null;
   description?: string;
-  images?: string[];
+  images?: string[] | null;
   height?: string;
-  languages?: string[];
+  languages?: string[] | string | null;
   availability?: string;
   verified?: boolean;
   isTop?: boolean;
-  experienceYears?: number;
-  rating?: number;
-  services?: string[];
+  experienceYears?: number | string | null;
+  rating?: number | string | null;
+  services?: string[] | string | null;
+};
+
+const toIntOrNull = (v: unknown) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+};
+
+const toNumOrNull = (v: unknown) => {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const toStringArray = (v: string[] | string | null | undefined) => {
+  if (Array.isArray(v)) {
+    return v;
+  }
+
+  if (typeof v === "string") {
+    return v
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 };
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -38,23 +65,32 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   try {
     const body = (await request.json()) as UpdateProfilePayload;
-    const payload = {
+
+    const payload: Record<string, unknown> = {
       name: body.name,
-      age: Number(body.age ?? 0),
       city: body.city,
-      price: Number(body.price ?? 0),
       description: body.description,
       image_url: body.images?.[0] ?? null,
       height: body.height ?? "",
-      languages: body.languages ?? [],
+      languages: toStringArray(body.languages),
       availability: body.availability ?? "Unavailable",
       verified: Boolean(body.verified),
       is_top: Boolean(body.isTop),
-      experience_years: Number(body.experienceYears ?? 0),
-      rating: Number(body.rating ?? 0),
-      services: body.services ?? [],
+      services: toStringArray(body.services),
       is_published: (body.availability ?? "Unavailable").toLowerCase() === "available"
     };
+
+    const age = toIntOrNull(body.age);
+    if (age !== null) payload.age = age;
+
+    const price = toNumOrNull(body.price);
+    if (price !== null) payload.price = price;
+
+    const experienceYears = toIntOrNull(body.experienceYears);
+    if (experienceYears !== null) payload.experience_years = experienceYears;
+
+    const rating = toNumOrNull(body.rating);
+    if (rating !== null) payload.rating = rating;
 
     const { data, error } = await supabaseAdmin
       .from("listings")
