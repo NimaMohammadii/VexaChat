@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { EditProfileForm } from "@/components/edit-profile-form";
 import { getProfileById } from "@/lib/profiles";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 
 export default async function EditProfilePage({ params }: { params: { id: string } }) {
   const profile = await getProfileById(params.id);
