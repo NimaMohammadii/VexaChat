@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { listProfilesPublic } from "@/lib/profiles";
+import { listProfiles } from "@/lib/profile-store";
 
 export async function GET() {
-  const profiles = await listProfilesPublic();
-  return NextResponse.json(profiles);
+  return NextResponse.json(listProfiles());
 }
