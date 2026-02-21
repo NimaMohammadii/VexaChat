@@ -12,7 +12,13 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
-export function EditProfileForm({ profile }: { profile: Profile }) {
+export function EditProfileForm({
+  profile,
+  isAdminContext = false
+}: {
+  profile: Profile;
+  isAdminContext?: boolean;
+}) {
   const [name, setName] = useState(profile.name);
   const [age, setAge] = useState(profile.age);
   const [city, setCity] = useState(profile.city);
@@ -79,35 +85,42 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   }
 
   async function onSave() {
-    const response = await fetch(`/api/profiles/${profile.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        age,
-        city,
-        price,
-        description,
-        images,
-        height,
-        languages: splitCommaSeparated(languages),
-        availability,
-        verified,
-        isTop,
-        experienceYears,
-        rating,
-        services: splitCommaSeparated(services)
-      })
-    });
+    const endpoint = isAdminContext ? `/api/admin/profiles/${profile.id}` : `/api/profiles/${profile.id}`;
 
-    if (!response.ok) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          age,
+          city,
+          price,
+          description,
+          images,
+          height,
+          languages: splitCommaSeparated(languages),
+          availability,
+          verified,
+          isTop,
+          experienceYears,
+          rating,
+          services: splitCommaSeparated(services)
+        })
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        setStatus(payload?.error ?? "Unable to save profile.");
+        return;
+      }
+
+      setStatus("Saved.");
+      router.push(isAdminContext ? "/admin/profiles" : `/profiles/${profile.id}`);
+      router.refresh();
+    } catch {
       setStatus("Unable to save profile.");
-      return;
     }
-
-    setStatus("Saved.");
-    router.push("/admin/profiles");
-    router.refresh();
   }
 
   return (
