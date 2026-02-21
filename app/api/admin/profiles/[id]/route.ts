@@ -6,10 +6,19 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 type UpdateProfilePayload = {
   name?: string;
+  age?: number;
   city?: string;
+  price?: number;
   description?: string;
-  image_url?: string | null;
-  is_published?: boolean;
+  images?: string[];
+  height?: string;
+  languages?: string[];
+  availability?: string;
+  verified?: boolean;
+  isTop?: boolean;
+  experienceYears?: number;
+  rating?: number;
+  services?: string[];
 };
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -31,10 +40,20 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const body = (await request.json()) as UpdateProfilePayload;
     const payload = {
       name: body.name,
+      age: Number(body.age ?? 0),
       city: body.city,
+      price: Number(body.price ?? 0),
       description: body.description,
-      image_url: body.image_url,
-      is_published: body.is_published
+      image_url: body.images?.[0] ?? null,
+      height: body.height ?? "",
+      languages: body.languages ?? [],
+      availability: body.availability ?? "Unavailable",
+      verified: Boolean(body.verified),
+      is_top: Boolean(body.isTop),
+      experience_years: Number(body.experienceYears ?? 0),
+      rating: Number(body.rating ?? 0),
+      services: body.services ?? [],
+      is_published: (body.availability ?? "Unavailable").toLowerCase() === "available"
     };
 
     const { data, error } = await supabaseAdmin
