@@ -1,3 +1,15 @@
-export default function AdminPage() {
-  return <main>Admin</main>;
+import { prisma } from "@/lib/prisma";
+
+export default async function AdminDashboardPage() {
+  const profiles = await prisma.profile.findMany();
+
+  return (
+    <section className="space-y-6">
+      <h1 className="text-3xl font-semibold">Dashboard</h1>
+      <div className="bw-card p-6">
+        <p className="text-sm text-white/70">Total Profiles</p>
+        <p className="mt-2 text-5xl font-semibold">{profiles.length}</p>
+      </div>
+    </section>
+  );
 }
