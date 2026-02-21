@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,13 +15,13 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name) {
+          get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name, value, options) {
+          set(name: string, value: string, options: CookieOptions) {
             cookieStore.set({ name, value, ...options });
           },
-          remove(name, options) {
+          remove(name: string, options: CookieOptions) {
             cookieStore.set({ name, value: "", ...options, maxAge: 0 });
           },
         },
