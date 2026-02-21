@@ -109,6 +109,12 @@ export function EditProfileForm({
         })
       });
 
+      if (response.status === 401) {
+        setStatus("Unauthorized. Please log in again.");
+        router.push("/admin-login");
+        return;
+      }
+
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         setStatus(payload?.error ?? "Unable to save profile.");
