@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, isAdminTokenValid } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -21,12 +22,9 @@ type UpdateProfilePayload = {
 };
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const adminCookie = request.headers
-    .get("cookie")
-    ?.split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(`${ADMIN_COOKIE}=`))
-    ?.split("=")[1];
+  const cookieStore = cookies();
+  const adminCookieRaw = cookieStore.get(ADMIN_COOKIE)?.value;
+  const adminCookie = adminCookieRaw ? decodeURIComponent(adminCookieRaw) : undefined;
 
   if (!isAdminTokenValid(adminCookie)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
