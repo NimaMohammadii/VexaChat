@@ -1,167 +1,165 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { Profile } from "@/lib/types";
+import { Prisma } from "@prisma/client";
+import { db } from "@/lib/db";
+import { Profile, ProfileInput } from "@/lib/types";
 
-const LISTING_COLUMNS =
-  "id,user_id,name,age,city,price,description,image_url,height,languages,availability,verified,is_top,experience_years,rating,services,is_published,created_at";
+const baseSelect = {
+  id: true,
+  supabaseUserId: true,
+  name: true,
+  age: true,
+  city: true,
+  price: true,
+  description: true,
+  imageUrls: true,
+  isPublished: true,
+  height: true,
+  languages: true,
+  availability: true,
+  verified: true,
+  isTop: true,
+  experienceYears: true,
+  rating: true,
+  services: true,
+  createdAt: true,
+  updatedAt: true
+} satisfies Prisma.ListingSelect;
 
-type ListingRow = {
-  id: string;
-  user_id: string | null;
-  name: string;
-  age: number;
-  city: string;
-  price: number;
-  description: string;
-  image_url: string | null;
-  height: string;
-  languages: string[];
-  availability: string;
-  verified: boolean;
-  is_top: boolean;
-  experience_years: number;
-  rating: number;
-  services: string[];
-  is_published: boolean | null;
-  created_at: string;
-};
+type ListingRecord = Prisma.ListingGetPayload<{ select: typeof baseSelect }>;
 
-function toProfile(row: ListingRow): Profile {
-  return {
-    id: row.id,
-    name: row.name,
-    age: row.age,
-    city: row.city,
-    price: row.price,
-    description: row.description,
-    images: row.image_url ? [row.image_url] : [],
-    height: row.height,
-    languages: row.languages,
-    availability: row.availability,
-    verified: row.verified,
-    isTop: row.is_top,
-    experienceYears: row.experience_years,
-    rating: Number(row.rating),
-    services: row.services,
-    createdAt: row.created_at
-  };
+const toProfile = (row: ListingRecord): Profile => ({
+  id: row.id,
+  supabaseUserId: row.supabaseUserId,
+  name: row.name,
+  age: row.age ?? 18,
+  city: row.city,
+  price: row.price ?? 0,
+  description: row.description,
+  images: row.imageUrls ?? [],
+  isPublished: row.isPublished,
+  height: row.height ?? "",
+  languages: row.languages ?? [],
+  availability: row.availability ?? "Unavailable",
+  verified: row.verified,
+  isTop: row.isTop,
+  experienceYears: row.experienceYears ?? 0,
+  rating: Number(row.rating ?? 0),
+  services: row.services ?? [],
+  createdAt: row.createdAt.toISOString(),
+  updatedAt: row.updatedAt.toISOString()
+});
+
+const toListingData = (data: Partial<ProfileInput>) => ({
+  name: data.name,
+  age: data.age,
+  city: data.city,
+  price: data.price,
+  description: data.description,
+  imageUrls: data.images,
+  height: data.height,
+  languages: data.languages,
+  availability: data.availability,
+  verified: data.verified,
+  isTop: data.isTop,
+  experienceYears: data.experienceYears,
+  rating: data.rating === undefined ? undefined : new Prisma.Decimal(data.rating),
+  services: data.services,
+  isPublished:
+    data.availability === undefined
+      ? undefined
+      : data.availability.toLowerCase() === "available"
+});
+
+export async function listProfilesPublic() {
+  const profiles = await db.listing.findMany({
+    where: { isPublished: true },
+    orderBy: { createdAt: "desc" },
+    select: baseSelect
+  });
+
+  return profiles.map(toProfile);
 }
 
-function toListingPayload(data: Omit<Profile, "id" | "createdAt">) {
-  return {
-    name: data.name,
-    age: data.age,
-    city: data.city,
-    price: data.price,
-    description: data.description,
-    image_url: data.images[0] ?? null,
-    height: data.height,
-    languages: data.languages,
-    availability: data.availability,
-    verified: data.verified,
-    is_top: data.isTop,
-    experience_years: data.experienceYears,
-    rating: data.rating,
-    services: data.services,
-    is_published: data.availability.toLowerCase() === "available"
-  };
+export async function getProfileById(id: string, includeUnpublished = false) {
+  const profile = await db.listing.findFirst({
+    where: { id, ...(includeUnpublished ? {} : { isPublished: true }) },
+    select: baseSelect
+  });
+
+  return profile ? toProfile(profile) : null;
 }
 
-export async function listProfiles() {
-  const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_COLUMNS)
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+export async function createOrUpdateProfileForUser(supabaseUserId: string, payload: Partial<ProfileInput>) {
+  const existing = await db.listing.findFirst({ where: { supabaseUserId }, select: { id: true } });
 
-  if (error) {
-    throw error;
+  if (existing) {
+    return db.listing
+      .update({
+        where: { id: existing.id },
+        data: toListingData(payload),
+        select: baseSelect
+      })
+      .then(toProfile);
   }
 
-  return (data ?? []).map((row) => toProfile(row as ListingRow));
-}
-
-export async function getProfileById(id: string) {
-  const supabase = createSupabaseAdminClient() ?? createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("listings")
-    .select(LISTING_COLUMNS)
-    .eq("id", id)
-    .eq("is_published", true)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? toProfile(data as ListingRow) : null;
-}
-
-export async function createProfile(data: Omit<Profile, "id" | "createdAt">) {
-  const supabase = createSupabaseServerClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-
-  if (userError) {
-    throw userError;
-  }
-
-  const userId = userData.user?.id;
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const { data: created, error } = await supabase
-    .from("listings")
-    .insert({
-      ...toListingPayload(data),
-      user_id: userId
+  return db.listing
+    .create({
+      data: {
+        supabaseUserId,
+        name: payload.name ?? "User",
+        city: payload.city ?? "",
+        description: payload.description ?? "",
+        imageUrls: payload.images ?? [],
+        availability: payload.availability ?? "Unavailable",
+        isPublished: (payload.availability ?? "Unavailable").toLowerCase() === "available",
+        age: payload.age,
+        price: payload.price,
+        height: payload.height,
+        languages: payload.languages ?? [],
+        verified: payload.verified ?? false,
+        isTop: payload.isTop ?? false,
+        experienceYears: payload.experienceYears,
+        rating: payload.rating === undefined ? undefined : new Prisma.Decimal(payload.rating),
+        services: payload.services ?? []
+      },
+      select: baseSelect
     })
-    .select(LISTING_COLUMNS)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return toProfile(created as ListingRow);
+    .then(toProfile);
 }
 
-export async function updateProfile(id: string, data: Omit<Profile, "id" | "createdAt">) {
-  const supabase = createSupabaseServerClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+export async function adminUpdateProfile(id: string, payload: Partial<ProfileInput>) {
+  const updated = await db.listing.update({
+    where: { id },
+    data: toListingData(payload),
+    select: baseSelect
+  });
 
-  if (userError) {
-    throw userError;
-  }
+  return toProfile(updated);
+}
 
-  const userId = userData.user?.id;
+export async function adminListProfiles() {
+  const profiles = await db.listing.findMany({
+    orderBy: { createdAt: "desc" },
+    select: baseSelect
+  });
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  const { data: updated, error } = await supabase
-    .from("listings")
-    .update(toListingPayload(data))
-    .eq("id", id)
-    .eq("user_id", userId)
-    .select(LISTING_COLUMNS)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return updated ? toProfile(updated as ListingRow) : null;
+  return profiles.map(toProfile);
 }
 
 export async function deleteProfile(id: string) {
-  const supabase = createSupabaseServerClient();
-  const { error } = await supabase.from("listings").delete().eq("id", id);
+  await db.listing.delete({ where: { id } });
+}
 
-  if (error) {
-    throw error;
-  }
+export async function createAdminProfile(payload: ProfileInput) {
+  const created = await db.listing.create({
+    data: {
+      ...toListingData(payload),
+      name: payload.name,
+      city: payload.city,
+      description: payload.description,
+      imageUrls: payload.images ?? []
+    },
+    select: baseSelect
+  });
+
+  return toProfile(created);
 }

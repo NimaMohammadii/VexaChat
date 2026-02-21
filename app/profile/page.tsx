@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { ProfilePageClient } from "@/components/profile-page-client";
+import { createOrUpdateProfileForUser } from "@/lib/profiles";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -21,33 +22,10 @@ export default async function ProfilePage() {
     user.email?.split("@")[0] ??
     "User";
 
-  await supabase.from("listings").upsert(
-    {
-      id: user.id,
-      user_id: user.id,
-      name: defaultName,
-      city: "",
-      description: "",
-      image_url: null,
-      is_published: false
-    },
-    {
-      onConflict: "id",
-      ignoreDuplicates: true
-    }
-  );
-
-  const { data: profileData } = await supabase
-    .from("listings")
-    .select("name, image_url")
-    .eq("id", user.id)
-    .single();
-
+  const profile = await createOrUpdateProfileForUser(user.id, { name: defaultName });
   const avatarUrl = (user.user_metadata.avatar_url as string | undefined) ?? null;
   const email = user.email ?? "No email";
-  const role: string = "user";
-  const initialImageUrl = (profileData?.image_url as string | null | undefined) ?? null;
-  const fallback = (profileData?.name ?? email).charAt(0).toUpperCase();
+  const fallback = (profile.name || email).charAt(0).toUpperCase();
 
   return (
     <main className="min-h-screen bg-black px-4 py-10 text-white">
@@ -56,35 +34,15 @@ export default async function ProfilePage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-[#333] bg-[#111] text-lg font-semibold">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt="User avatar" className="h-full w-full object-cover" />
-                ) : (
-                  <span>{fallback}</span>
-                )}
+                {avatarUrl ? <img src={avatarUrl} alt="User avatar" className="h-full w-full object-cover" /> : <span>{fallback}</span>}
               </div>
-              <div className="space-y-2">
-                <p className="text-sm text-white/80">{email}</p>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#333] bg-black px-3 py-1 text-xs uppercase tracking-wide text-white">
-                    {role}
-                  </span>
-                  {role === "admin" ? (
-                    <span className="inline-flex rounded-full border border-[#333] bg-white px-3 py-1 text-xs font-medium text-black">
-                      Admin
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+              <p className="text-sm text-white/80">{email}</p>
             </div>
-
-            <div className="self-start">
-              <LogoutButton />
-            </div>
+            <LogoutButton />
           </div>
         </section>
 
-        <ProfilePageClient userId={user.id} initialImageUrl={initialImageUrl} />
+        <ProfilePageClient userId={user.id} initialImageUrl={profile.images[0] ?? null} initialName={profile.name} />
       </div>
     </main>
   );

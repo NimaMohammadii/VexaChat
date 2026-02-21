@@ -8,10 +8,11 @@ import { uploadProfileImage } from "@/lib/profile-image-upload";
 type ProfilePageClientProps = {
   userId: string;
   initialImageUrl: string | null;
+  initialName?: string;
 };
 
-export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClientProps) {
-  const [name, setName] = useState("");
+export function ProfilePageClient({ userId, initialImageUrl, initialName = "" }: ProfilePageClientProps) {
+  const [name, setName] = useState(initialName);
   const [city, setCity] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState(initialImageUrl ?? "");
@@ -19,23 +20,16 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImageUrl);
 
   const supabase = useMemo(() => createSupabaseClient(), []);
 
   const handleImageSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
-
-    if (!selectedFile) {
-      return;
-    }
+    if (!selectedFile) return;
 
     setIsUploadingImage(true);
     setErrorMessage(null);
     setMessage(null);
-
-    const objectPreview = URL.createObjectURL(selectedFile);
-    setPreviewUrl(objectPreview);
 
     try {
       const {
@@ -43,32 +37,18 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
         error: userError
       } = await supabase.auth.getUser();
 
-      if (userError || !user) {
-        throw new Error("You must be logged in to upload an image.");
+      if (userError || !user || user.id !== userId) {
+        throw new Error("You must be logged in as the profile owner to upload an image.");
       }
 
-      if (user.id !== userId) {
-        throw new Error("You can only upload your own profile image.");
-      }
-
-      const publicUrl = await uploadProfileImage({
-        supabase,
-        file: selectedFile,
-        userId,
-        previousImageUrl: imageUrl || null
-      });
-
+      const publicUrl = await uploadProfileImage({ supabase, file: selectedFile, userId });
       setImageUrl(publicUrl);
-      setPreviewUrl(publicUrl);
       setMessage("Image uploaded successfully.");
     } catch (error) {
-      const nextError = error instanceof Error ? error.message : "Failed to upload image.";
-      setErrorMessage(nextError);
-      setPreviewUrl(imageUrl || initialImageUrl || null);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to upload image.");
     } finally {
       setIsUploadingImage(false);
       event.target.value = "";
-      URL.revokeObjectURL(objectPreview);
     }
   };
 
@@ -79,28 +59,26 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
     setErrorMessage(null);
 
     try {
-      const insertResult = await supabase.from("listings").insert({
-        user_id: userId,
-        name,
-        city,
-        description,
-        image_url: imageUrl,
-        is_published: true
+      const response = await fetch(`/api/profiles/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          city,
+          description,
+          images: imageUrl ? [imageUrl] : [],
+          availability: "Available"
+        })
       });
-      const { error } = insertResult;
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "Failed to publish listing.");
       }
 
-      setName("");
-      setCity("");
-      setDescription("");
-      setMessage("Listing published successfully.");
+      setMessage("Listing saved successfully.");
     } catch (error) {
-  console.error("SUPABASE INSERT ERROR:", error);
-  const nextError = error instanceof Error ? error.message : "Failed to publish listing.";
-  setErrorMessage(nextError);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to publish listing.");
     } finally {
       setIsSubmitting(false);
     }
@@ -110,59 +88,24 @@ export function ProfilePageClient({ userId, initialImageUrl }: ProfilePageClient
     <section className="rounded-2xl border border-[#222] bg-[#050505] p-6 md:p-7">
       <h2 className="text-lg font-semibold text-white">Create Your Listing</h2>
       <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-        <input
-          required
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Name"
-          className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white outline-none transition-all duration-200 focus:border-white hover:border-white/60"
-        />
-        <input
-          required
-          value={city}
-          onChange={(event) => setCity(event.target.value)}
-          placeholder="City"
-          className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white outline-none transition-all duration-200 focus:border-white hover:border-white/60"
-        />
-        <textarea
-          required
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="Description"
-          className="min-h-28 w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white outline-none transition-all duration-200 focus:border-white hover:border-white/60"
-        />
+        <input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Name" className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white" />
+        <input required value={city} onChange={(event) => setCity(event.target.value)} placeholder="City" className="w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white" />
+        <textarea required value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" className="min-h-28 w-full rounded-xl border border-[#333] bg-black px-4 py-3 text-sm text-white" />
 
-        <div className="space-y-3 rounded-xl border border-[#333] bg-black/70 p-4 transition-all duration-200 hover:border-white/60">
-          <p className="text-sm text-white">Profile image</p>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageSelect}
-            disabled={isUploadingImage}
-            className="w-full cursor-pointer rounded-xl border border-[#333] bg-black px-3 py-2 text-sm text-white file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-white file:bg-black file:px-3 file:py-1.5 file:text-sm file:text-white file:transition file:hover:bg-white file:hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
-          />
+        <input type="file" accept="image/*" onChange={handleImageSelect} disabled={isUploadingImage} className="w-full cursor-pointer rounded-xl border border-[#333] bg-black px-3 py-2 text-sm text-white" />
 
-          {isUploadingImage ? <p className="text-xs text-white/70">Uploading image...</p> : null}
+        {imageUrl ? (
+          <div className="relative h-64 w-full overflow-hidden rounded-xl border border-[#333]">
+            <Image src={imageUrl} alt="Profile upload" fill className="object-cover" unoptimized />
+          </div>
+        ) : null}
 
-          {previewUrl ? (
-            <div className="relative h-44 w-full overflow-hidden rounded-xl border border-[#333] bg-[#0a0a0a]">
-              <Image src={previewUrl} alt="Profile preview" fill className="object-cover" unoptimized />
-            </div>
-          ) : (
-            <p className="text-xs text-white/60">No image selected yet.</p>
-          )}
-        </div>
+        {message ? <p className="text-sm text-emerald-400">{message}</p> : null}
+        {errorMessage ? <p className="text-sm text-red-300">{errorMessage}</p> : null}
 
-        <button
-          type="submit"
-          disabled={isSubmitting || isUploadingImage || !imageUrl}
-          className="inline-flex items-center justify-center rounded-xl border border-white px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-white hover:text-black disabled:opacity-70"
-        >
-          {isSubmitting ? "Publishing..." : "Publish Listing"}
+        <button type="submit" disabled={isSubmitting || isUploadingImage} className="rounded-xl border border-white px-4 py-2 text-sm text-white">
+          {isSubmitting ? "Saving..." : "Save listing"}
         </button>
-
-        {message ? <p className="text-sm text-white">{message}</p> : null}
-        {errorMessage ? <p className="text-sm text-red-400">{errorMessage}</p> : null}
       </form>
     </section>
   );

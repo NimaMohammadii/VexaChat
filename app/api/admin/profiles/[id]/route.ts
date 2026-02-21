@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, isAdminTokenValid } from "@/lib/auth";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { adminUpdateProfile } from "@/lib/profiles";
 
 type UpdateProfilePayload = {
   name?: string;
@@ -34,83 +34,39 @@ const toNumOrNull = (v: unknown) => {
 };
 
 const toStringArray = (v: string[] | string | null | undefined) => {
-  if (Array.isArray(v)) {
-    return v;
-  }
-
-  if (typeof v === "string") {
-    return v
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") return v.split(",").map((item) => item.trim()).filter(Boolean);
   return [];
 };
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const adminCookieRaw = cookieStore.get(ADMIN_COOKIE)?.value;
-  const adminCookie = adminCookieRaw ? decodeURIComponent(adminCookieRaw) : undefined;
-
+  const adminCookie = cookies().get(ADMIN_COOKIE)?.value;
   if (!isAdminTokenValid(adminCookie)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseAdmin = createSupabaseAdminClient();
-
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: "Supabase admin client is not configured" }, { status: 500 });
-  }
-
   try {
     const body = (await request.json()) as UpdateProfilePayload;
-
-    const payload: Record<string, unknown> = {
+    const updated = await adminUpdateProfile(params.id, {
       name: body.name,
       city: body.city,
       description: body.description,
-      image_url: body.images?.[0] ?? null,
-      height: body.height ?? "",
+      images: body.images ?? [],
+      height: body.height,
       languages: toStringArray(body.languages),
-      availability: body.availability ?? "Unavailable",
+      availability: body.availability,
       verified: Boolean(body.verified),
-      is_top: Boolean(body.is_top),
+      isTop: Boolean(body.is_top),
       services: toStringArray(body.services),
-      is_published: (body.availability ?? "Unavailable").toLowerCase() === "available"
-    };
-
-    const age = toIntOrNull(body.age);
-    if (age !== null) payload.age = age;
-
-    const price = toNumOrNull(body.price);
-    if (price !== null) payload.price = price;
-
-    const experienceYears = toIntOrNull(body.experience_years);
-    if (experienceYears !== null) payload.experience_years = experienceYears;
-
-    const rating = toNumOrNull(body.rating);
-    if (rating !== null) payload.rating = rating;
-
-    const { data, error } = await supabaseAdmin
-      .from("listings")
-      .update(payload)
-      .eq("id", params.id)
-      .select("*")
-      .maybeSingle();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    if (!data) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
+      age: toIntOrNull(body.age) ?? undefined,
+      price: toNumOrNull(body.price) ?? undefined,
+      experienceYears: toIntOrNull(body.experience_years) ?? undefined,
+      rating: toNumOrNull(body.rating) ?? undefined
+    });
 
     revalidatePath("/");
     revalidatePath("/admin/profiles");
-
-    return NextResponse.json(data);
+    return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to update profile";
     return NextResponse.json({ error: message }, { status: 400 });

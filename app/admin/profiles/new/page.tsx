@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createProfile } from "@/lib/profiles";
+import { createAdminProfile } from "@/lib/profiles";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -13,7 +13,7 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
-async function createProfileAction(formData: FormData) {
+async function createAdminProfileAction(formData: FormData) {
   "use server";
 
   const name = String(formData.get("name") ?? "").trim();
@@ -30,7 +30,7 @@ async function createProfileAction(formData: FormData) {
   const languages = splitCommaSeparated(String(formData.get("languages") ?? ""));
   const services = splitCommaSeparated(String(formData.get("services") ?? ""));
 
-  await createProfile({
+  await createAdminProfile({
     name,
     age,
     city,
@@ -58,7 +58,7 @@ export default function NewProfilePage() {
     <section className="space-y-6">
       <h1 className="text-3xl font-semibold">New Profile</h1>
       <div className="bw-card p-6">
-        <form action={createProfileAction} className="space-y-4">
+        <form action={createAdminProfileAction} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm">
               <span>Name</span>

@@ -8,9 +8,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const nextParam = requestUrl.searchParams.get("next") ?? "/";
-
-  const safePath =
-    nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  const safePath = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
 
   const redirectUrl = new URL(safePath, requestUrl.origin);
   const response = NextResponse.redirect(redirectUrl);
@@ -23,7 +21,6 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = cookies();
-
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name: string) {
@@ -39,34 +36,5 @@ export async function GET(request: NextRequest) {
   });
 
   await supabase.auth.exchangeCodeForSession(code);
-
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const name =
-      (user.user_metadata.full_name as string | undefined) ??
-      (user.user_metadata.name as string | undefined) ??
-      user.email?.split("@")[0] ??
-      "User";
-
-    await supabase.from("listings").upsert(
-      {
-        id: user.id,
-        user_id: user.id,
-        name,
-        city: "",
-        description: "",
-        image_url: null,
-        is_published: false
-      },
-      {
-        onConflict: "id",
-        ignoreDuplicates: true
-      }
-    );
-  }
-
   return response;
 }
