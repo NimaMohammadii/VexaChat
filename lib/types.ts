@@ -1,5 +1,6 @@
 export type Profile = {
   id: string;
+  supabaseUserId?: string | null;
   name: string;
   age: number;
   city: string;
@@ -14,5 +15,12 @@ export type Profile = {
   experienceYears: number;
   rating: number;
   services: string[];
+  isPublished: boolean;
   createdAt: string;
+  updatedAt: string;
 };
+
+export type ProfileInput = Omit<
+  Profile,
+  "id" | "createdAt" | "updatedAt" | "supabaseUserId" | "isPublished"
+>;

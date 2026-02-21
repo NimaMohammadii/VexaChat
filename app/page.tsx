@@ -1,13 +1,13 @@
 import { PublicHeader } from "@/components/public-header";
 import { ProfileCard } from "@/components/profile-card";
-import { listProfiles } from "@/lib/profiles";
+import { listProfilesPublic } from "@/lib/profiles";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const profiles = await (async () => {
     try {
-      return await listProfiles();
+      return await listProfilesPublic();
     } catch (error) {
       console.error("Failed to load profiles", error);
       return [];

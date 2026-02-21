@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-const PROFILE_IMAGES_BUCKET = "profile-images";
+const PROFILE_IMAGES_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET ?? "profile-images";
 
 function getFileExtension(file: File) {
   const nameParts = file.name.split(".");
@@ -16,21 +16,20 @@ function getFileExtension(file: File) {
 
 function buildProfileImagePath(userId: string, file: File) {
   const extension = getFileExtension(file);
-  return `${userId}-${Date.now()}.${extension}`;
+  return `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
 }
 
 export async function uploadProfileImage(params: {
   supabase: SupabaseClient;
   file: File;
   userId: string;
-  previousImageUrl?: string | null;
 }) {
-  const { supabase, file, userId, previousImageUrl } = params;
+  const { supabase, file, userId } = params;
   const filePath = buildProfileImagePath(userId, file);
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from(PROFILE_IMAGES_BUCKET)
-    .upload(filePath, file);
+    .upload(filePath, file, { upsert: false });
 
   if (uploadError) {
     throw new Error(uploadError.message || "Failed to upload image.");
@@ -43,39 +42,7 @@ export async function uploadProfileImage(params: {
     throw new Error("Unable to generate public URL for uploaded image.");
   }
 
-  const { error: profileUpdateError } = await supabase
-    .from("listings")
-    .update({ image_url: publicUrl })
-    .eq("id", userId);
-
-  if (profileUpdateError) {
-    if (uploadData?.path) {
-      await supabase.storage.from(PROFILE_IMAGES_BUCKET).remove([uploadData.path]);
-    }
-
-    throw new Error(profileUpdateError.message || "Image uploaded but profile update failed.");
-  }
-
-  if (previousImageUrl) {
-    const previousPath = getStoragePathFromPublicUrl(previousImageUrl);
-
-    if (previousPath && previousPath !== filePath) {
-      await supabase.storage.from(PROFILE_IMAGES_BUCKET).remove([previousPath]);
-    }
-  }
-
   return publicUrl;
-}
-
-export function getStoragePathFromPublicUrl(publicUrl: string) {
-  const marker = `/storage/v1/object/public/${PROFILE_IMAGES_BUCKET}/`;
-  const markerIndex = publicUrl.indexOf(marker);
-
-  if (markerIndex === -1) {
-    return null;
-  }
-
-  return publicUrl.slice(markerIndex + marker.length);
 }
 
 export const profileImagesBucket = PROFILE_IMAGES_BUCKET;

@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 
 export default async function EditProfilePage({ params }: { params: { id: string } }) {
-  const profile = await getProfileById(params.id);
+  const profile = await getProfileById(params.id, true);
 
   if (!profile) {
     notFound();

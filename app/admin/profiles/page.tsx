@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { listProfiles } from "@/lib/profiles";
+import { adminListProfiles } from "@/lib/profiles";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminProfilesPage() {
-  const profiles = await listProfiles();
+  const profiles = await adminListProfiles();
 
   return (
     <section className="space-y-6">
