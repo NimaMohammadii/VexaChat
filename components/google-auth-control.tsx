@@ -69,11 +69,12 @@ export function GoogleAuthControl() {
 
   const handleGoogleLogin = async () => {
     const supabase = createSupabaseClient();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? window.location.origin;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${appUrl}/auth/callback`
       }
     });
 
