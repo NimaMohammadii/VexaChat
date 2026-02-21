@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase-client";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 type UserSession = {
   avatarUrl: string | null;
@@ -124,7 +125,7 @@ export function GoogleAuthControl() {
       return;
     }
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && event.target instanceof Node && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
@@ -138,10 +139,12 @@ export function GoogleAuthControl() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
@@ -209,33 +212,37 @@ export function GoogleAuthControl() {
           )}
         </button>
 
-        <div
-          id="profile-menu"
-          role="menu"
-          aria-hidden={!isOpen}
-          className={`absolute right-0 z-20 mt-2 w-44 origin-top-right rounded-xl border border-line bg-black/90 p-1.5 shadow-xl backdrop-blur transition duration-150 ease-out ${
-            isOpen
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none -translate-y-1 scale-95 opacity-0"
-          }`}
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={goToProfile}
-            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          >
-            My Profile
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => void handleSignOut()}
-            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          >
-            Sign out
-          </button>
-        </div>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              id="profile-menu"
+              key="profile-menu"
+              role="menu"
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="absolute right-0 z-20 mt-2 w-44 origin-top-right rounded-xl border border-line bg-black/90 p-1.5 shadow-xl backdrop-blur"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={goToProfile}
+                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                My Profile
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void handleSignOut()}
+                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                Sign out
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
