@@ -2,6 +2,9 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createProfile } from "@/lib/profiles";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 
 function splitCommaSeparated(value: string) {
   return value

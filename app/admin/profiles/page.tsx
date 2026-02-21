@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listProfiles } from "@/lib/profiles";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AdminProfilesPage() {
   const profiles = await listProfiles();
