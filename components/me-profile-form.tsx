@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
 type MeData = {
@@ -43,6 +43,8 @@ export function MeProfileForm({ data }: { data: MeData }) {
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const deviceFileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const shownName = name || data.user.email;
 
@@ -75,22 +77,18 @@ export function MeProfileForm({ data }: { data: MeData }) {
     setIsSaving(false);
   };
 
-  const onAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
+  const onAvatarFileSelected = async (file: File | null) => {
     if (!file) {
       return;
     }
 
     if (!file.type.startsWith("image/")) {
       setStatus("Please upload an image file.");
-      event.target.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       setStatus("Image must be 5MB or less.");
-      event.target.value = "";
       return;
     }
 
@@ -140,8 +138,19 @@ export function MeProfileForm({ data }: { data: MeData }) {
       setStatus("Unable to upload avatar right now.");
     } finally {
       setIsUploadingAvatar(false);
-      event.target.value = "";
+      if (deviceFileInputRef.current) {
+        deviceFileInputRef.current.value = "";
+      }
+
+      if (cameraFileInputRef.current) {
+        cameraFileInputRef.current.value = "";
+      }
     }
+  };
+
+  const onAvatarFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    void onAvatarFileSelected(file);
   };
 
   return (
@@ -161,18 +170,46 @@ export function MeProfileForm({ data }: { data: MeData }) {
       </div>
 
       <div className="space-y-4">
-        <label className="space-y-2 text-sm">
+        <div className="space-y-2 text-sm">
           <span>Avatar</span>
-          <input
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="bw-input file:mr-4 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:text-paper"
-            onChange={(event) => void onAvatarFileChange(event)}
-            disabled={isUploadingAvatar}
-          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={deviceFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onAvatarFileChange}
+              disabled={isUploadingAvatar}
+            />
+            <button
+              type="button"
+              className="bw-button-muted"
+              onClick={() => deviceFileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+            >
+              Upload from device
+            </button>
+
+            <input
+              ref={cameraFileInputRef}
+              type="file"
+              accept="image/*"
+              capture="user"
+              className="hidden"
+              onChange={onAvatarFileChange}
+              disabled={isUploadingAvatar}
+            />
+            <button
+              type="button"
+              className="bw-button-muted"
+              onClick={() => cameraFileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+            >
+              Take photo
+            </button>
+          </div>
           <p className="text-xs text-white/60">Upload a JPG/PNG/WebP image up to 5MB.</p>
-        </label>
+        </div>
 
         <label className="space-y-2 text-sm">
           <span>Name</span>
