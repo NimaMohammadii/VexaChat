@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import { LogoutButton } from "@/components/logout-button";
 
 export async function PublicHeader() {
-  const session = await auth();
+  const session = await getAuthSession();
 
   return (
     <header className="border-b border-line">
