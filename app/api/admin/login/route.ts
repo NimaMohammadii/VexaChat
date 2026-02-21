@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ADMIN_COOKIE, getAdminToken } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, getAdminToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const { password } = await request.json();
