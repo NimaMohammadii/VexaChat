@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createSupabaseClient } from "@/lib/supabase-client";
 import { useEffect, useRef, useState } from "react";
 
@@ -37,10 +37,12 @@ function getInitial(displayName: string) {
 }
 
 export function GoogleAuthControl() {
+  const router = useRouter();
   const [session, setSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const avatarButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseClient();
@@ -59,9 +61,11 @@ export function GoogleAuthControl() {
       }
 
       const displayName = user.user_metadata.full_name ?? user.user_metadata.name ?? user.email ?? "User";
+      const response = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+      const profilePayload = response?.ok ? ((await response.json()) as { profile: { avatarUrl: string } | null }) : null;
 
       setSession({
-        avatarUrl: user.user_metadata.avatar_url ?? null,
+        avatarUrl: profilePayload?.profile?.avatarUrl || user.user_metadata.avatar_url || null,
         displayName
       });
       setIsLoading(false);
@@ -71,7 +75,7 @@ export function GoogleAuthControl() {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, authSession) => {
+    } = supabase.auth.onAuthStateChange((_event: unknown, authSession: { user?: { user_metadata: { full_name?: string; name?: string; avatar_url?: string }; email?: string | null } } | null) => {
       const user = authSession?.user;
 
       if (!user) {
@@ -87,8 +91,31 @@ export function GoogleAuthControl() {
       });
     });
 
+    const handleAvatarUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ avatarUrl?: string }>;
+      const nextAvatarUrl = customEvent.detail?.avatarUrl;
+
+      if (!nextAvatarUrl) {
+        return;
+      }
+
+      setSession((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          avatarUrl: nextAvatarUrl
+        };
+      });
+    };
+
+    window.addEventListener("profile-avatar-updated", handleAvatarUpdated);
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener("profile-avatar-updated", handleAvatarUpdated);
     };
   }, []);
 
@@ -106,6 +133,7 @@ export function GoogleAuthControl() {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
+        avatarButtonRef.current?.focus();
       }
     };
 
@@ -141,6 +169,8 @@ export function GoogleAuthControl() {
 
   const handleSignOut = async () => {
     const supabase = createSupabaseClient();
+    setIsOpen(false);
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -149,7 +179,11 @@ export function GoogleAuthControl() {
     }
 
     setSession(null);
+  };
+
+  const goToProfile = () => {
     setIsOpen(false);
+    router.push("/me");
   };
 
   if (isLoading) {
@@ -160,9 +194,11 @@ export function GoogleAuthControl() {
     return (
       <div className="relative" ref={dropdownRef}>
         <button
+          ref={avatarButtonRef}
           type="button"
           aria-haspopup="menu"
           aria-expanded={isOpen}
+          aria-controls="profile-menu"
           onClick={() => setIsOpen((current) => !current)}
           className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-line/80 bg-white/[0.06] text-sm font-semibold text-paper transition hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
@@ -173,29 +209,33 @@ export function GoogleAuthControl() {
           )}
         </button>
 
-        {isOpen ? (
-          <div
-            role="menu"
-            className="absolute right-0 z-20 mt-2 w-44 rounded-xl border border-line bg-black/90 p-1.5 shadow-xl backdrop-blur"
+        <div
+          id="profile-menu"
+          role="menu"
+          aria-hidden={!isOpen}
+          className={`absolute right-0 z-20 mt-2 w-44 origin-top-right rounded-xl border border-line bg-black/90 p-1.5 shadow-xl backdrop-blur transition duration-150 ease-out ${
+            isOpen
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none -translate-y-1 scale-95 opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={goToProfile}
+            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
-            <Link
-              href="/me"
-              role="menuitem"
-              className="block rounded-lg px-3 py-2 text-sm text-paper transition hover:bg-white/10"
-              onClick={() => setIsOpen(false)}
-            >
-              My Profile
-            </Link>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => void handleSignOut()}
-              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10"
-            >
-              Sign out
-            </button>
-          </div>
-        ) : null}
+            My Profile
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void handleSignOut()}
+            className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }
