@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { createSupabaseClient } from "@/lib/supabase-client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type UserSession = {
   avatarUrl: string | null;
@@ -31,14 +32,20 @@ function GoogleIcon() {
   );
 }
 
+function getInitial(displayName: string) {
+  return displayName.trim().slice(0, 1).toUpperCase() || "U";
+}
+
 export function GoogleAuthControl() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const supabase = createSupabaseClient();
+    const supabase = createSupabaseClient();
 
+    const syncSession = async () => {
       const {
         data: { session: authSession }
       } = await supabase.auth.getSession();
@@ -51,11 +58,7 @@ export function GoogleAuthControl() {
         return;
       }
 
-      const displayName =
-        user.user_metadata.full_name ??
-        user.user_metadata.name ??
-        user.email ??
-        "User";
+      const displayName = user.user_metadata.full_name ?? user.user_metadata.name ?? user.email ?? "User";
 
       setSession({
         avatarUrl: user.user_metadata.avatar_url ?? null,
@@ -64,8 +67,56 @@ export function GoogleAuthControl() {
       setIsLoading(false);
     };
 
-    void loadSession();
+    void syncSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, authSession) => {
+      const user = authSession?.user;
+
+      if (!user) {
+        setSession(null);
+        setIsOpen(false);
+        return;
+      }
+
+      const displayName = user.user_metadata.full_name ?? user.user_metadata.name ?? user.email ?? "User";
+      setSession({
+        avatarUrl: user.user_metadata.avatar_url ?? null,
+        displayName
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && event.target instanceof Node && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
 
   const handleGoogleLogin = async () => {
     const supabase = createSupabaseClient();
@@ -88,20 +139,63 @@ export function GoogleAuthControl() {
     }
   };
 
+  const handleSignOut = async () => {
+    const supabase = createSupabaseClient();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Sign out Error:", error);
+      return;
+    }
+
+    setSession(null);
+    setIsOpen(false);
+  };
+
   if (isLoading) {
     return <div className="h-10 w-10 animate-pulse rounded-full border border-line bg-white/5" aria-hidden />;
   }
 
   if (session) {
     return (
-      <div className="flex items-center gap-3 rounded-full border border-line/80 bg-white/[0.04] px-2 py-1.5 backdrop-blur-sm dark:bg-white/[0.03]">
-        {session.avatarUrl ? (
-          <img src={session.avatarUrl} alt={session.displayName} className="h-8 w-8 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-semibold text-paper">
-            {session.displayName.slice(0, 1).toUpperCase()}
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((current) => !current)}
+          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-line/80 bg-white/[0.06] text-sm font-semibold text-paper transition hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        >
+          {session.avatarUrl ? (
+            <img src={session.avatarUrl} alt={session.displayName} className="h-full w-full object-cover" />
+          ) : (
+            <span>{getInitial(session.displayName)}</span>
+          )}
+        </button>
+
+        {isOpen ? (
+          <div
+            role="menu"
+            className="absolute right-0 z-20 mt-2 w-44 rounded-xl border border-line bg-black/90 p-1.5 shadow-xl backdrop-blur"
+          >
+            <Link
+              href="/me"
+              role="menuitem"
+              className="block rounded-lg px-3 py-2 text-sm text-paper transition hover:bg-white/10"
+              onClick={() => setIsOpen(false)}
+            >
+              My Profile
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => void handleSignOut()}
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10"
+            >
+              Sign out
+            </button>
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
