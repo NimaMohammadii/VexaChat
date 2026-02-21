@@ -6,19 +6,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 type UpdateProfilePayload = {
   name?: string;
-  age?: number;
   city?: string;
-  price?: number;
   description?: string;
-  images?: string[];
-  height?: string;
-  languages?: string[];
-  availability?: string;
-  verified?: boolean;
-  isTop?: boolean;
-  experienceYears?: number;
-  rating?: number;
-  services?: string[];
+  image_url?: string | null;
+  is_published?: boolean;
 };
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -38,25 +29,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   try {
     const body = (await request.json()) as UpdateProfilePayload;
+    const payload = {
+      name: body.name,
+      city: body.city,
+      description: body.description,
+      image_url: body.image_url,
+      is_published: body.is_published
+    };
 
     const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        name: body.name,
-        age: Number(body.age),
-        city: body.city,
-        price: Number(body.price),
-        description: body.description,
-        images: body.images ?? [],
-        height: body.height ?? "",
-        languages: body.languages ?? [],
-        availability: body.availability ?? "Unavailable",
-        verified: Boolean(body.verified),
-        isTop: Boolean(body.isTop),
-        experienceYears: Number(body.experienceYears ?? 0),
-        rating: Number(body.rating ?? 0),
-        services: body.services ?? []
-      })
+      .from("listings")
+      .update(payload)
       .eq("id", params.id)
       .select("*")
       .maybeSingle();
