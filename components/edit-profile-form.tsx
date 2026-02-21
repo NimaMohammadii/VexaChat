@@ -90,6 +90,7 @@ export function EditProfileForm({
     try {
       const response = await fetch(endpoint, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
