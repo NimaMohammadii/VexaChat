@@ -88,30 +88,22 @@ export function EditProfileForm({
     const endpoint = isAdminContext ? `/api/admin/profiles/${profile.id}` : `/api/profiles/${profile.id}`;
 
     try {
-      const payload = isAdminContext
-        ? {
-            name,
-            city,
-            description,
-            image_url: images[0] ?? null,
-            is_published: availability.toLowerCase() === "available"
-          }
-        : {
-            name,
-            age,
-            city,
-            price,
-            description,
-            images,
-            height,
-            languages: splitCommaSeparated(languages),
-            availability,
-            verified,
-            isTop,
-            experienceYears,
-            rating,
-            services: splitCommaSeparated(services)
-          };
+      const payload = {
+        name,
+        age,
+        city,
+        price,
+        description,
+        images,
+        height,
+        languages: splitCommaSeparated(languages),
+        availability,
+        verified,
+        isTop,
+        experienceYears,
+        rating,
+        services: splitCommaSeparated(services)
+      };
 
       const response = await fetch(endpoint, {
         method: "PUT",
