@@ -7,28 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Listing {
-  id              String    @id @default(uuid()) @db.Uuid
-  supabaseUserId  String?   @map("supabase_user_id") @db.Uuid
+model Profile {
+  id              String   @id @default(uuid())
   name            String
-  age             Int?
+  age             Int
   city            String
-  price           Int?
+  price           Int
   description     String
-  imageUrls       String[]  @default([]) @map("image_urls")
-  isPublished     Boolean   @default(false) @map("is_published")
-  height          String?
-  languages       String[]  @default([])
-  availability    String?
-  verified        Boolean   @default(false)
-  isTop           Boolean   @default(false) @map("is_top")
-  experienceYears Int?      @map("experience_years")
-  rating          Decimal?  @db.Decimal(3, 2)
-  services        String[]  @default([])
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  @@index([isPublished], map: "listings_is_published_idx")
-  @@index([city], map: "listings_city_idx")
-  @@map("listings")
+  images          String[]
+  height          String   @default("")
+  languages       String[] @default([])
+  availability    String   @default("Unavailable")
+  verified        Boolean  @default(false)
+  isTop           Boolean  @default(false)
+  experienceYears Int      @default(0)
+  rating          Float    @default(0)
+  services        String[] @default([])
+  createdAt       DateTime @default(now())
 }
