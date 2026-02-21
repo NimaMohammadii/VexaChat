@@ -88,14 +88,19 @@ export function GoogleAuthControl() {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const { data } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`
       }
     });
 
-    if (data.url) {
+    if (error) {
+      console.error("OAuth Error:", error);
+      return;
+    }
+
+    if (data?.url) {
       window.location.href = data.url;
     }
   };
