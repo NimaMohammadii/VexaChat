@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
 type CreateListingForm = {
@@ -10,7 +10,6 @@ type CreateListingForm = {
   city: string;
   price: string;
   description: string;
-  imageUrl: string;
   height: string;
   availability: string;
   experienceYears: string;
@@ -25,7 +24,6 @@ const INITIAL_FORM: CreateListingForm = {
   city: "",
   price: "0",
   description: "",
-  imageUrl: "",
   height: "",
   availability: "Available",
   experienceYears: "0",
@@ -40,26 +38,54 @@ function splitCommaSeparated(value: string) {
 
 export default function CreateProfilePage() {
   const [listingForm, setListingForm] = useState<CreateListingForm>(INITIAL_FORM);
-  const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
   const [uploading, setUploading] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState<boolean | null>(null);
+  const [draftProfileId, setDraftProfileId] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    const checkExistingProfile = async () => {
+      const response = await fetch("/api/me/profiles", { cache: "no-store" }).catch(() => null);
+      if (!response || !response.ok) {
+        setHasExistingProfile(null);
+        return;
+      }
+
+      const payload = (await response.json()) as { profiles: Array<{ id: string }> };
+      setHasExistingProfile(payload.profiles.length > 0);
+    };
+
+    void checkExistingProfile();
+  }, []);
+
+  const uploadedCountLabel = useMemo(() => `${uploadedImageUrls.length}/2 uploaded`, [uploadedImageUrls.length]);
 
   const onFileSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      setStatus("Please select an image file.");
+    if (files.length > 2) {
+      setStatus("You can select at most 2 images.");
+      event.target.value = "";
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setStatus("Image must be 5MB or less.");
+    const invalidFile = files.find((file) => !file.type.startsWith("image/"));
+    if (invalidFile) {
+      setStatus("Please select only image files.");
+      event.target.value = "";
+      return;
+    }
+
+    const oversized = files.find((file) => file.size > 5 * 1024 * 1024);
+    if (oversized) {
+      setStatus("Each image must be 5MB or less.");
+      event.target.value = "";
       return;
     }
 
@@ -74,27 +100,59 @@ export default function CreateProfilePage() {
     }
 
     setUploading(true);
-    setStatus("Uploading image...");
+    setStatus("Uploading images...");
 
-    const tempProfileId = crypto.randomUUID();
-    const extension = file.name.split(".").pop() || "jpg";
-    const path = `${user.id}/${tempProfileId}/${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("profile-images").upload(path, file, { upsert: false });
+    const profileId = draftProfileId;
+    const uploadedPaths: string[] = [];
 
-    if (error) {
-      setStatus(`Upload failed: ${error.message}`);
+    try {
+      const prefix = `${user.id}/${profileId}`;
+      const { data: existingFiles } = await supabase.storage.from("profile-images").list(prefix, { limit: 100 });
+      if (existingFiles && existingFiles.length > 0) {
+        const existingPaths = existingFiles.map((item) => `${prefix}/${item.name}`);
+        await supabase.storage.from("profile-images").remove(existingPaths);
+      }
+
+      const nextUrls: string[] = [];
+
+      for (const file of files) {
+        const extension = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/${profileId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+        const { error } = await supabase.storage.from("profile-images").upload(path, file, { upsert: false });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        uploadedPaths.push(path);
+        const { data } = supabase.storage.from("profile-images").getPublicUrl(path);
+        nextUrls.push(data.publicUrl);
+      }
+
+      setUploadedImageUrls(nextUrls.slice(0, 2));
+      setStatus(`Images uploaded (${nextUrls.length}/2).`);
+    } catch (error) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from("profile-images").remove(uploadedPaths);
+      }
+      setUploadedImageUrls([]);
+      setStatus(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
       setUploading(false);
-      return;
+      event.target.value = "";
     }
-
-    const { data } = supabase.storage.from("profile-images").getPublicUrl(path);
-    setUploadedImageUrl(data.publicUrl);
-    setStatus("Image uploaded.");
-    setUploading(false);
   };
 
   const onCreateListing = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (uploadedImageUrls.length > 2) {
+      setStatus("A profile can include at most 2 images.");
+      return;
+    }
+
+    const profileId = draftProfileId;
+
     setIsCreating(true);
     setSuccess(false);
 
@@ -102,13 +160,13 @@ export default function CreateProfilePage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        profileId,
         name: listingForm.name,
         age: Number(listingForm.age),
         city: listingForm.city,
         price: Number(listingForm.price),
         description: listingForm.description,
-        imageUrl: imageMode === "url" ? listingForm.imageUrl : "",
-        uploadedImageUrl: imageMode === "upload" ? uploadedImageUrl : "",
+        imageUrls: uploadedImageUrls,
         height: listingForm.height,
         availability: listingForm.availability,
         experienceYears: Number(listingForm.experienceYears),
@@ -128,10 +186,27 @@ export default function CreateProfilePage() {
 
     setSuccess(true);
     setStatus("Submitted for verification.");
+    setHasExistingProfile(true);
     setListingForm(INITIAL_FORM);
-    setUploadedImageUrl("");
+    setUploadedImageUrls([]);
+    setDraftProfileId(crypto.randomUUID());
     setIsCreating(false);
   };
+
+  if (hasExistingProfile) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-3xl space-y-6 px-4 py-10">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Create Home Profile</h1>
+          <Link href="/me" className="bw-button-muted">Back</Link>
+        </div>
+        <section className="bw-card space-y-3 p-6 md:p-8">
+          <p className="text-sm text-amber-300">You already have a profile. Only one profile is allowed per account.</p>
+          <Link href="/me" className="bw-button-muted inline-flex">Back to My Profiles</Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl space-y-6 px-4 py-10">
@@ -157,16 +232,12 @@ export default function CreateProfilePage() {
           <input className="bw-input" placeholder="Services (comma separated)" value={listingForm.services} onChange={(e) => setListingForm((p) => ({ ...p, services: e.target.value }))} />
 
           <div className="rounded-xl border border-line p-4">
-            <p className="mb-3 text-sm font-medium">Profile image</p>
-            <div className="mb-3 flex gap-2">
-              <button type="button" className={`rounded-lg border px-3 py-1.5 text-sm ${imageMode === "upload" ? "border-paper" : "border-line"}`} onClick={() => setImageMode("upload")}>Upload image</button>
-              <button type="button" className={`rounded-lg border px-3 py-1.5 text-sm ${imageMode === "url" ? "border-paper" : "border-line"}`} onClick={() => setImageMode("url")}>Use image link</button>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-medium">Upload images</p>
+              <span className="text-xs text-white/60">{uploadedCountLabel}</span>
             </div>
-            {imageMode === "upload" ? (
-              <input type="file" accept="image/*" capture="environment" onChange={onFileSelected} className="bw-input" disabled={uploading} />
-            ) : (
-              <input className="bw-input" placeholder="https://example.com/photo.jpg" value={listingForm.imageUrl} onChange={(e) => setListingForm((p) => ({ ...p, imageUrl: e.target.value }))} />
-            )}
+            <input type="file" accept="image/*" multiple capture="environment" onChange={onFileSelected} className="bw-input" disabled={uploading} />
+            <p className="mt-2 text-xs text-white/60">You can upload up to 2 images.</p>
           </div>
 
           <textarea className="bw-input min-h-28" placeholder="Description" value={listingForm.description} onChange={(e) => setListingForm((p) => ({ ...p, description: e.target.value }))} required />

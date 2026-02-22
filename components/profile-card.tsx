@@ -9,7 +9,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
   const router = useRouter();
   const [isSelected, setIsSelected] = useState(false);
   const isNavigatingRef = useRef(false);
-  const primaryImage = profile.imageUrl || profile.images?.[0] || null;
+  const primaryImage = profile.images?.[0] || profile.imageUrl || null;
 
   const navigateToProfile = useCallback(() => {
     if (isNavigatingRef.current) {
