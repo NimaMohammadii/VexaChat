@@ -57,3 +57,38 @@ npm run start:prod
 ```
 
 This keeps build independent from database migrations while guaranteeing `prisma migrate deploy` runs right before `next start` in production.
+
+
+## Render deployment settings for Homepage Manager
+
+Homepage Manager depends on Prisma migration `20260302120000_add_home_sections`.
+If this migration is not applied, `/api/admin/home-sections` will fail and Admin → Homepage Manager will not load.
+
+### Required environment variables
+
+- `DATABASE_URL`: set this to your **Render Internal Postgres URL**.
+- `DIRECT_URL`: set this only if your Prisma schema/environment explicitly uses `DIRECT_URL`.
+
+### Render commands
+
+- Build Command:
+
+```bash
+npm install && npm run build
+```
+
+- Start Command (recommended):
+
+```bash
+npm run start:prod
+```
+
+This runs `prisma migrate deploy` before starting Next.js.
+
+- Start Command (safe auto-repair option):
+
+```bash
+npm run start:prod:safe
+```
+
+Use this if you want startup to run the Prisma repair script first for fresh/misaligned databases, then start Next.js.
