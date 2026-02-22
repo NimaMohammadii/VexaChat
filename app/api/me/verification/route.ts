@@ -70,23 +70,19 @@ export async function POST(request: Request) {
 
   const requestId = body.requestId?.trim();
 
+  if (latestRequest?.status === "pending") {
+    return NextResponse.json({ error: "You already have a pending verification request." }, { status: 409 });
+  }
+
   try {
-    const verificationRequest = latestRequest?.status === "pending"
-      ? await prisma.verificationRequest.update({
-        where: { id: latestRequest.id },
-        data: {
-          docUrls,
-          note: null
-        }
-      })
-      : await prisma.verificationRequest.create({
-        data: {
-          id: requestId || undefined,
-          userId: user.id,
-          status: "pending",
-          docUrls
-        }
-      });
+    const verificationRequest = await prisma.verificationRequest.create({
+      data: {
+        id: requestId || undefined,
+        userId: user.id,
+        status: "pending",
+        docUrls
+      }
+    });
 
     await prisma.userProfile.updateMany({
       where: { userId: user.id },
