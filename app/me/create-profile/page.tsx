@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
 type CreateListingForm = {
@@ -45,6 +45,8 @@ export default function CreateProfilePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [hasExistingProfile, setHasExistingProfile] = useState<boolean | null>(null);
   const [draftProfileId, setDraftProfileId] = useState(() => crypto.randomUUID());
+  const deviceFileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const checkExistingProfile = async () => {
@@ -236,8 +238,13 @@ export default function CreateProfilePage() {
               <p className="text-sm font-medium">Upload images</p>
               <span className="text-xs text-white/60">{uploadedCountLabel}</span>
             </div>
-            <input type="file" accept="image/*" multiple capture="environment" onChange={onFileSelected} className="bw-input" disabled={uploading} />
-            <p className="mt-2 text-xs text-white/60">You can upload up to 2 images.</p>
+            <input ref={deviceFileInputRef} type="file" accept="image/*" multiple onChange={onFileSelected} className="hidden" disabled={uploading} />
+            <input ref={cameraFileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={onFileSelected} className="hidden" disabled={uploading} />
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className="bw-button-muted" onClick={() => deviceFileInputRef.current?.click()} disabled={uploading}>Upload from gallery/files</button>
+              <button type="button" className="bw-button-muted" onClick={() => cameraFileInputRef.current?.click()} disabled={uploading}>Take photo</button>
+            </div>
+            <p className="mt-2 text-xs text-white/60">You can upload up to 2 images. JPG/PNG/WebP up to 5MB each.</p>
           </div>
 
           <textarea className="bw-input min-h-28" placeholder="Description" value={listingForm.description} onChange={(e) => setListingForm((p) => ({ ...p, description: e.target.value }))} required />
