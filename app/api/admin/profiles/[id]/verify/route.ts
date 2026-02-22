@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { isAdminUser } from "@/lib/admin";
+import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 export async function POST(_: Request, { params }: { params: { id: string } }) {
-  const user = await getAuthenticatedUser();
+  const hasAdminAccess = await isAdminAccessAllowed();
 
-  if (!user || !isAdminUser(user)) {
+  if (!hasAdminAccess) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
