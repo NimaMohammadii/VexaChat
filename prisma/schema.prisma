@@ -79,6 +79,13 @@ model VerificationRequest {
   @@index([status])
 }
 
+enum MeetRequestStatus {
+  pending
+  accepted
+  rejected
+  canceled
+}
+
 model MeetCard {
   id               String   @id @default(cuid())
   userId           String   @unique
@@ -95,21 +102,36 @@ model MeetCard {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  @@index([city])
-  @@index([gender])
-  @@index([lookingFor])
-  @@index([isActive])
 }
 
-model MeetLike {
-  id         String   @id @default(cuid())
+model MeetLikeRequest {
+  id         String            @id @default(cuid())
   fromUserId String
   toUserId   String
-  createdAt  DateTime @default(now())
+  status     MeetRequestStatus @default(pending)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   @@unique([fromUserId, toUserId])
-  @@index([toUserId])
+  @@index([toUserId, status])
+}
+
+model MeetMatch {
+  id         String   @id @default(cuid())
+  userLowId  String
+  userHighId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userLowId, userHighId])
+}
+
+model MeetNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  data      Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
 }
 
 model MeetPass {
@@ -117,8 +139,6 @@ model MeetPass {
   fromUserId String
   toUserId   String
   createdAt  DateTime @default(now())
-
-  @@unique([fromUserId, toUserId])
 }
 
 model MeetBlock {
@@ -128,14 +148,4 @@ model MeetBlock {
   createdAt     DateTime @default(now())
 
   @@unique([blockerUserId, blockedUserId])
-}
-
-model MeetReport {
-  id             String   @id @default(cuid())
-  reporterUserId String
-  reportedUserId String
-  reason         String
-  createdAt      DateTime @default(now())
-
-  @@index([reportedUserId])
 }

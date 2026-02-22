@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     await prisma.meetPass.create({ data: { fromUserId: user.id, toUserId } });
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
-      console.error("Failed to pass meet card", error);
+      console.error("Failed to save pass", error);
       return NextResponse.json({ error: "Unable to save pass." }, { status: 500 });
     }
   }

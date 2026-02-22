@@ -32,6 +32,12 @@ export function parseStoragePathFromUrl(url: string) {
   return null;
 }
 
+export function orderedUserPair(firstUserId: string, secondUserId: string) {
+  return firstUserId < secondUserId
+    ? { userLowId: firstUserId, userHighId: secondUserId }
+    : { userLowId: secondUserId, userHighId: firstUserId };
+}
+
 export function validateMeetCardPayload(payload: MeetCardPayload, mode: "create" | "update") {
   const displayName = payload.displayName?.trim();
   const city = payload.city?.trim();
