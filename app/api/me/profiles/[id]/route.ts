@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "@/lib/supabase-server";
 
 type UpdatePayload = {
   name?: unknown;
@@ -8,8 +8,7 @@ type UpdatePayload = {
   city?: unknown;
   price?: unknown;
   description?: unknown;
-  imageUrl?: unknown;
-  uploadedImageUrl?: unknown;
+  imageUrls?: unknown;
   height?: unknown;
   languages?: unknown;
   availability?: unknown;
@@ -46,6 +45,31 @@ function readStringArray(value: unknown) {
   return value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean);
 }
 
+async function deleteProfileStorageObjects(userId: string, profileId: string) {
+  const supabase = createSupabaseServerClient();
+  const bucket = "profile-images";
+  const prefix = `${userId}/${profileId}`;
+
+  const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 100 });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return { error: null };
+  }
+
+  const paths = data.map((item) => `${prefix}/${item.name}`);
+  const { error: removeError } = await supabase.storage.from(bucket).remove(paths);
+
+  if (removeError) {
+    return { error: removeError.message };
+  }
+
+  return { error: null };
+}
+
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
   const user = await getAuthenticatedUser();
 
@@ -57,6 +81,11 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 
   if (!existing || existing.ownerUserId !== user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const storageResult = await deleteProfileStorageObjects(user.id, params.id);
+  if (storageResult.error) {
+    return NextResponse.json({ error: `Failed to remove profile images: ${storageResult.error}` }, { status: 500 });
   }
 
   await prisma.profile.delete({ where: { id: params.id } });
@@ -77,10 +106,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   const body = (await request.json()) as UpdatePayload;
+  const imageUrls = body.imageUrls !== undefined ? (readStringArray(body.imageUrls) ?? []) : undefined;
 
-  const uploadedImageUrl = readString(body.uploadedImageUrl);
-  const pastedImageUrl = readString(body.imageUrl);
-  const imageUrl = uploadedImageUrl || pastedImageUrl;
+  if (imageUrls && imageUrls.length > 2) {
+    return NextResponse.json({ error: "A profile can include at most 2 images." }, { status: 400 });
+  }
 
   const data = {
     ...(body.name !== undefined ? { name: readString(body.name) } : {}),
@@ -95,12 +125,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     ...(body.isTop !== undefined ? { isTop: Boolean(body.isTop) } : {}),
     ...(body.languages !== undefined ? { languages: readStringArray(body.languages) ?? [] } : {}),
     ...(body.services !== undefined ? { services: readStringArray(body.services) ?? [] } : {}),
-    ...((body.imageUrl !== undefined || body.uploadedImageUrl !== undefined)
-      ? {
-          imageUrl,
-          images: imageUrl ? [imageUrl] : []
-        }
-      : {})
+    ...(imageUrls !== undefined ? { imageUrl: imageUrls[0] || "", images: imageUrls } : {})
   };
 
   const profile = await prisma.profile.update({

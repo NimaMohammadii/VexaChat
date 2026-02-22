@@ -3,13 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 type CreateProfilePayload = {
+  profileId?: unknown;
   name?: unknown;
   age?: unknown;
   city?: unknown;
   price?: unknown;
   description?: unknown;
-  imageUrl?: unknown;
-  uploadedImageUrl?: unknown;
+  imageUrls?: unknown;
   height?: unknown;
   languages?: unknown;
   availability?: unknown;
@@ -20,6 +20,7 @@ type CreateProfilePayload = {
 };
 
 type ValidatedProfileCreateData = {
+  id: string;
   name: string;
   age: number;
   city: string;
@@ -64,9 +65,14 @@ function readNumber(value: unknown, fallback: number) {
 }
 
 function validateCreatePayload(body: CreateProfilePayload) {
+  const profileId = readString(body.profileId);
   const name = readString(body.name);
   const city = readString(body.city);
   const description = readString(body.description);
+
+  if (!profileId) {
+    return { error: "Profile ID is required." };
+  }
 
   if (!name) {
     return { error: "Name is required." };
@@ -100,18 +106,20 @@ function validateCreatePayload(body: CreateProfilePayload) {
     return { error: "Rating must be between 0 and 5." };
   }
 
-  const uploadedImageUrl = readString(body.uploadedImageUrl);
-  const pastedImageUrl = readString(body.imageUrl);
-  const finalImageUrl = uploadedImageUrl || pastedImageUrl;
+  const imageUrls = readStringArray(body.imageUrls);
+  if (imageUrls.length > 2) {
+    return { error: "A profile can include at most 2 images." };
+  }
 
   const data: ValidatedProfileCreateData = {
+    id: profileId,
     name,
     age,
     city,
     price,
     description,
-    imageUrl: finalImageUrl,
-    images: finalImageUrl ? [finalImageUrl] : [],
+    imageUrl: imageUrls[0] || "",
+    images: imageUrls,
     height: readString(body.height),
     languages: readStringArray(body.languages),
     availability: readString(body.availability) || "Unavailable",
@@ -144,6 +152,15 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const existingProfile = await prisma.profile.findFirst({
+    where: { ownerUserId: user.id },
+    select: { id: true }
+  });
+
+  if (existingProfile) {
+    return NextResponse.json({ error: "You can only create one profile." }, { status: 400 });
   }
 
   const body = (await request.json()) as CreateProfilePayload;
