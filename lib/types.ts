@@ -6,6 +6,7 @@ export type Profile = {
   price: number;
   description: string;
   images: string[];
+  imageUrl: string;
   height: string;
   languages: string[];
   availability: string;
