@@ -35,6 +35,16 @@ function ConnectIcon() {
   );
 }
 
+function PrivateRoomIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <rect x="4" y="8.3" width="12" height="8.2" rx="2.6" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M6.8 8.3V6.6a3.2 3.2 0 0 1 6.4 0v1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="10" cy="12.4" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
 function ProfileIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
@@ -64,6 +74,7 @@ function SignOutIcon() {
 const items: MenuItem[] = [
   { href: "/", label: "Home", match: (pathname) => pathname === "/", Icon: HomeIcon },
   { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
+  { href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
   { href: "/connect", label: "Connect", match: (pathname) => pathname === "/connect", Icon: ConnectIcon },
   { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
   { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me", Icon: FavoritesIcon }
