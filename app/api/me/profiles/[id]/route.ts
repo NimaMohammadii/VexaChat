@@ -71,7 +71,7 @@ async function deleteProfileStorageObjects(userId: string, profileId: string) {
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUser({ canSetCookies: true });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -93,7 +93,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUser({ canSetCookies: true });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
