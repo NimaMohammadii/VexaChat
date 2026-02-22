@@ -78,3 +78,74 @@ model VerificationRequest {
   @@index([userId])
   @@index([status])
 }
+
+model MeetCard {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  displayName      String
+  age              Int
+  city             String
+  gender           String
+  lookingFor       String
+  bio              String?
+  questionPrompt   String?
+  answer           String?
+  imageUrls        String[]
+  isAdultConfirmed Boolean  @default(false)
+  adultConfirmedAt DateTime?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([city])
+  @@index([gender])
+  @@index([lookingFor])
+  @@index([isActive])
+}
+
+model MeetLike {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+}
+
+model MeetPass {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+}
+
+model MeetFollow {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+}
+
+model MeetReport {
+  id             String   @id @default(cuid())
+  reporterUserId String
+  reportedUserId String
+  reason         String
+  createdAt      DateTime @default(now())
+
+  @@index([reportedUserId])
+}
+
+model MeetBlock {
+  id            String   @id @default(cuid())
+  blockerUserId String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  @@unique([blockerUserId, blockedUserId])
+}
