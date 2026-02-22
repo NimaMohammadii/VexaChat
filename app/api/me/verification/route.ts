@@ -29,7 +29,6 @@ function toDocUrls(value: unknown) {
 
 export async function GET() {
   const user = await getAuthenticatedUser({ canSetCookies: true });
-
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -51,7 +50,6 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser({ canSetCookies: true });
-
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -63,16 +61,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `docUrls must be an array of 1-${MAX_DOCS} strings.` }, { status: 400 });
   }
 
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const submissionsInWindow = await prisma.verificationRequest.count({
+    where: { userId: user.id, createdAt: { gte: last24h } }
+  });
+
+  if (submissionsInWindow >= 3) {
+    return NextResponse.json({ error: "Rate limit exceeded. Max 3 submissions per 24h." }, { status: 429 });
+  }
+
   const latestRequest = await prisma.verificationRequest.findFirst({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" }
   });
 
-  const requestId = body.requestId?.trim();
-
   if (latestRequest?.status === "pending") {
     return NextResponse.json({ error: "You already have a pending verification request." }, { status: 409 });
   }
+
+  const requestId = body.requestId?.trim();
 
   try {
     const verificationRequest = await prisma.verificationRequest.create({
@@ -80,7 +87,9 @@ export async function POST(request: Request) {
         id: requestId || undefined,
         userId: user.id,
         status: "pending",
-        docUrls
+        docUrls,
+        note: null,
+        adminNote: null
       }
     });
 
@@ -103,7 +112,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Verification request ID already exists. Try again." }, { status: 400 });
     }
 
-    console.error("Failed to submit verification", error);
     return NextResponse.json({ error: "Unable to submit verification request." }, { status: 500 });
   }
 }

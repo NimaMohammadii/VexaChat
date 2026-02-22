@@ -1,50 +1,81 @@
-import { PublicHeader } from "@/components/public-header";
-import { ProfileCard } from "@/components/profile-card";
 import { GoogleAuthControl } from "@/components/google-auth-control";
+import { ProfileCard } from "@/components/profile-card";
+import { PublicHeader } from "@/components/public-header";
+import { HomeFilters } from "@/components/home-filters";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+function parseList(value: string | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export default async function HomePage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+  const city = searchParams.city?.trim() ?? "";
+  const min = Number(searchParams.min ?? "");
+  const max = Number(searchParams.max ?? "");
+  const languages = parseList(searchParams.languages);
+  const services = parseList(searchParams.services);
+  const sort = searchParams.sort ?? "newest";
+
+  const orderBy =
+    sort === "lowest" ? [{ price: "asc" as const }] :
+      sort === "highest" ? [{ price: "desc" as const }] :
+        sort === "verified" ? [{ verified: "desc" as const }, { createdAt: "desc" as const }] :
+          [{ createdAt: "desc" as const }];
+
   const profiles = await (async () => {
     try {
       return await prisma.profile.findMany({
-        where: { verified: true },
-        orderBy: { createdAt: "desc" }
+        where: {
+          verified: true,
+          city: city ? { contains: city, mode: "insensitive" } : undefined,
+          price: {
+            gte: Number.isFinite(min) ? min : undefined,
+            lte: Number.isFinite(max) ? max : undefined
+          },
+          languages: languages.length ? { hasSome: languages } : undefined,
+          services: services.length ? { hasSome: services } : undefined
+        },
+        orderBy
       });
-    } catch (error) {
-      console.error("Failed to load profiles", error);
+    } catch {
       return [];
     }
   })();
+
+  const user = await getAuthenticatedUser({ canSetCookies: false });
+  const favorites = await (async () => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      return await prisma.favorite.findMany({ where: { userId: user.id }, select: { profileId: true } });
+    } catch {
+      return [];
+    }
+  })();
+  const favoriteSet = new Set(favorites.map((item) => item.profileId));
 
   return (
     <main className="min-h-screen bg-ink text-paper">
       <PublicHeader rightSlot={<GoogleAuthControl />} />
       <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-12 md:py-16">
-        <div className="hero-background" aria-hidden="true" />
-        <div className="orb orb-1" aria-hidden="true" />
-        <div className="orb orb-2" aria-hidden="true" />
+        <HomeFilters />
 
-        <div className="mx-auto max-w-4xl space-y-7 border-b border-line pb-12 md:space-y-9 md:pb-16">
-          <h1 className="max-w-3xl text-3xl font-bold tracking-[0.01em] md:text-5xl md:tracking-[0.02em]">
-            <span className="highlight">Premium</span> Private <span className="highlight">Companion</span> Directory
-          </h1>
-          <p className="max-w-2xl whitespace-pre-line text-base text-paper md:text-xl md:leading-relaxed">
-            {`A curated selection of verified independent companions.
-Discreet. Professional. Effortless.`}
-          </p>
-          <p className="max-w-xl text-sm leading-relaxed text-[#AAAAAA] md:text-base">
-            Browse profiles by city, availability, and service. Connect directly and privately.
-          </p>
-        </div>
-
-        <div className="pt-10 md:pt-12">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-5">
-            {profiles.map((profile) => (
-              <ProfileCard key={profile.id} profile={profile} />
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-5">
+          {profiles.map((profile) => (
+            <ProfileCard key={profile.id} profile={profile} isFavorite={favoriteSet.has(profile.id)} />
+          ))}
         </div>
       </section>
     </main>

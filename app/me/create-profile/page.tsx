@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
+import { processImageFile, previewUrl } from "@/lib/image-processing";
 
 type CreateListingForm = {
   name: string;
@@ -40,6 +41,7 @@ export default function CreateProfilePage() {
   const [listingForm, setListingForm] = useState<CreateListingForm>(INITIAL_FORM);
   const [uploading, setUploading] = useState(false);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -84,13 +86,6 @@ export default function CreateProfilePage() {
       return;
     }
 
-    const oversized = files.find((file) => file.size > 5 * 1024 * 1024);
-    if (oversized) {
-      setStatus("Each image must be 5MB or less.");
-      event.target.value = "";
-      return;
-    }
-
     const supabase = createSupabaseClient();
     const {
       data: { user }
@@ -117,8 +112,14 @@ export default function CreateProfilePage() {
 
       const nextUrls: string[] = [];
 
-      for (const file of files) {
-        const extension = file.name.split(".").pop() || "jpg";
+      const processedFiles = await Promise.all(files.map((file) => processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: "square" })));
+      if (processedFiles.some((file) => file.size > 5 * 1024 * 1024)) {
+        throw new Error("Processed images must be <= 5MB.");
+      }
+      setPreviewImages(processedFiles.map((file) => previewUrl(file)));
+
+      for (const file of processedFiles) {
+        const extension = file.name.split(".").pop() || "webp";
         const path = `${user.id}/${profileId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
         const { error } = await supabase.storage.from("profile-images").upload(path, file, { upsert: false });
 
@@ -248,6 +249,7 @@ export default function CreateProfilePage() {
           </div>
 
           <textarea className="bw-input min-h-28" placeholder="Description" value={listingForm.description} onChange={(e) => setListingForm((p) => ({ ...p, description: e.target.value }))} required />
+          {previewImages.length ? <div className="grid grid-cols-2 gap-2">{previewImages.map((src) => <img key={src} src={src} className="h-24 w-full rounded-lg object-cover" alt="Preview" />)}</div> : null}
           <div className="flex items-center gap-3">
             <button type="submit" className="bw-button" disabled={isCreating || uploading}>{isCreating ? "Submitting..." : "Submit for Verification"}</button>
             {success ? (

@@ -32,10 +32,24 @@ model Profile {
   services        String[] @default([])
   imageUrl        String   @default("")
   ownerUserId     String?
+  rejectionNote   String?
   createdAt       DateTime @default(now())
+  favorites       Favorite[]
 
   @@index([ownerUserId])
   @@index([verified])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  profileId String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, profileId])
+  @@index([userId])
+  @@index([profileId])
 }
 
 model UserProfile {
@@ -57,6 +71,7 @@ model VerificationRequest {
   status    VerificationStatus @default(pending)
   docUrls   Json
   note      String?
+  adminNote String?
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 

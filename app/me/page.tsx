@@ -40,6 +40,7 @@ type VerificationRequest = {
   status: "pending" | "approved" | "rejected";
   docUrls: string[];
   note: string | null;
+  adminNote?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -58,6 +59,7 @@ export default function MePage() {
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [verificationRequest, setVerificationRequest] = useState<VerificationRequest | null>(null);
+  const [favorites, setFavorites] = useState<OwnedProfile[]>([]);
 
   const loadMyProfiles = async () => {
     const response = await fetch("/api/me/profiles", { cache: "no-store" }).catch(() => null);
@@ -69,6 +71,17 @@ export default function MePage() {
 
     const payload = (await response.json()) as { profiles: OwnedProfile[] };
     setMyProfiles(payload.profiles);
+  };
+
+
+  const loadFavorites = async () => {
+    const response = await fetch("/api/me/favorites", { cache: "no-store" }).catch(() => null);
+    if (!response || !response.ok) {
+      setFavorites([]);
+      return;
+    }
+    const payload = (await response.json()) as { favorites: Array<{ profile: OwnedProfile }> };
+    setFavorites(payload.favorites.map((item) => item.profile));
   };
 
   const loadVerification = async () => {
@@ -127,13 +140,14 @@ export default function MePage() {
       setStatus("ready");
       void loadMyProfiles();
       void loadVerification();
+      void loadFavorites();
     };
 
     void load();
   }, []);
 
   if (status !== "ready" || !data) {
-    return <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10"><p className="text-sm text-white/70">{status === "loading" ? "Loading profile..." : "Please sign in to continue."}</p></main>;
+    return <main className="mx-auto min-h-screen w-full max-w-3xl px-4 py-10"><div className="animate-pulse space-y-4"><div className="h-8 w-48 rounded bg-white/10" /><div className="h-40 rounded bg-white/10" /><div className="h-24 rounded bg-white/10" /></div></main>;
   }
 
   const hasProfile = myProfiles.length > 0;
@@ -165,7 +179,8 @@ export default function MePage() {
         </div>
 
         <p className="text-sm text-white/70">Start or review your verification submission in a guided flow.</p>
-        {verificationRequest?.note ? <p className="text-sm text-white/60">Admin note: {verificationRequest.note}</p> : null}
+        {(verificationRequest?.adminNote || verificationRequest?.note) ? <p className="text-sm text-white/60">Admin note: {verificationRequest?.adminNote || verificationRequest?.note}</p> : null}
+        {currentVerificationStatus === "rejected" ? <span className="inline-flex rounded-lg border border-red-400/60 px-3 py-2 text-sm text-red-300">Resubmit available</span> : null}
         <span className="inline-flex rounded-lg border border-line px-3 py-2 text-sm">Open verification wizard →</span>
       </Link>
 
@@ -226,6 +241,13 @@ export default function MePage() {
             );
           })}
         </ul>
+      </section>
+
+
+      <section className="bw-card space-y-4 p-6 md:p-8">
+        <h2 className="text-xl font-semibold">Favorites</h2>
+        {favorites.length === 0 ? <p className="text-sm text-white/70">No favorites yet.</p> : null}
+        <ul className="space-y-2">{favorites.map((fav) => <li key={fav.id} className="text-sm text-white/80">{fav.name} · {fav.city}</li>)}</ul>
       </section>
     </main>
   );

@@ -14,7 +14,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 
   const body = (await request.json().catch(() => ({}))) as RejectionPayload;
-  const note = body.note?.trim() || null;
+  const note = body.note?.trim() || "";
+
+  if (!note) {
+    return NextResponse.json({ error: "Rejection note is required." }, { status: 400 });
+  }
 
   const existing = await prisma.verificationRequest.findUnique({ where: { id: params.id } });
   if (!existing) {
@@ -26,7 +30,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
       where: { id: params.id },
       data: {
         status: "rejected",
-        note
+        note,
+        adminNote: note
       }
     }),
     prisma.userProfile.updateMany({
@@ -35,7 +40,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         identityVerified: false,
         identityStatus: "rejected"
       }
-    })
+    }),
+    prisma.profile.updateMany({ where: { ownerUserId: existing.userId }, data: { rejectionNote: note, verified: false } })
   ]);
 
   return NextResponse.json({ request: updated });

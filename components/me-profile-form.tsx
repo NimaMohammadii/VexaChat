@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
+import { previewUrl, processImageFile } from "@/lib/image-processing";
 
 type MeData = {
   user: {
@@ -40,6 +41,7 @@ export function MeProfileForm({ data }: { data: MeData }) {
   const [username, setUsername] = useState(data.profile?.username ?? "");
   const [bio, setBio] = useState(data.profile?.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(data.profile?.avatarUrl ?? data.user.avatarUrl ?? "");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -87,17 +89,18 @@ export function MeProfileForm({ data }: { data: MeData }) {
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setStatus("Image must be 5MB or less.");
-      return;
-    }
-
     setIsUploadingAvatar(true);
     setStatus(null);
 
     try {
+      const processedFile = await processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: "square" });
+      if (processedFile.size > MAX_FILE_SIZE) {
+        setStatus("Processed image must be 5MB or less.");
+        return;
+      }
+      setAvatarPreview(previewUrl(processedFile));
       const supabase = createSupabaseClient();
-      const ext = extensionFromFile(file);
+      const ext = extensionFromFile(processedFile);
       const userId = data.user.id;
 
       const { data: existing, error: listError } = await supabase.storage.from("avatars").list(userId, { limit: 100 });
@@ -120,10 +123,10 @@ export function MeProfileForm({ data }: { data: MeData }) {
 
       const path = `${userId}/avatar.${ext}`;
 
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, processedFile, {
         cacheControl: "3600",
         upsert: true,
-        contentType: file.type
+        contentType: processedFile.type
       });
 
       if (uploadError) {
@@ -178,8 +181,8 @@ export function MeProfileForm({ data }: { data: MeData }) {
   return (
     <div className="bw-card mx-auto w-full max-w-2xl space-y-6 p-6 md:p-8">
       <div className="flex items-center gap-4 border-b border-line pb-5">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={shownName} className="h-14 w-14 rounded-full object-cover" />
+        {(avatarPreview || avatarUrl) ? (
+          <img src={avatarPreview || avatarUrl} alt={shownName} className="h-14 w-14 rounded-full object-cover" />
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-lg font-semibold text-paper">
             {initial(shownName)}
