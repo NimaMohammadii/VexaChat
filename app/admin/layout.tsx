@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/components/admin-sidebar";
-import { isAdminUser } from "@/lib/admin";
-import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { isAdminAccessAllowed } from "@/lib/admin-access";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await getAuthenticatedUser();
+  const hasAdminAccess = await isAdminAccessAllowed();
 
-  if (!user || !isAdminUser(user)) {
-    redirect("/");
+  if (!hasAdminAccess) {
+    redirect("/admin-login");
   }
 
   return (

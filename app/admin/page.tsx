@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
   }
 
   if (status === "forbidden") {
-    return <p className="text-sm text-red-300">Forbidden. Configure ADMIN_EMAILS or ADMIN_USER_IDS and sign in as an admin.</p>;
+    return <p className="text-sm text-red-300">Forbidden. Sign in with an allowlisted account or use the admin secret key.</p>;
   }
 
   if (status === "error") {
