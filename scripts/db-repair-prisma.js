@@ -33,16 +33,23 @@ async function main() {
     console.log('[db:repair] Connecting to database...');
     await prisma.$connect();
 
-    /** @type {{regclass: string | null}[]} */
-    const tableExistsRows = await prisma.$queryRaw`
-      SELECT to_regclass('public._prisma_migrations') AS regclass
-    `;
+    let migrationsTableExists = false;
 
-    const migrationsTableExists = tableExistsRows.length > 0 && tableExistsRows[0].regclass !== null;
+    try {
+      /** @type {{regclass: string | null}[]} */
+      const tableExistsRows = await prisma.$queryRaw`
+        SELECT to_regclass('public._prisma_migrations') AS regclass
+      `;
+
+      migrationsTableExists = tableExistsRows.length > 0 && tableExistsRows[0].regclass !== null;
+    } catch (error) {
+      console.warn('[db:repair] Unable to check _prisma_migrations table. Skipping repair.', error);
+      process.exit(0);
+    }
 
     if (!migrationsTableExists) {
-      console.log('[db:repair] _prisma_migrations does not exist yet. No repair needed.');
-      return;
+      console.warn('[db:repair] _prisma_migrations does not exist yet. Skipping repair.');
+      process.exit(0);
     }
 
     /** @type {MigrationRow[]} */
@@ -123,8 +130,8 @@ async function main() {
 
     console.log('[db:repair] Repair step complete.');
   } catch (error) {
-    console.error('[db:repair] Unexpected error:', error);
-    process.exit(1);
+    console.warn('[db:repair] Repair skipped due to query error or missing migrations state.', error);
+    process.exit(0);
   } finally {
     await prisma.$disconnect();
   }

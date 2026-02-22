@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "npm run start:prod:safe",
-    "start:prod": "prisma migrate deploy && next start",
-    "start:prod:safe": "node scripts/db-repair-prisma.js && prisma migrate deploy && next start",
-    "db:deploy": "prisma migrate deploy",
+    "start:prod": "npx prisma migrate deploy && next start",
+    "start:prod:safe": "node scripts/db-repair-prisma.js && npx prisma migrate deploy && next start",
+    "db:deploy": "npx prisma migrate deploy",
     "postinstall": "prisma generate",
     "db:status": "prisma migrate status",
     "db:repair": "node scripts/db-repair-prisma.js"

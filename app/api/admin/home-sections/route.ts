@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const created = await prisma.homeSection.create({
       data: {
         title,
-        subtitle: String(body.subtitle ?? "").trim() || null,
+        subtitle: String(body.subtitle ?? "").trim(),
         imageUrl,
         order: Number.isFinite(body.order) ? Number(body.order) : 0,
         isActive: body.isActive ?? true
