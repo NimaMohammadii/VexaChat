@@ -1,7 +1,6 @@
 import { GoogleAuthControl } from "@/components/google-auth-control";
 import { ProfileCard } from "@/components/profile-card";
 import { PublicHeader } from "@/components/public-header";
-import { HomeFilters } from "@/components/home-filters";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
@@ -75,9 +74,13 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
       <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 pb-14 pt-12 md:pb-20 md:pt-16">
         <div className="mb-10 space-y-5 text-center md:mb-14 md:space-y-6">
           <h1 className="animate-[pulse_6s_ease-in-out_infinite] bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-4xl font-extrabold uppercase tracking-[0.06em] text-transparent drop-shadow-[0_0_24px_rgba(200,130,255,0.3)] md:text-6xl">
-            Vexa Directory
+            Private Connections, Elevated
           </h1>
-          <p className="mx-auto max-w-2xl text-sm text-white/65 md:text-base">Private connections. Refined discovery. Curated profiles with a premium dark experience.</p>
+          <p className="mx-auto max-w-2xl text-sm text-white/65 md:text-base">
+            A modern premium directory designed for discreet introductions and trusted discovery.
+            <br className="hidden md:block" />
+            Explore verified profiles in a calm, private-first experience.
+          </p>
           <a
             href="#profiles"
             className="inline-flex rounded-full border border-white/20 bg-white/[0.06] px-6 py-2.5 text-sm font-medium text-white transition hover:scale-[1.02] hover:border-white/40 hover:bg-white/[0.12] hover:shadow-[0_0_28px_rgba(255,255,255,0.2)]"
@@ -85,8 +88,6 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
             Start Exploring
           </a>
         </div>
-
-        <HomeFilters />
 
         <div id="profiles" className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3 md:gap-7 lg:grid-cols-4">
           {profiles.map((profile) => (
