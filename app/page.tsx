@@ -67,14 +67,35 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
   const favoriteSet = new Set(favorites.map((item) => item.profileId));
 
   return (
-    <main className="min-h-screen bg-ink text-paper">
+    <main className="relative min-h-screen overflow-hidden bg-ink text-paper">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(190,120,255,0.2),transparent_36%),radial-gradient(circle_at_80%_10%,rgba(80,160,255,0.12),transparent_32%),radial-gradient(circle_at_50%_90%,rgba(250,120,190,0.14),transparent_35%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-20 [background-size:120px_120px] [background-image:radial-gradient(circle,rgba(255,255,255,0.14)_1px,transparent_1px)]" />
       <PublicHeader rightSlot={<GoogleAuthControl />} />
-      <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-12 md:py-16">
+
+      <section className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 pb-14 pt-12 md:pb-20 md:pt-16">
+        <div className="mb-10 space-y-5 text-center md:mb-14 md:space-y-6">
+          <h1 className="animate-[pulse_6s_ease-in-out_infinite] bg-gradient-to-r from-white via-fuchsia-200 to-violet-300 bg-clip-text text-4xl font-extrabold uppercase tracking-[0.06em] text-transparent drop-shadow-[0_0_24px_rgba(200,130,255,0.3)] md:text-6xl">
+            Vexa Directory
+          </h1>
+          <p className="mx-auto max-w-2xl text-sm text-white/65 md:text-base">Private connections. Refined discovery. Curated profiles with a premium dark experience.</p>
+          <a
+            href="#profiles"
+            className="inline-flex rounded-full border border-white/20 bg-white/[0.06] px-6 py-2.5 text-sm font-medium text-white transition hover:scale-[1.02] hover:border-white/40 hover:bg-white/[0.12] hover:shadow-[0_0_28px_rgba(255,255,255,0.2)]"
+          >
+            Start Exploring
+          </a>
+        </div>
+
         <HomeFilters />
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-5">
+        <div id="profiles" className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3 md:gap-7 lg:grid-cols-4">
           {profiles.map((profile) => (
-            <ProfileCard key={profile.id} profile={profile} isFavorite={favoriteSet.has(profile.id)} />
+            <div key={profile.id} className="group relative rounded-2xl transition duration-300 hover:scale-[1.02]">
+              <div className="overflow-hidden rounded-2xl shadow-[0_14px_42px_rgba(0,0,0,0.38)] transition duration-300 group-hover:shadow-[0_20px_52px_rgba(164,115,255,0.25)]">
+                <ProfileCard profile={profile} isFavorite={favoriteSet.has(profile.id)} />
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 rounded-b-2xl bg-gradient-to-t from-black/55 via-black/25 to-transparent backdrop-blur-[2px]" />
+            </div>
           ))}
         </div>
       </section>
