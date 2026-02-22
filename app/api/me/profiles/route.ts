@@ -1,7 +1,6 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 type CreateProfilePayload = {
   name?: unknown;
@@ -9,11 +8,11 @@ type CreateProfilePayload = {
   city?: unknown;
   price?: unknown;
   description?: unknown;
-  images?: unknown;
+  imageUrl?: unknown;
+  uploadedImageUrl?: unknown;
   height?: unknown;
   languages?: unknown;
   availability?: unknown;
-  verified?: unknown;
   isTop?: unknown;
   experienceYears?: unknown;
   rating?: unknown;
@@ -26,43 +25,16 @@ type ValidatedProfileCreateData = {
   city: string;
   price: number;
   description: string;
+  imageUrl: string;
   images: string[];
   height: string;
   languages: string[];
   availability: string;
-  verified: boolean;
   isTop: boolean;
   experienceYears: number;
   rating: number;
   services: string[];
 };
-
-function createSupabaseServerClient() {
-  const cookieStore = cookies();
-
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set(name: string, value: string, options: CookieOptions) {
-        cookieStore.set({ name, value, ...options });
-      },
-      remove(name: string, options: CookieOptions) {
-        cookieStore.set({ name, value: "", ...options, maxAge: 0 });
-      }
-    }
-  });
-}
-
-async function getAuthenticatedUser() {
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  return user;
-}
 
 function readString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -128,17 +100,21 @@ function validateCreatePayload(body: CreateProfilePayload) {
     return { error: "Rating must be between 0 and 5." };
   }
 
+  const uploadedImageUrl = readString(body.uploadedImageUrl);
+  const pastedImageUrl = readString(body.imageUrl);
+  const finalImageUrl = uploadedImageUrl || pastedImageUrl;
+
   const data: ValidatedProfileCreateData = {
     name,
     age,
     city,
     price,
     description,
-    images: readStringArray(body.images),
+    imageUrl: finalImageUrl,
+    images: finalImageUrl ? [finalImageUrl] : [],
     height: readString(body.height),
     languages: readStringArray(body.languages),
     availability: readString(body.availability) || "Unavailable",
-    verified: Boolean(body.verified),
     isTop: Boolean(body.isTop),
     experienceYears,
     rating,
@@ -180,7 +156,8 @@ export async function POST(request: Request) {
   const profile = await prisma.profile.create({
     data: {
       ...validated.data,
-      ownerUserId: user.id
+      ownerUserId: user.id,
+      verified: false
     }
   });
 

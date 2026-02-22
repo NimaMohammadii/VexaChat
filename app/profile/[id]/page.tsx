@@ -43,8 +43,8 @@ export default async function ProfilePage({ params }: { params: { id: string } }
     <main className="mx-auto min-h-screen w-full max-w-7xl space-y-8 px-4 py-8 md:space-y-10 md:py-10">
       <section className="grid gap-6 rounded-2xl border border-line bg-slate p-5 md:grid-cols-[1.1fr_1fr] md:gap-8 md:p-8">
         <div className="relative h-[500px] overflow-hidden rounded-xl border border-line bg-black">
-          {profile.images[0] ? (
-            <Image src={profile.images[0]} alt={profile.name} fill className="object-cover" priority />
+          {(profile.imageUrl || profile.images[0]) ? (
+            <Image src={profile.imageUrl || profile.images[0]} alt={profile.name} fill className="object-cover" priority />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/40">No image available</div>
           )}

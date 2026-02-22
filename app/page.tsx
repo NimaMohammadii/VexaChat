@@ -9,6 +9,7 @@ export default async function HomePage() {
   const profiles = await (async () => {
     try {
       return await prisma.profile.findMany({
+        where: { verified: true },
         orderBy: { createdAt: "desc" }
       });
     } catch (error) {

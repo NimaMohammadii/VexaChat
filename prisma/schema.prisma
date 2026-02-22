@@ -23,10 +23,12 @@ model Profile {
   experienceYears Int      @default(0)
   rating          Float    @default(0)
   services        String[] @default([])
+  imageUrl        String   @default("")
   ownerUserId     String?
   createdAt       DateTime @default(now())
 
   @@index([ownerUserId])
+  @@index([verified])
 }
 
 model UserProfile {
