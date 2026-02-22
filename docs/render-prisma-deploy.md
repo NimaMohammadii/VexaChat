@@ -4,8 +4,13 @@ This project is configured for **production-safe Prisma migrations** on Render.
 
 ## Render service commands
 
-- **Build Command**: `npm install && npm run build`
-- **Start Command**: `npx prisma migrate deploy && npm run start`
+- **Build Command**: `npm install && npx prisma generate && npm run build`
+- **Start Command**: `npm start`
+
+`npm start` runs the safe production flow (`start:prod:safe`) which:
+1. Repairs a previously failed migration (P3009) when present.
+2. Runs `prisma migrate deploy` against the production Render Postgres DB.
+3. Starts `next start`.
 
 > Do not use `prisma migrate dev` in production.
 > Do not use `prisma db push` in production.
