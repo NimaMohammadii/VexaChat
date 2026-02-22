@@ -82,7 +82,14 @@ export default function AdminHomepageManagerPage() {
 
   if (status === "loading") return <p className="text-sm text-white/70">Loading homepage manager…</p>;
   if (status === "forbidden") return <p className="text-sm text-red-300">Forbidden.</p>;
-  if (status === "error") return <p className="text-sm text-red-300">Unable to load homepage manager.</p>;
+  if (status === "error") {
+    return (
+      <div className="space-y-1">
+        <p className="text-sm text-red-300">Unable to load homepage manager.</p>
+        <p className="text-xs text-red-200/90">DB not ready. Migrations may not have been applied.</p>
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-8">
