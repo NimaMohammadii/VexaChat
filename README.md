@@ -44,15 +44,16 @@ npm run db:repair -- --confirm-sql-repair --drop-meet-tables
 
 ### Render production workflow
 
-- Build command should keep `prisma generate` before `next build`.
-- Prefer running migrations as a separate pre-deploy job/step:
+- Build Command:
 
 ```bash
-npm run db:deploy
+npm install && npm run build
 ```
 
-- If migrations must be in Start Command, use:
+- Start Command:
 
 ```bash
-npx prisma migrate deploy && npm run start
+npm run start:prod
 ```
+
+This keeps build independent from database migrations while guaranteeing `prisma migrate deploy` runs right before `next start` in production.
