@@ -41,9 +41,8 @@ async function main() {
     const migrationsTableExists = tableExistsRows.length > 0 && tableExistsRows[0].regclass !== null;
 
     if (!migrationsTableExists) {
-      console.log('[db:repair] _prisma_migrations does not exist yet. Running migrate deploy...');
-      const deployed = runCommand('npx', ['prisma', 'migrate', 'deploy']);
-      process.exit(deployed ? 0 : 1);
+      console.log('[db:repair] _prisma_migrations does not exist yet. No repair needed.');
+      return;
     }
 
     /** @type {MigrationRow[]} */
@@ -122,9 +121,7 @@ async function main() {
       console.log(`[db:repair] No failed row found for ${TARGET_MIGRATION}.`);
     }
 
-    console.log('[db:repair] Running prisma migrate deploy...');
-    const deployed = runCommand('npx', ['prisma', 'migrate', 'deploy']);
-    process.exit(deployed ? 0 : 1);
+    console.log('[db:repair] Repair step complete.');
   } catch (error) {
     console.error('[db:repair] Unexpected error:', error);
     process.exit(1);
