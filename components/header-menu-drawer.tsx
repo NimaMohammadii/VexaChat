@@ -3,21 +3,77 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
 type MenuItem = {
   href: string;
   label: string;
   match: (pathname: string) => boolean;
+  Icon: () => JSX.Element;
 };
 
-const baseItems: MenuItem[] = [
-  { href: "/", label: "Home", match: (pathname) => pathname === "/" },
-  { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet" },
-  { href: "/connect", label: "Connect", match: (pathname) => pathname === "/connect" },
-  { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me" },
-  { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me" }
+function iconClassName() {
+  return "h-5 w-5 shrink-0";
+}
+
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="M3 8.5 10 3l7 5.5V17a1 1 0 0 1-1 1h-4.5v-5h-3v5H4a1 1 0 0 1-1-1V8.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MeetIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="M10 17s-5.5-3.4-5.5-8A3.5 3.5 0 0 1 10 6.2 3.5 3.5 0 0 1 15.5 9c0 4.6-5.5 8-5.5 8Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ConnectIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="M7.2 12.8 12.8 7.2M6.4 6.4h3.2M10.4 13.6h3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7.6 14.8H5.4A2.4 2.4 0 0 1 3 12.4v-2a2.4 2.4 0 0 1 2.4-2.4h2.2M12.4 5.2h2.2A2.4 2.4 0 0 1 17 7.6v2a2.4 2.4 0 0 1-2.4 2.4h-2.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="M10 10.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 16.8a6 6 0 0 1 12 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FavoritesIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="m10 3 2.2 4.5 5 .7-3.6 3.5.9 4.9-4.5-2.4-4.5 2.4.9-4.9L2.8 8.2l5-.7L10 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SignOutIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <path d="M8 4.5H5.8A1.8 1.8 0 0 0 4 6.3v7.4a1.8 1.8 0 0 0 1.8 1.8H8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 13.5 16 10l-4-3.5M16 10H8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const items: MenuItem[] = [
+  { href: "/", label: "Home", match: (pathname) => pathname === "/", Icon: HomeIcon },
+  { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
+  { href: "/connect", label: "Connect", match: (pathname) => pathname === "/connect", Icon: ConnectIcon },
+  { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
+  { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me", Icon: FavoritesIcon }
 ];
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -34,7 +90,6 @@ export function HeaderMenuDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
@@ -45,16 +100,7 @@ export function HeaderMenuDrawer() {
         data: { session }
       } = await supabase.auth.getSession();
 
-      const signedIn = Boolean(session?.user);
-      setHasSession(signedIn);
-
-      if (!signedIn) {
-        setIsAdmin(false);
-        return;
-      }
-
-      const adminProbe = await fetch("/api/admin/verifications", { cache: "no-store" }).catch(() => null);
-      setIsAdmin(Boolean(adminProbe?.ok));
+      setHasSession(Boolean(session?.user));
     };
 
     void syncState();
@@ -88,12 +134,6 @@ export function HeaderMenuDrawer() {
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
-
-  const items = useMemo(() => {
-    return isAdmin
-      ? [...baseItems, { href: "/admin", label: "Admin", match: (current: string) => current.startsWith("/admin") }]
-      : baseItems;
-  }, [isAdmin]);
 
   const handleSignOut = async () => {
     const supabase = createSupabaseClient();
@@ -135,21 +175,23 @@ export function HeaderMenuDrawer() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 280, damping: 30 }}
-              className="fixed left-0 top-0 z-50 flex h-full w-[84vw] max-w-sm flex-col border-r border-line bg-[#070707]/95 px-4 pb-5 pt-6 shadow-2xl backdrop-blur"
+              className="fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[360px] min-w-[260px] flex-col border-r border-line bg-[#070707]/95 px-4 pb-5 pt-6 shadow-2xl backdrop-blur"
             >
               <p className="mb-5 px-2 text-xs tracking-[0.24em] text-white/65">MENU</p>
 
               <nav className="space-y-1.5">
                 {items.map((item) => {
                   const isActive = item.match(pathname);
+                  const Icon = item.Icon;
 
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`block rounded-xl px-4 py-3 text-sm transition ${isActive ? "bg-white/[0.12] text-white shadow-[0_0_22px_rgba(255,255,255,0.16)]" : "text-white/78 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_18px_rgba(255,255,255,0.1)]"}`}
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition ${isActive ? "bg-white/[0.12] text-white shadow-[0_0_22px_rgba(255,255,255,0.16)]" : "text-white/78 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_0_18px_rgba(255,255,255,0.1)]"}`}
                     >
-                      {item.label}
+                      <Icon />
+                      <span>{item.label}</span>
                     </Link>
                   );
                 })}
@@ -160,9 +202,10 @@ export function HeaderMenuDrawer() {
                   type="button"
                   onClick={() => void handleSignOut()}
                   disabled={!hasSession}
-                  className="w-full rounded-xl border border-white/15 px-4 py-3 text-left text-sm text-white/85 transition hover:border-white/40 hover:bg-white/[0.08] hover:shadow-[0_0_16px_rgba(255,255,255,0.12)] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="flex w-full items-center gap-3 rounded-xl border border-white/15 px-4 py-3 text-left text-sm text-white/85 transition hover:border-white/40 hover:bg-white/[0.08] hover:shadow-[0_0_16px_rgba(255,255,255,0.12)] disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Sign out
+                  <SignOutIcon />
+                  <span>Sign out</span>
                 </button>
               </div>
             </motion.aside>
