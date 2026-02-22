@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { MeProfileForm } from "@/components/me-profile-form";
 import { createSupabaseClient } from "@/lib/supabase-client";
 
@@ -226,6 +226,8 @@ export default function MePage() {
     void load();
   }, []);
 
+  const selectedFilesLabel = `${selectedFiles.length}/${MAX_DOCS} selected`;
+
   if (status !== "ready" || !data) {
     return <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10"><p className="text-sm text-white/70">{status === "loading" ? "Loading profile..." : "Please sign in to continue."}</p></main>;
   }
@@ -235,7 +237,6 @@ export default function MePage() {
   const canSubmitVerification = verificationRequest?.status !== "approved";
   const docUrls = Array.isArray(verificationRequest?.docUrls) ? verificationRequest?.docUrls : [];
   const pendingReplacement = verificationRequest?.status === "pending";
-  const selectedFilesLabel = useMemo(() => `${selectedFiles.length}/${MAX_DOCS} selected`, [selectedFiles.length]);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl space-y-6 px-4 py-10">
