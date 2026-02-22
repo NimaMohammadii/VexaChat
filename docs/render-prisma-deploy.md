@@ -13,10 +13,9 @@ This project is configured for **production-safe Prisma migrations** on Render.
 ## Required environment variables
 
 - `DATABASE_URL` → Render PostgreSQL connection string used by Prisma runtime and migrations.
-- `DIRECT_URL` → direct Render PostgreSQL connection string used by Prisma migration engine.
 
 Supabase should remain scoped to Auth/Storage env vars only (`NEXT_PUBLIC_SUPABASE_*`).
-Prisma uses only `DATABASE_URL` / `DIRECT_URL`.
+Prisma uses only `DATABASE_URL`.
 
 ## P3009 recovery without data loss
 
