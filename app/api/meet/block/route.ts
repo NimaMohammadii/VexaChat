@@ -21,10 +21,20 @@ export async function POST(request: Request) {
     await prisma.meetBlock.create({ data: { blockerUserId: user.id, blockedUserId } });
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
-      console.error("Failed to block meet user", error);
+      console.error("Failed to block user", error);
       return NextResponse.json({ error: "Unable to block user." }, { status: 500 });
     }
   }
+
+  await prisma.meetLikeRequest.updateMany({
+    where: {
+      OR: [
+        { fromUserId: user.id, toUserId: blockedUserId, status: "pending" },
+        { fromUserId: blockedUserId, toUserId: user.id, status: "pending" }
+      ]
+    },
+    data: { status: "canceled" }
+  });
 
   return NextResponse.json({ ok: true });
 }
