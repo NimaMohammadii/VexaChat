@@ -235,17 +235,6 @@ export function GoogleAuthControl() {
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => {
-                  setIsOpen(false);
-                  router.push('/meet');
-                }}
-                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              >
-                Meet
-              </button>
-              <button
-                type="button"
-                role="menuitem"
                 onClick={() => void handleSignOut()}
                 className="block w-full rounded-lg px-3 py-2 text-left text-sm text-paper transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
