@@ -17,14 +17,24 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     isActive?: boolean;
   };
 
+  // Prisma update does NOT accept null for non-nullable string fields.
+  // Normalize null/empty-string to undefined (means: "do not update this field")
+  const normStr = (value: unknown) => {
+    if (value === null || value === undefined) return undefined;
+    if (typeof value !== "string") return undefined;
+
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  };
+
   const updated = await prisma.homeSection.update({
     where: { id: params.id },
     data: {
-      title: body.title !== undefined ? String(body.title).trim() : undefined,
-      subtitle: body.subtitle !== undefined ? String(body.subtitle).trim() || null : undefined,
-      imageUrl: body.imageUrl !== undefined ? String(body.imageUrl).trim() : undefined,
-      order: body.order !== undefined ? Number(body.order) : undefined,
-      isActive: body.isActive
+      title: normStr(body.title),
+      subtitle: normStr(body.subtitle),
+      imageUrl: normStr(body.imageUrl),
+      order: typeof body.order === "number" ? body.order : undefined,
+      isActive: typeof body.isActive === "boolean" ? body.isActive : undefined
     }
   });
 
