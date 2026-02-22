@@ -28,7 +28,7 @@ function toDocUrls(value: unknown) {
 }
 
 export async function GET() {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUser({ canSetCookies: true });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,7 +50,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUser({ canSetCookies: true });
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
