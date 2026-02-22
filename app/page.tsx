@@ -66,10 +66,21 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   const favoriteProfileIds = favorites.map((item) => item.profileId);
 
+  const homeSections = await (async () => {
+    try {
+      return await prisma.homeSection.findMany({
+        where: { isActive: true },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }]
+      });
+    } catch {
+      return [];
+    }
+  })();
+
   return (
     <>
       <PublicHeader rightSlot={<GoogleAuthControl />} />
-      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} />
+      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} />
     </>
   );
 }
