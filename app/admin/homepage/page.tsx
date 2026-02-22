@@ -23,14 +23,24 @@ export default function AdminHomepageManagerPage() {
   const [status, setStatus] = useState<"loading" | "forbidden" | "ready" | "error">("loading");
   const [form, setForm] = useState({ title: "", subtitle: "", imageUrl: "", order: 0, isActive: true });
   const [saving, setSaving] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const load = async () => {
     setStatus("loading");
+    setErrorDetail(null);
     const response = await fetch("/api/admin/home-sections", { cache: "no-store" }).catch(() => null);
 
-    if (!response) return setStatus("error");
+    if (!response) {
+      setErrorDetail("Request failed before a response was received.");
+      return setStatus("error");
+    }
     if (response.status === 403) return setStatus("forbidden");
-    if (!response.ok) return setStatus("error");
+    if (!response.ok) {
+      const responseText = (await response.text().catch(() => "")).replace(/\s+/g, " ").trim();
+      const snippet = responseText.slice(0, 180) || "No response body";
+      setErrorDetail(`HTTP ${response.status}: ${snippet}`);
+      return setStatus("error");
+    }
 
     const payload = (await response.json()) as { sections: HomeSection[] };
     setSections(payload.sections);
@@ -87,6 +97,7 @@ export default function AdminHomepageManagerPage() {
       <div className="space-y-1">
         <p className="text-sm text-red-300">Unable to load homepage manager.</p>
         <p className="text-xs text-red-200/90">DB not ready. Migrations may not have been applied.</p>
+        {errorDetail ? <p className="text-xs text-red-200/90">{errorDetail}</p> : null}
       </div>
     );
   }
