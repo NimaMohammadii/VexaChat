@@ -98,11 +98,31 @@ export function MeProfileForm({ data }: { data: MeData }) {
     try {
       const supabase = createSupabaseClient();
       const ext = extensionFromFile(file);
-      const path = `${data.user.id}/${Date.now()}.${ext}`;
+      const userId = data.user.id;
+
+      const { data: existing, error: listError } = await supabase.storage.from("avatars").list(userId, { limit: 100 });
+
+      if (listError) {
+        setStatus(listError.message || "Unable to prepare avatar upload.");
+        return;
+      }
+
+      const paths = (existing ?? []).map((f) => `${userId}/${f.name}`);
+
+      if (paths.length) {
+        const { error: removeError } = await supabase.storage.from("avatars").remove(paths);
+
+        if (removeError) {
+          setStatus(removeError.message || "Unable to replace existing avatar.");
+          return;
+        }
+      }
+
+      const path = `${userId}/avatar.${ext}`;
 
       const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
         cacheControl: "3600",
-        upsert: false,
+        upsert: true,
         contentType: file.type
       });
 
@@ -115,12 +135,14 @@ export function MeProfileForm({ data }: { data: MeData }) {
         data: { publicUrl }
       } = supabase.storage.from("avatars").getPublicUrl(path);
 
+      const nextPublicUrl = `${publicUrl}?v=${Date.now()}`;
+
       const profileResponse = await fetch("/api/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ avatarUrl: publicUrl })
+        body: JSON.stringify({ avatarUrl: nextPublicUrl })
       });
 
       const profileResult = (await profileResponse.json()) as { error?: string; profile?: { avatarUrl: string } };
@@ -130,7 +152,7 @@ export function MeProfileForm({ data }: { data: MeData }) {
         return;
       }
 
-      const nextAvatarUrl = profileResult.profile?.avatarUrl ?? publicUrl;
+      const nextAvatarUrl = profileResult.profile?.avatarUrl ?? nextPublicUrl;
       setAvatarUrl(nextAvatarUrl);
       window.dispatchEvent(new CustomEvent("profile-avatar-updated", { detail: { avatarUrl: nextAvatarUrl } }));
       setStatus("Avatar uploaded.");
