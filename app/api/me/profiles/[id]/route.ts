@@ -108,6 +108,19 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   const body = (await request.json()) as UpdatePayload;
 
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const editsInWindow = await prisma.profile.count({
+    where: {
+      ownerUserId: user.id,
+      createdAt: { gte: oneHourAgo }
+    }
+  });
+
+  if (editsInWindow >= 5) {
+    return NextResponse.json({ error: "Rate limit exceeded. Max 5 profile edits per hour." }, { status: 429 });
+  }
+
+
   if (body.verified !== undefined) {
     return NextResponse.json({ error: "verified cannot be changed from this endpoint." }, { status: 400 });
   }

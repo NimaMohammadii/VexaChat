@@ -26,7 +26,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
       where: { id: params.id },
       data: {
         status: "approved",
-        note
+        note,
+        adminNote: note
       }
     }),
     prisma.userProfile.updateMany({
@@ -35,7 +36,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
         identityVerified: true,
         identityStatus: "approved"
       }
-    })
+    }),
+    prisma.profile.updateMany({ where: { ownerUserId: existing.userId }, data: { verified: true, rejectionNote: null } })
   ]);
 
   return NextResponse.json({ request: updated });

@@ -1,11 +1,19 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { KeyboardEvent, useCallback, useRef, useState } from "react";
 import { Profile } from "@/lib/types";
+import { FavoriteHeartButton } from "@/components/favorite-heart-button";
 
-export function ProfileCard({ profile }: { profile: Profile }) {
+export function ProfileCard({
+  profile,
+  isFavorite = false
+}: {
+  profile: Profile;
+  isFavorite?: boolean;
+}) {
   const router = useRouter();
   const [isSelected, setIsSelected] = useState(false);
   const isNavigatingRef = useRef(false);
@@ -20,8 +28,8 @@ export function ProfileCard({ profile }: { profile: Profile }) {
     setIsSelected(true);
 
     window.setTimeout(() => {
-      router.push(`/profile/${profile.id}`);
-    }, 180);
+      router.push(`/p/${profile.id}`);
+    }, 120);
   }, [profile.id, router]);
 
   const handleKeyDown = useCallback(
@@ -35,7 +43,9 @@ export function ProfileCard({ profile }: { profile: Profile }) {
   );
 
   return (
-    <div
+    <motion.div
+      whileHover={{ scale: 1.02, y: -4 }}
+      transition={{ duration: 0.2 }}
       className={`profile-card card relative overflow-hidden rounded-xl bg-slate shadow-sm ${profile.isTop ? "top" : ""} ${isSelected ? "selected" : ""}`}
       onClick={navigateToProfile}
       onKeyDown={handleKeyDown}
@@ -43,11 +53,8 @@ export function ProfileCard({ profile }: { profile: Profile }) {
       tabIndex={0}
       aria-label={`View ${profile.name}'s profile`}
     >
-      {profile.isTop ? (
-        <span className="absolute right-3 top-3 z-10 rounded-full border border-violet-300/35 bg-[linear-gradient(135deg,rgba(0,0,0,0.92),rgba(88,28,135,0.5))] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/95 backdrop-blur-sm shadow-[0_0_12px_rgba(168,85,247,0.38)]">
-          TOP
-        </span>
-      ) : null}
+      <FavoriteHeartButton profileId={profile.id} initialActive={isFavorite} />
+      {profile.verified ? <span className="verified-glow absolute right-3 top-3 z-10 rounded-full border border-emerald-300/45 bg-emerald-500/10 px-2 py-1 text-[10px]">Verified</span> : null}
       <div className="profile-image-wrapper aspect-[3/4] w-full">
         {primaryImage ? (
           <Image
@@ -67,10 +74,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           <p className="text-xs text-[#AAAAAA]">{profile.city}</p>
           <p className="text-xs text-[#AAAAAA]">${profile.price}/hr</p>
         </div>
-        <span className="inline-flex w-full items-center justify-center rounded-lg border border-line px-3 py-1.5 text-xs text-paper transition hover:border-paper">
-          View
-        </span>
       </div>
-    </div>
+    </motion.div>
   );
 }

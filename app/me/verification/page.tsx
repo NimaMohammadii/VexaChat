@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
+import { previewUrl, processImageFile } from "@/lib/image-processing";
 
 type VerificationRequest = {
   id: string;
@@ -24,6 +25,7 @@ export default function VerificationWizardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [request, setRequest] = useState<VerificationRequest | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const deviceFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -75,14 +77,16 @@ export default function VerificationWizardPage() {
       return;
     }
 
-    const oversized = files.find((file) => file.size > MAX_FILE_SIZE);
-    if (oversized) {
-      setStatus("Each image must be 5MB or less.");
-      event.target.value = "";
-      return;
-    }
-
-    setSelectedFiles(files);
+    Promise.all(files.map((file) => processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: "none" })))
+      .then((processed) => {
+        if (processed.some((file) => file.size > MAX_FILE_SIZE)) {
+          setStatus("Each processed image must be <= 5MB.");
+          return;
+        }
+        setSelectedFiles(processed);
+        setPreviewImages(processed.map((file) => previewUrl(file)));
+      })
+      .catch(() => setStatus("Unable to process files."));
     setStatus(`${files.length} image(s) ready for review.`);
   };
 
@@ -216,6 +220,7 @@ export default function VerificationWizardPage() {
                 <p className="text-xs uppercase tracking-[0.2em] text-white/60">Step 3 of 4</p>
                 <h2 className="text-xl font-semibold">Review and submit</h2>
                 <ul className="space-y-2 text-sm text-white/80">
+                  {previewImages.map((src, idx) => (<li key={src} className="rounded-lg border border-line p-2"><img src={src} alt={`Doc preview ${idx + 1}`} className="h-24 w-auto rounded" /></li>))}
                   {selectedFiles.map((file) => (
                     <li key={`${file.name}-${file.size}`} className="rounded-lg border border-line px-3 py-2">{file.name}</li>
                   ))}
