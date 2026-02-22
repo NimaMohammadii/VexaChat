@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
+import { SvjHeartIcon, SvjHomeIcon } from "@/components/svj-icons";
 
 type MenuItem = {
   href: string;
@@ -18,19 +19,11 @@ function iconClassName() {
 }
 
 function HomeIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
-      <path d="M3 8.5 10 3l7 5.5V17a1 1 0 0 1-1 1h-4.5v-5h-3v5H4a1 1 0 0 1-1-1V8.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <SvjHomeIcon className={iconClassName()} />;
 }
 
 function MeetIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
-      <path d="M10 17s-5.5-3.4-5.5-8A3.5 3.5 0 0 1 10 6.2 3.5 3.5 0 0 1 15.5 9c0 4.6-5.5 8-5.5 8Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <SvjHeartIcon className={iconClassName()} />;
 }
 
 function ConnectIcon() {
