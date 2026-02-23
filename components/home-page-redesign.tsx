@@ -103,7 +103,7 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
             transition={{ duration: 0.75, ease: "easeOut" }}
             className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base"
           >
-            طراحی مدرن، ریتم سریع، و فضای خلوت‌تر برای دیده‌شدن آدم‌های واقعی. {homeHeroConfig.heroSubtitle}
+            Modern design, faster rhythm, and cleaner space to spotlight real people. {homeHeroConfig.heroSubtitle}
           </motion.p>
           <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-8 flex justify-center gap-2.5">
             <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
@@ -167,9 +167,9 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
 
       <section className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.8, ease: "easeOut" }}>
-          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">کم، دقیق، جذاب.</h2>
+          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">Less noise, more impact.</h2>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
-            اینجا هر کارت، هر متن و هر حرکت حساب‌شده‌ست؛ بدون شلوغی اضافه و با حس لوکس مینیمال.
+            Every card, every line, and every motion is intentional—clean, focused, and unmistakably premium.
           </p>
         </motion.div>
       </section>
