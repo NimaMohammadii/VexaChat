@@ -32,8 +32,10 @@ type HomeConfig = {
 
 const fadeUp = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
 
+type AdminHomepageTab = "hero" | "sections" | "images";
+
 export default function AdminHomepageManagerPage() {
-  const [activeTab, setActiveTab] = useState<"hero" | "sections">("hero");
+  const [activeTab, setActiveTab] = useState<AdminHomepageTab>("hero");
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [homepageImages, setHomepageImages] = useState<HomepageImage[]>([]);
   const [heroForm, setHeroForm] = useState({
@@ -70,7 +72,7 @@ export default function AdminHomepageManagerPage() {
     data.set("file", file);
     const response = await fetch("/api/admin/upload", { method: "POST", body: data });
     if (!response.ok) throw new Error("Upload failed");
-    return (await response.json() as { url: string }).url;
+    return ((await response.json()) as { url: string }).url;
   };
 
   const uploadHomepageImage = async (file: File) => {
@@ -78,7 +80,7 @@ export default function AdminHomepageManagerPage() {
     data.set("file", file);
     const response = await fetch("/api/admin/homepage-images", { method: "POST", body: data });
     if (!response.ok) throw new Error("Upload failed");
-    return (await response.json() as { image: HomepageImage }).image;
+    return ((await response.json()) as { image: HomepageImage }).image;
   };
 
   const replaceHomepageImage = async (id: string, file: File) => {
@@ -86,7 +88,7 @@ export default function AdminHomepageManagerPage() {
     data.set("file", file);
     const response = await fetch(`/api/admin/homepage-images/${id}`, { method: "PATCH", body: data });
     if (!response.ok) throw new Error("Replace failed");
-    return (await response.json() as { image: HomepageImage }).image;
+    return ((await response.json()) as { image: HomepageImage }).image;
   };
 
   const loadAll = async () => {
@@ -101,9 +103,9 @@ export default function AdminHomepageManagerPage() {
     if (configResponse.status === 403 || sectionsResponse.status === 403 || imagesResponse.status === 403) return setStatus("forbidden");
     if (!configResponse.ok || !sectionsResponse.ok || !imagesResponse.ok) return setStatus("error");
 
-    const configPayload = await configResponse.json() as { config: HomeConfig };
-    const sectionsPayload = await sectionsResponse.json() as { sections: HomeSection[] };
-    const imagesPayload = await imagesResponse.json() as { images: HomepageImage[] };
+    const configPayload = (await configResponse.json()) as { config: HomeConfig };
+    const sectionsPayload = (await sectionsResponse.json()) as { sections: HomeSection[] };
+    const imagesPayload = (await imagesResponse.json()) as { images: HomepageImage[] };
 
     setHeroForm({
       heroTitle: configPayload.config.heroTitle,
@@ -130,6 +132,7 @@ export default function AdminHomepageManagerPage() {
     });
     setSavingHero(false);
     if (response.ok) setToast("Saved");
+    else setToast("Error");
   };
 
   const saveSection = async (section: HomeSection) => {
@@ -140,6 +143,29 @@ export default function AdminHomepageManagerPage() {
     });
 
     if (response.ok) setToast("Saved");
+    else setToast("Error");
+  };
+
+  const updateSectionImage = async (section: HomeSection, file: File) => {
+    try {
+      const url = await uploadImage(file);
+      const response = await fetch(`/api/admin/home-sections/${section.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: url })
+      });
+
+      if (!response.ok) {
+        setToast("Error");
+        return;
+      }
+
+      const payload = (await response.json()) as { section: HomeSection };
+      setSections((current) => current.map((item) => (item.id === section.id ? payload.section : item)));
+      setToast("Saved");
+    } catch {
+      setToast("Error");
+    }
   };
 
   const moveSection = async (id: string, direction: -1 | 1) => {
@@ -195,14 +221,18 @@ export default function AdminHomepageManagerPage() {
       </div>
 
       <div className="inline-flex rounded-full border border-white/[0.08] bg-black/20 p-1 text-sm">
-        {(["hero", "sections"] as const).map((tab) => (
+        {([
+          { value: "hero", label: "Hero" },
+          { value: "sections", label: "Sections" },
+          { value: "images", label: "Images" }
+        ] as const).map((tab) => (
           <motion.button
-            key={tab}
-            className={`rounded-full px-4 py-1.5 capitalize ${activeTab === tab ? "bg-white text-black" : "text-white/75"}`}
+            key={tab.value}
+            className={`rounded-full px-4 py-1.5 ${activeTab === tab.value ? "bg-white text-black" : "text-white/75"}`}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => setActiveTab(tab.value)}
           >
-            {tab}
+            {tab.label}
           </motion.button>
         ))}
       </div>
@@ -226,7 +256,9 @@ export default function AdminHomepageManagerPage() {
               {savingHero ? "Saving..." : "Save"}
             </motion.button>
           </motion.article>
-        ) : (
+        ) : null}
+
+        {activeTab === "sections" ? (
           <motion.div key="sections" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
             <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsCreateOpen(true)} className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">Create New Section</motion.button>
 
@@ -235,21 +267,31 @@ export default function AdminHomepageManagerPage() {
                 <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4">
                   <input className="bw-input" placeholder="Title" value={newSection.title} onChange={(event) => setNewSection((current) => ({ ...current, title: event.target.value }))} />
                   <textarea className="bw-input min-h-20" placeholder="Subtitle (optional)" value={newSection.subtitle} onChange={(event) => setNewSection((current) => ({ ...current, subtitle: event.target.value }))} />
-                  <input type="file" accept="image/*" className="block w-full text-xs text-white/80" onChange={async (event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    const url = await uploadImage(file);
-                    setNewSection((current) => ({ ...current, imageUrl: url }));
-                  }} />
+                  <label className="space-y-1 text-xs text-white/75">
+                    <span>Upload image</span>
+                    <input type="file" accept="image/*" className="block w-full text-xs text-white/80" onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const url = await uploadImage(file);
+                        setNewSection((current) => ({ ...current, imageUrl: url }));
+                        setToast("Saved");
+                      } catch {
+                        setToast("Error");
+                      }
+                    }} />
+                  </label>
                   <div className="flex items-center gap-2">
                     <button className="rounded-full bg-white px-4 py-1.5 text-xs text-black" onClick={async () => {
                       const response = await fetch("/api/admin/home-sections", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newSection) });
-                      if (!response.ok) return;
+                      if (!response.ok) return setToast("Error");
                       setNewSection({ title: "", subtitle: "", imageUrl: "", isActive: true });
                       setIsCreateOpen(false);
                       setToast("Saved");
                       await loadAll();
-                    }}>Create</button>
+                    }}>
+                      Save section
+                    </button>
                     <button className="rounded-full border border-white/20 px-4 py-1.5 text-xs" onClick={() => setIsCreateOpen(false)}>Cancel</button>
                   </div>
                 </motion.article>
@@ -258,16 +300,16 @@ export default function AdminHomepageManagerPage() {
 
             <AnimatePresence>
               {sortedSections.map((section, index) => (
-                <motion.article key={section.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="rounded-2xl border border-white/[0.08] bg-black/35 p-4">
-                  <div className="grid gap-4 md:grid-cols-[120px_1fr]">
-                    <div className="relative h-28 overflow-hidden rounded-xl border border-white/[0.08]">
+                <motion.article key={section.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4 rounded-2xl border border-white/[0.08] bg-black/35 p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row">
+                    <div className="relative h-40 w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black lg:w-64">
                       <Image src={section.imageUrl} alt={section.title} fill className="object-cover" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex-1 space-y-3">
                       <input className="bw-input" value={section.title} onChange={(event) => setSections((current) => current.map((item) => item.id === section.id ? { ...item, title: event.target.value } : item))} />
                       <textarea className="bw-input min-h-20" value={section.subtitle ?? ""} onChange={(event) => setSections((current) => current.map((item) => item.id === section.id ? { ...item, subtitle: event.target.value } : item))} />
                       <div className="flex flex-wrap items-center gap-2">
-                        <input className="bw-input w-24" type="number" value={section.order} onChange={(event) => setSections((current) => current.map((item) => item.id === section.id ? { ...item, order: Number(event.target.value) || 0 } : item))} />
+                        <input className="bw-input h-9 w-24" type="number" value={section.order} onChange={(event) => setSections((current) => current.map((item) => item.id === section.id ? { ...item, order: Number(event.target.value) || 0 } : item))} />
                         <label className="flex items-center gap-2 text-xs text-white/80"><input type="checkbox" checked={section.isActive} onChange={(event) => setSections((current) => current.map((item) => item.id === section.id ? { ...item, isActive: event.target.checked } : item))} />Active</label>
                         <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveSection(section.id, -1)} disabled={index === 0}>Up</button>
                         <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveSection(section.id, 1)} disabled={index === sortedSections.length - 1}>Down</button>
@@ -278,90 +320,96 @@ export default function AdminHomepageManagerPage() {
                           setSections((current) => current.filter((item) => item.id !== section.id));
                         }}>Delete</button>
                       </div>
-                      <input type="file" accept="image/*" className="block w-full text-xs text-white/80" onChange={async (event) => {
-                        const file = event.target.files?.[0];
-                        if (!file) return;
-                        const url = await uploadImage(file);
-                        setSections((current) => current.map((item) => item.id === section.id ? { ...item, imageUrl: url } : item));
-                      }} />
+
+                      <label className="space-y-1 text-xs text-white/75">
+                        <span>Replace section image</span>
+                        <input type="file" accept="image/*" className="block w-full text-xs text-white/80" onChange={async (event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          await updateSectionImage(section, file);
+                        }} />
+                      </label>
                     </div>
                   </div>
                 </motion.article>
               ))}
             </AnimatePresence>
-
-            <motion.article className="space-y-4 rounded-2xl border border-white/[0.08] bg-black/35 p-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">
-                  Upload
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const created = await uploadHomepageImage(file);
-                        setHomepageImages((current) => [...current, created]);
-                        setToast("Saved");
-                      } catch {
-                        setToast("Error");
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-
-              <div className="space-y-3">
-                {sortedHomepageImages.map((image, index) => (
-                  <div key={image.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.08] p-3">
-                    <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-white/[0.08]">
-                      <Image src={image.url} alt={`Homepage image ${index + 1}`} fill className="object-cover" />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, -1)} disabled={index === 0}>Up</button>
-                      <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, 1)} disabled={index === sortedHomepageImages.length - 1}>Down</button>
-                      <label className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70">
-                        Replace
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (!file) return;
-                            try {
-                              const updated = await replaceHomepageImage(image.id, file);
-                              setHomepageImages((current) => current.map((item) => item.id === image.id ? updated : item));
-                              setToast("Saved");
-                            } catch {
-                              setToast("Error");
-                            }
-                          }}
-                        />
-                      </label>
-                      <button
-                        className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70"
-                        onClick={async () => {
-                          const response = await fetch(`/api/admin/homepage-images/${image.id}`, { method: "DELETE" });
-                          if (!response.ok) {
-                            setToast("Error");
-                            return;
-                          }
-                          setHomepageImages((current) => current.filter((item) => item.id !== image.id));
-                          setToast("Saved");
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.article>
           </motion.div>
-        )}
+        ) : null}
+
+        {activeTab === "images" ? (
+          <motion.article key="images" className="space-y-4 rounded-2xl border border-white/[0.08] bg-black/35 p-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+            <p className="text-sm text-white/75">These images are used for main homepage visuals in order. You can upload, replace, and reorder them.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">
+                Upload new image
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const created = await uploadHomepageImage(file);
+                      setHomepageImages((current) => [...current, created]);
+                      setToast("Saved");
+                    } catch {
+                      setToast("Error");
+                    }
+                  }}
+                />
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              {sortedHomepageImages.map((image, index) => (
+                <div key={image.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.08] p-3">
+                  <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-white/[0.08]">
+                    <Image src={image.url} alt={`Homepage image ${index + 1}`} fill className="object-cover" />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, -1)} disabled={index === 0}>Up</button>
+                    <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, 1)} disabled={index === sortedHomepageImages.length - 1}>Down</button>
+                    <label className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70">
+                      Replace
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const updated = await replaceHomepageImage(image.id, file);
+                            setHomepageImages((current) => current.map((item) => item.id === image.id ? updated : item));
+                            setToast("Saved");
+                          } catch {
+                            setToast("Error");
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70"
+                      onClick={async () => {
+                        const response = await fetch(`/api/admin/homepage-images/${image.id}`, { method: "DELETE" });
+                        if (!response.ok) {
+                          setToast("Error");
+                          return;
+                        }
+                        setHomepageImages((current) => current.filter((item) => item.id !== image.id));
+                        setToast("Saved");
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.article>
+        ) : null}
       </AnimatePresence>
     </motion.section>
   );
