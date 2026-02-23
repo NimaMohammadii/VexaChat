@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 const PAGE_SIZE = 30;
+const INCREMENTAL_PAGE_SIZE = 50;
 
 export async function GET(request: Request, { params }: { params: { conversationId: string } }) {
   const user = await getAuthenticatedUser({ canSetCookies: true });
@@ -20,10 +21,40 @@ export async function GET(request: Request, { params }: { params: { conversation
   }
 
   if (conversation.expiresAt <= new Date()) {
-    return NextResponse.json({ error: "Chat expired" }, { status: 410 });
+    return NextResponse.json({ error: "Chat expired", expired: true }, { status: 410 });
   }
 
-  const cursor = new URL(request.url).searchParams.get("cursor");
+  const searchParams = new URL(request.url).searchParams;
+  const after = searchParams.get("after");
+
+  if (after) {
+    const afterDate = new Date(after);
+    if (Number.isNaN(afterDate.getTime())) {
+      return NextResponse.json({ error: "Invalid after timestamp" }, { status: 400 });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        conversationId: conversation.id,
+        createdAt: { gt: afterDate }
+      },
+      orderBy: { createdAt: "asc" },
+      take: INCREMENTAL_PAGE_SIZE
+    });
+
+    return NextResponse.json({
+      conversation: {
+        id: conversation.id,
+        userAId: conversation.userAId,
+        userBId: conversation.userBId,
+        expiresAt: conversation.expiresAt
+      },
+      messages,
+      nextCursor: null
+    });
+  }
+
+  const cursor = searchParams.get("cursor");
   const messages = await prisma.message.findMany({
     where: { conversationId: conversation.id },
     orderBy: { createdAt: "desc" },

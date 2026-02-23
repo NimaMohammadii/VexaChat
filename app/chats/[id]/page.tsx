@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 type ChatMessage = { id: string; senderId: string; text: string | null; createdAt: string };
@@ -20,6 +20,10 @@ function daysLeft(expiresAt: string) {
 export default function ChatThreadPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollInFlightRef = useRef(false);
+  const [pollDelayMs, setPollDelayMs] = useState(2500);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [expiresAt, setExpiresAt] = useState("");
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -27,12 +31,55 @@ export default function ChatThreadPage() {
   const [input, setInput] = useState("");
   const [expired, setExpired] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [showNewMessagesPill, setShowNewMessagesPill] = useState(false);
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+
+  const isNearBottom = useCallback(() => {
+    const node = messagesContainerRef.current;
+    if (!node) {
+      return true;
+    }
+
+    return node.scrollHeight - node.scrollTop - node.clientHeight < 80;
+  }, []);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const node = messagesContainerRef.current;
+    if (!node) {
+      return;
+    }
+
+    node.scrollTo({ top: node.scrollHeight, behavior });
+  }, []);
+
+  const mergeMessages = useCallback((prev: ChatMessage[], incoming: ChatMessage[]) => {
+    if (!incoming.length) {
+      return prev;
+    }
+
+    const merged = [...prev];
+    const existingIds = new Set(prev.map((message) => message.id));
+    for (const message of incoming) {
+      if (!existingIds.has(message.id)) {
+        existingIds.add(message.id);
+        merged.push(message);
+      }
+    }
+
+    return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, []);
 
   const loadMessages = useCallback(async (cursor?: string) => {
     const response = await fetch(`/api/chats/${params.id}/messages${cursor ? `?cursor=${cursor}` : ""}`, { cache: "no-store" });
 
     if (response.status === 410) {
       setExpired(true);
+      return;
+    }
+
+    if (response.status === 401) {
+      setIsAuthenticated(false);
       return;
     }
 
@@ -60,12 +107,111 @@ export default function ChatThreadPage() {
     if (me.ok) {
       const meData = (await me.json()) as { user: { id: string } };
       setCurrentUserId(meData.user?.id ?? "");
+    } else if (me.status === 401) {
+      setIsAuthenticated(false);
     }
   }, [params.id]);
+
+  const pollForNewMessages = useCallback(async () => {
+    if (pollInFlightRef.current || expired || !isAuthenticated || !isPageVisible) {
+      return;
+    }
+
+    pollInFlightRef.current = true;
+    const wasNearBottom = isNearBottom();
+
+    try {
+      const newestCreatedAt = messages[messages.length - 1]?.createdAt;
+      const query = newestCreatedAt ? `?after=${encodeURIComponent(newestCreatedAt)}` : "";
+      const response = await fetch(`/api/chats/${params.id}/messages${query}`, { cache: "no-store" });
+
+      if (response.status === 410) {
+        setExpired(true);
+        return;
+      }
+
+      if (response.status === 401) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("poll failed");
+      }
+
+      const data = (await response.json()) as ConversationPayload;
+      setExpiresAt(data.conversation.expiresAt);
+      if (data.messages.length) {
+        setMessages((prev) => mergeMessages(prev, data.messages));
+        if (wasNearBottom) {
+          setShowNewMessagesPill(false);
+          setTimeout(() => scrollToBottom("smooth"), 30);
+        } else {
+          setShowNewMessagesPill(true);
+        }
+      }
+
+      setPollDelayMs(2500);
+    } catch (_error) {
+      setPollDelayMs(5000);
+    } finally {
+      pollInFlightRef.current = false;
+    }
+  }, [expired, isAuthenticated, isNearBottom, isPageVisible, mergeMessages, messages, params.id, scrollToBottom]);
+
+  const clearPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback(() => {
+    if (pollIntervalRef.current || expired || !isAuthenticated || !isPageVisible) {
+      return;
+    }
+
+    pollIntervalRef.current = setInterval(() => {
+      void pollForNewMessages();
+    }, pollDelayMs);
+  }, [expired, isAuthenticated, isPageVisible, pollDelayMs, pollForNewMessages]);
 
   useEffect(() => {
     void loadMessages();
   }, [loadMessages]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsPageVisible(visible);
+      if (!visible) {
+        clearPolling();
+      }
+    };
+
+    setIsPageVisible(!document.hidden);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [clearPolling]);
+
+  useEffect(() => {
+    clearPolling();
+    if (!expired && isAuthenticated && isPageVisible) {
+      startPolling();
+    }
+
+    return () => {
+      clearPolling();
+    };
+  }, [clearPolling, expired, isAuthenticated, isPageVisible, startPolling]);
+
+  useEffect(() => {
+    if (messages.length && isNearBottom()) {
+      scrollToBottom("auto");
+    }
+  }, [isNearBottom, messages.length, scrollToBottom]);
 
   const send = async () => {
     if (!input.trim() || expired) {
@@ -78,12 +224,18 @@ export default function ChatThreadPage() {
       body: JSON.stringify({ text: input.trim() })
     });
 
+    if (response.status === 410) {
+      setExpired(true);
+      return;
+    }
+
     if (!response.ok) {
       return;
     }
 
     setInput("");
-    await loadMessages();
+    await pollForNewMessages();
+    scrollToBottom("smooth");
   };
 
   const left = useMemo(() => (expiresAt ? daysLeft(expiresAt) : 0), [expiresAt]);
@@ -106,7 +258,15 @@ export default function ChatThreadPage() {
 
         {expired ? <div className="p-8 text-center text-sm text-white/65">This chat expired</div> : null}
 
-        <div className="h-[62vh] overflow-y-auto px-3 py-4">
+        <div
+          ref={messagesContainerRef}
+          onScroll={() => {
+            if (isNearBottom()) {
+              setShowNewMessagesPill(false);
+            }
+          }}
+          className="h-[62vh] overflow-y-auto px-3 py-4"
+        >
           {nextCursor ? (
             <button onClick={() => void loadMessages(nextCursor)} className="mb-3 w-full rounded-lg border border-white/15 py-2 text-xs text-white/70">
               Load older
@@ -128,6 +288,22 @@ export default function ChatThreadPage() {
         </div>
 
         <div className="border-t border-white/[0.06] p-3">
+          <AnimatePresence>
+            {showNewMessagesPill ? (
+              <motion.button
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                onClick={() => {
+                  scrollToBottom("smooth");
+                  setShowNewMessagesPill(false);
+                }}
+                className="mx-auto mb-2 block rounded-full border border-[#FF2E63]/35 bg-black/70 px-3 py-1 text-[11px] text-[#FF8FB1]"
+              >
+                New messages
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
           <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/40 p-2">
             <input
               value={input}
