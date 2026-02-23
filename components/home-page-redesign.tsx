@@ -14,10 +14,19 @@ type HomeSectionItem = {
   isActive: boolean;
 };
 
+type HomeHeroConfig = {
+  heroTitle: string;
+  heroAccentWord: string | null;
+  heroSubtitle: string;
+  primaryCtaText: string;
+  secondaryCtaText: string | null;
+};
+
 type HomePageRedesignProps = {
   profiles: Profile[];
   favoriteProfileIds: string[];
   homeSections: HomeSectionItem[];
+  homeHeroConfig: HomeHeroConfig;
 };
 
 const fadeInUp = {
@@ -52,7 +61,7 @@ const placeholderSections: HomeSectionItem[] = [
   }
 ];
 
-export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignProps) {
+export function HomePageRedesign({ profiles, homeSections, homeHeroConfig }: HomePageRedesignProps) {
   const featuredProfiles = profiles.slice(0, 8);
   const displaySections = homeSections.length ? homeSections : placeholderSections;
 
@@ -65,7 +74,7 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.16 } } }}
         >
-          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-8 inline-flex rounded-full border border-[#FF2E63]/60 px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[#d6d6d6]">
+          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-8 inline-flex rounded-full border border-white/[0.06] px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[#d6d6d6]">
             Private social editorial
           </motion.p>
           <motion.h1
@@ -73,22 +82,24 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
             transition={{ duration: 0.75, ease: "easeOut" }}
             className="text-5xl font-semibold leading-[1.08] tracking-[0.02em] md:text-7xl"
           >
-            Where Desire Meets <span className="text-[#FF2E63]">Discretion</span>
+            {homeHeroConfig.heroTitle} {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
           </motion.h1>
           <motion.p
             variants={fadeInUp}
             transition={{ duration: 0.75, ease: "easeOut" }}
             className="mx-auto mt-10 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-lg"
           >
-            Refined discovery for people who value privacy, curation, and meaningful introductions.
+            {homeHeroConfig.heroSubtitle}
           </motion.p>
-          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-12">
-            <Link
-              href="#home-sections"
-              className="inline-flex rounded-full border border-transparent bg-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base"
-            >
-              Explore the Experience
+          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-12 flex justify-center gap-3">
+            <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
+              {homeHeroConfig.primaryCtaText}
             </Link>
+            {homeHeroConfig.secondaryCtaText ? (
+              <Link href="/me/create-profile" className="inline-flex rounded-full border border-white/[0.2] px-9 py-4 text-sm font-medium tracking-[0.03em] text-white transition-all duration-300 hover:border-[#FF2E63]/70 md:text-base">
+                {homeHeroConfig.secondaryCtaText}
+              </Link>
+            ) : null}
           </motion.div>
         </motion.div>
       </section>
@@ -100,7 +111,7 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
           return (
             <motion.article
               key={section.id}
-              className={`grid items-center gap-10 py-24 md:py-28 lg:grid-cols-2 lg:gap-16 ${flip ? "" : ""}`}
+              className="grid items-center gap-10 py-24 md:py-28 lg:grid-cols-2 lg:gap-16"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
@@ -108,13 +119,7 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
             >
               <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-2" : ""}>
                 <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0a0a0a]">
-                  <Image
-                    src={section.imageUrl}
-                    alt={section.title}
-                    width={1400}
-                    height={1000}
-                    className="h-[420px] w-full object-cover md:h-[520px]"
-                  />
+                  <Image src={section.imageUrl} alt={section.title} width={1400} height={1000} className="h-[420px] w-full object-cover md:h-[520px]" />
                 </div>
               </motion.div>
               <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-1" : ""}>
@@ -132,20 +137,9 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
           <div className="mt-6 h-px w-full bg-white/10" />
         </motion.div>
 
-        <motion.div
-          className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.15 }}
-          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
-        >
+        <motion.div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
           {displaySections.slice(0, 6).map((section) => (
-            <motion.article
-              key={`preview-${section.id}`}
-              variants={fadeInUp}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-              className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]"
-            >
+            <motion.article key={`preview-${section.id}`} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]">
               <div className="aspect-[4/5] overflow-hidden bg-black">
                 <Image src={section.imageUrl} alt={section.title} width={800} height={1000} className="h-full w-full object-cover" />
               </div>
@@ -169,10 +163,7 @@ export function HomePageRedesign({ profiles, homeSections }: HomePageRedesignPro
       <section className="px-6 pb-28 pt-10">
         <motion.div className="mx-auto max-w-3xl text-center" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }}>
           <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Enter the experience.</p>
-          <Link
-            href="/me/create-profile"
-            className="mt-10 inline-flex rounded-full border border-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base"
-          >
+          <Link href="/me/create-profile" className="mt-10 inline-flex rounded-full border border-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
             Create Your Profile
           </Link>
         </motion.div>
