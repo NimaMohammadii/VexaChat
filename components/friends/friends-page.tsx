@@ -18,7 +18,7 @@ type FriendRequestItem = {
   sender: UserCard;
 };
 
-type Tab = "friends" | "requests";
+type Tab = "friends" | "requests" | "blocked";
 
 const transition = { duration: 0.7, ease: "easeOut" as const };
 
@@ -38,6 +38,7 @@ export function FriendsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("friends");
   const [friends, setFriends] = useState<UserCard[]>([]);
   const [requests, setRequests] = useState<FriendRequestItem[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<UserCard[]>([]);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<UserCard[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserCard | null>(null);
@@ -64,9 +65,31 @@ export function FriendsPage() {
     setRequests(payload.requests);
   };
 
+  const loadBlocked = async () => {
+    const response = await fetch("/api/friends/blocked", { cache: "no-store" });
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = (await response.json()) as { blocked: UserCard[] };
+    setBlockedUsers(payload.blocked);
+  };
+
   useEffect(() => {
     void loadFriends();
     void loadRequests();
+    void loadBlocked();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedUser(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -98,7 +121,7 @@ export function FriendsPage() {
   }, [requests]);
 
   const refreshAll = async () => {
-    await Promise.all([loadFriends(), loadRequests()]);
+    await Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
   };
 
   const sendRequest = async (receiverId: string) => {
@@ -151,6 +174,18 @@ export function FriendsPage() {
     await refreshAll();
   };
 
+  const unblockUser = async (userId: string) => {
+    await fetch("/api/friends/unblock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId })
+    });
+
+    setSearchResults((prev) => prev.map((item) => (item.id === userId ? { ...item, relationship: "none" } : item)));
+    setSelectedUser((prev) => (prev?.id === userId ? { ...prev, relationship: "none" } : prev));
+    await refreshAll();
+  };
+
   const statusButton = (user: UserCard) => {
     if (user.relationship === "friends") {
       return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Friends</button>;
@@ -176,7 +211,7 @@ export function FriendsPage() {
         </motion.header>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-6 flex gap-6 border-b border-white/10">
-          {(["friends", "requests"] as const).map((tab) => (
+          {(["friends", "requests", "blocked"] as const).map((tab) => (
             <button key={tab} type="button" onClick={() => setActiveTab(tab)} className="relative pb-3 text-sm capitalize text-white/80 transition hover:text-white">
               {tab}
               {activeTab === tab ? <motion.span layoutId="friends-active-tab" className="absolute inset-x-0 -bottom-px h-[2px] bg-[#FF2E63]" /> : null}
@@ -185,14 +220,20 @@ export function FriendsPage() {
         </motion.div>
 
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-8 rounded-2xl border border-white/[0.06] bg-[#111] p-4">
-          <motion.input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search username..."
-            className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-white/35"
-            whileFocus={{ scale: 1.01 }}
-            transition={{ duration: 0.25 }}
-          />
+          <div className="relative transition-all duration-200 focus-within:scale-[1.01]">
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.7" fill="none" />
+              <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <motion.input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search username..."
+              className="w-full rounded-xl border border-white/10 bg-black py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-white/35"
+              whileFocus={{ scale: 1.01 }}
+              transition={{ duration: 0.25 }}
+            />
+          </div>
 
           <AnimatePresence>
             {searchResults.length > 0 ? (
@@ -206,12 +247,13 @@ export function FriendsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                     transition={transition}
-                    className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-black/60 px-3 py-2 text-left"
+                    whileHover={{ scale: 1.01 }}
+                    className="flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-black/60 px-3 py-3 text-left transition hover:border-white/15 hover:bg-white/[0.03]"
                   >
-                    <Avatar user={item} />
+                    <Avatar user={item} size="h-10 w-10" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-white">@{item.username}</p>
-                      <p className="truncate text-xs text-white/55">{item.bio || "No bio yet"}</p>
+                      <p className="truncate text-sm text-white">{item.username}</p>
+                      <p className="truncate text-xs text-white/55">@{item.username}</p>
                     </div>
                     <div onClick={(event) => event.stopPropagation()}>{statusButton(item)}</div>
                   </motion.button>
@@ -225,29 +267,57 @@ export function FriendsPage() {
           {activeTab === "friends" ? (
             <motion.section key="friends-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
               {friends.length ? (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
                   {friends.map((friend) => (
                     <motion.article
                       key={friend.id}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.01 }}
                       transition={{ duration: 0.25 }}
-                      className="rounded-2xl border border-white/[0.06] bg-[#111] p-4"
+                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
                     >
-                      <button type="button" className="w-full text-left" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })}>
-                        <Avatar user={friend} size="h-14 w-14" />
-                        <p className="mt-3 truncate text-sm text-white">@{friend.username}</p>
-                        <p className="text-xs text-white/55">{friend.verified ? "Verified" : "Member"}</p>
+                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })}>
+                        <Avatar user={friend} size="h-10 w-10" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-white">{friend.username}</p>
+                          <p className="truncate text-xs text-white/55">@{friend.username}</p>
+                        </div>
                       </button>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button onClick={() => setMessage("Messaging is coming soon.")} className="rounded-xl border border-white/15 px-2.5 py-1 text-xs text-white/80">Message</button>
-                        <button onClick={() => void removeFriend(friend.id)} className="rounded-xl border border-white/15 px-2.5 py-1 text-xs text-white/80">Remove</button>
-                        <button onClick={() => void blockUser(friend.id)} className="rounded-xl border border-white/15 px-2.5 py-1 text-xs text-white/80">Block</button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button onClick={() => setMessage("Messaging is coming soon.")} className="h-8 rounded-lg border border-white/25 px-3 text-xs text-white/85">Message</button>
+                        <button onClick={() => void removeFriend(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Remove</button>
+                        <button onClick={() => void blockUser(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Block</button>
                       </div>
                     </motion.article>
                   ))}
-                </div>
+                </motion.div>
               ) : (
                 <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-12 text-center text-white/65">No connections yet. Start searching.</div>
+              )}
+            </motion.section>
+          ) : activeTab === "blocked" ? (
+            <motion.section key="blocked-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
+              {blockedUsers.length ? (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
+                  {blockedUsers.map((blockedUser) => (
+                    <motion.article
+                      key={blockedUser.id}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
+                    >
+                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...blockedUser, relationship: "blocked" })}>
+                        <Avatar user={blockedUser} size="h-10 w-10" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-white">{blockedUser.username}</p>
+                          <p className="truncate text-xs text-white/55">@{blockedUser.username}</p>
+                        </div>
+                      </button>
+                      <button onClick={() => void unblockUser(blockedUser.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Unblock</button>
+                    </motion.article>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-10 text-center text-white/65">No blocked users.</div>
               )}
             </motion.section>
           ) : (
@@ -272,7 +342,7 @@ export function FriendsPage() {
         {selectedUser ? (
           <>
             <motion.button key="backdrop" className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedUser(null)} aria-label="Close profile modal" />
-            <motion.div key="modal" initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} transition={transition} className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/[0.06] bg-[#111] p-6">
+            <motion.div key="modal" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.25, ease: "easeOut" }} className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/[0.06] bg-[#111] p-6">
               <button className="absolute right-3 top-3 rounded-full border border-white/10 px-2 py-1 text-xs text-white/60" onClick={() => setSelectedUser(null)}>✕</button>
               <div className="flex flex-col items-center text-center">
                 <Avatar user={selectedUser} size="h-20 w-20" />
@@ -281,16 +351,21 @@ export function FriendsPage() {
                 {selectedUser.verified ? <span className="mt-2 rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/75">Verified</span> : null}
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                   {selectedUser.relationship === "pending" ? <button disabled className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Pending</button> : null}
-                  {selectedUser.relationship === "friends" ? <button onClick={() => void removeFriend(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Remove</button> : null}
-                  {selectedUser.relationship === "none" || !selectedUser.relationship ? <button onClick={() => void sendRequest(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Add Friend</button> : null}
+                  {selectedUser.relationship === "friends" ? (
+                    <>
+                      <button onClick={() => setMessage("Messaging is coming soon.")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Message</button>
+                      <button onClick={() => void removeFriend(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Remove</button>
+                      <button onClick={() => void blockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Block</button>
+                    </>
+                  ) : null}
+                  {selectedUser.relationship === "blocked" ? <button onClick={() => void unblockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Unblock</button> : null}
+                  {selectedUser.relationship === "none" || !selectedUser.relationship ? <button onClick={() => void sendRequest(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Add</button> : null}
                   {requestMap.get(selectedUser.id) ? (
                     <>
                       <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "accept")} className="rounded-xl border border-[#FF2E63] px-3 py-2 text-xs text-white">Accept</button>
                       <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "reject")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Reject</button>
                     </>
                   ) : null}
-                  <button onClick={() => setMessage("Messaging is coming soon.")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Message</button>
-                  <button onClick={() => void blockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Block</button>
                 </div>
               </div>
             </motion.div>
