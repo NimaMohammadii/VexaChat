@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -17,6 +18,11 @@ const access = [
 export default function PrivateRoomPage() {
   return (
     <main className="min-h-screen bg-black px-6 pb-24 pt-24 text-white">
+      <header className="mx-auto mb-10 flex w-full max-w-5xl items-center gap-3">
+        <HeaderMenuDrawer />
+        <p className="text-sm tracking-[0.2em]">PRIVATE ROOM</p>
+      </header>
+
       <motion.section initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.14 } } }} className="mx-auto max-w-5xl text-center">
         <motion.p variants={fadeUp} transition={{ duration: 0.7 }} className="mb-6 inline-flex rounded-full border border-[#FF2E63]/60 px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-white/75">
           Private Room
