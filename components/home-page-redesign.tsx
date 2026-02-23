@@ -26,6 +26,7 @@ type HomePageRedesignProps = {
   profiles: Profile[];
   favoriteProfileIds: string[];
   homeSections: HomeSectionItem[];
+  homepageImages: { id: string; url: string; order: number }[];
   homeHeroConfig: HomeHeroConfig;
 };
 
@@ -61,9 +62,14 @@ const placeholderSections: HomeSectionItem[] = [
   }
 ];
 
-export function HomePageRedesign({ profiles, homeSections, homeHeroConfig }: HomePageRedesignProps) {
+export function HomePageRedesign({ profiles, homeSections, homepageImages, homeHeroConfig }: HomePageRedesignProps) {
   const featuredProfiles = profiles.slice(0, 8);
+  const sortedHomepageImages = [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
   const displaySections = homeSections.length ? homeSections : placeholderSections;
+  const displaySectionsWithImages = displaySections.map((section, index) => ({
+    ...section,
+    imageUrl: sortedHomepageImages[index]?.url ?? section.imageUrl
+  }));
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -105,7 +111,7 @@ export function HomePageRedesign({ profiles, homeSections, homeHeroConfig }: Hom
       </section>
 
       <section id="home-sections" className="mx-auto w-full max-w-7xl px-6 pb-20">
-        {displaySections.map((section, index) => {
+        {displaySectionsWithImages.map((section, index) => {
           const flip = index % 2 === 1;
 
           return (
@@ -138,7 +144,7 @@ export function HomePageRedesign({ profiles, homeSections, homeHeroConfig }: Hom
         </motion.div>
 
         <motion.div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
-          {displaySections.slice(0, 6).map((section) => (
+          {displaySectionsWithImages.slice(0, 6).map((section) => (
             <motion.article key={`preview-${section.id}`} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]">
               <div className="aspect-[4/5] overflow-hidden bg-black">
                 <Image src={section.imageUrl} alt={section.title} width={800} height={1000} className="h-full w-full object-cover" />

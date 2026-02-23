@@ -86,10 +86,22 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
     }
   })();
 
+  const homepageImages = await (async () => {
+    try {
+      return await prisma.homepageImage.findMany({
+        where: { slot: "homepage" },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        select: { id: true, url: true, order: true }
+      });
+    } catch {
+      return [];
+    }
+  })();
+
   return (
     <>
       <PublicHeader rightSlot={<GoogleAuthControl />} />
-      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
+      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homepageImages={homepageImages} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
     </>
   );
 }
