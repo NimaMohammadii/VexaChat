@@ -70,47 +70,50 @@ export default function ChatThreadPage() {
     return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, []);
 
-  const loadMessages = useCallback(async (cursor?: string) => {
-    const response = await fetch(`/api/chats/${params.id}/messages${cursor ? `?cursor=${cursor}` : ""}`, { cache: "no-store" });
+  const loadMessages = useCallback(
+    async (cursor?: string) => {
+      const response = await fetch(`/api/chats/${params.id}/messages${cursor ? `?cursor=${cursor}` : ""}`, { cache: "no-store" });
 
-    if (response.status === 410) {
-      setExpired(true);
-      return;
-    }
-
-    if (response.status === 401) {
-      setIsAuthenticated(false);
-      return;
-    }
-
-    if (!response.ok) {
-      return;
-    }
-
-    const data = (await response.json()) as ConversationPayload;
-    setExpiresAt(data.conversation.expiresAt);
-    setNextCursor(data.nextCursor);
-    setMessages((prev) => (cursor ? [...data.messages, ...prev] : data.messages));
-
-    const listResponse = await fetch("/api/chats/list", { cache: "no-store" });
-    if (listResponse.ok) {
-      const listData = (await listResponse.json()) as {
-        conversations: { id: string; friendUser: { username: string; avatarUrl: string; id: string } }[];
-      };
-      const row = listData.conversations.find((item) => item.id === params.id);
-      if (row) {
-        setFriend(row.friendUser);
+      if (response.status === 410) {
+        setExpired(true);
+        return;
       }
-    }
 
-    const me = await fetch("/api/me");
-    if (me.ok) {
-      const meData = (await me.json()) as { user: { id: string } };
-      setCurrentUserId(meData.user?.id ?? "");
-    } else if (me.status === 401) {
-      setIsAuthenticated(false);
-    }
-  }, [params.id]);
+      if (response.status === 401) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as ConversationPayload;
+      setExpiresAt(data.conversation.expiresAt);
+      setNextCursor(data.nextCursor);
+      setMessages((prev) => (cursor ? [...data.messages, ...prev] : data.messages));
+
+      const listResponse = await fetch("/api/chats/list", { cache: "no-store" });
+      if (listResponse.ok) {
+        const listData = (await listResponse.json()) as {
+          conversations: { id: string; friendUser: { username: string; avatarUrl: string; id: string } }[];
+        };
+        const row = listData.conversations.find((item) => item.id === params.id);
+        if (row) {
+          setFriend(row.friendUser);
+        }
+      }
+
+      const me = await fetch("/api/me");
+      if (me.ok) {
+        const meData = (await me.json()) as { user: { id: string } };
+        setCurrentUserId(meData.user?.id ?? "");
+      } else if (me.status === 401) {
+        setIsAuthenticated(false);
+      }
+    },
+    [params.id]
+  );
 
   const pollForNewMessages = useCallback(async () => {
     if (pollInFlightRef.current || expired || !isAuthenticated || !isPageVisible) {
@@ -239,25 +242,73 @@ export default function ChatThreadPage() {
   };
 
   const left = useMemo(() => (expiresAt ? daysLeft(expiresAt) : 0), [expiresAt]);
+  const isSendDisabled = !input.trim() || expired;
 
   return (
-    <motion.main initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="min-h-screen bg-black px-4 py-5 text-white">
-      <div className="mx-auto flex max-w-3xl flex-col rounded-3xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-xl">
-        <div className="flex items-center gap-3 border-b border-white/[0.06] p-4">
-          <motion.button whileTap={{ scale: 0.95 }} onClick={() => router.push("/chats")} className="rounded-lg border border-white/15 px-3 py-1 text-xs">
-            Back
+    <motion.main
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 20% 30%, rgba(120,0,20,0.15), transparent 40%), radial-gradient(circle at 80% 70%, rgba(120,0,20,0.10), transparent 50%), linear-gradient(#000,#000)"
+      }}
+    >
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut", delay: 0.05 }}
+        className="z-20 border-b border-white/[0.08] bg-black/45 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)] backdrop-blur-xl"
+      >
+        <div className="flex items-center justify-between">
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            onClick={() => router.push("/chats")}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]"
+            aria-label="Back to chats"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M14.5 5.5 8 12l6.5 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </motion.button>
-          <img src={friend?.avatarUrl || "https://placehold.co/36x36/111111/FFFFFF?text=%40"} alt={friend?.username ?? "User"} className="h-9 w-9 rounded-full object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm">@{friend?.username ?? "chat"}</p>
-          </div>
-          <span className={`rounded-full border px-2 py-1 text-[11px] ${left <= 2 ? "border-[#FF2E63]/40 text-[#FF8FB1]" : "border-white/15 text-white/65"}`}>
-            Days left: {left}
-          </span>
+
+          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.12 }} className="flex min-w-0 items-center gap-3">
+            <img
+              src={friend?.avatarUrl || "https://placehold.co/44x44/111111/FFFFFF?text=%40"}
+              alt={friend?.username ?? "User"}
+              className="h-11 w-11 rounded-full object-cover ring-1 ring-white/20"
+            />
+            <div className="min-w-0 text-center">
+              <p className="truncate text-base font-semibold tracking-tight text-white">{friend?.username ?? "Chat"}</p>
+              <p className="truncate text-xs text-white/50">@{friend?.username ?? "username"}</p>
+            </div>
+          </motion.div>
+
+          <div className="h-10 w-10" />
         </div>
 
-        {expired ? <div className="p-8 text-center text-sm text-white/65">This chat expired</div> : null}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut", delay: 0.18 }}
+          className="pt-3"
+        >
+          <p
+            className={`mx-auto w-fit rounded-full border border-white/[0.08] bg-white/[0.06] px-4 py-1.5 text-xs backdrop-blur-md ${
+              left <= 2 ? "text-[#cf6f83]" : "text-white/70"
+            }`}
+          >
+            Deletes in {left} day{left === 1 ? "" : "s"}
+          </p>
+        </motion.div>
+      </motion.header>
 
+      {expired ? <div className="px-4 pb-2 pt-4 text-center text-sm text-white/60">This chat expired.</div> : null}
+
+      <section className="relative flex min-h-0 flex-1 flex-col">
         <div
           ref={messagesContainerRef}
           onScroll={() => {
@@ -265,20 +316,33 @@ export default function ChatThreadPage() {
               setShowNewMessagesPill(false);
             }
           }}
-          className="h-[62vh] overflow-y-auto px-3 py-4"
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-28 pt-4 [scrollbar-width:thin] [scroll-behavior:smooth]"
         >
           {nextCursor ? (
-            <button onClick={() => void loadMessages(nextCursor)} className="mb-3 w-full rounded-lg border border-white/15 py-2 text-xs text-white/70">
-              Load older
+            <button
+              onClick={() => void loadMessages(nextCursor)}
+              className="mb-4 w-full rounded-full border border-white/15 bg-white/[0.04] py-2 text-xs text-white/70 backdrop-blur"
+            >
+              Load older messages
             </button>
           ) : null}
 
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {messages.map((message) => {
               const mine = currentUserId && message.senderId === currentUserId;
               return (
-                <motion.div key={message.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`mb-2 flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[75%] rounded-2xl border px-3 py-2 text-sm ${mine ? "border-[#FF2E63]/25 bg-[#FF2E63]/12" : "border-white/[0.08] bg-white/[0.06]"}`}>
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className={`mb-2.5 flex ${mine ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      mine ? "bg-[rgba(120,0,20,0.25)] text-white backdrop-blur-md" : "bg-white/[0.05] text-white/90"
+                    }`}
+                  >
                     {message.text}
                   </div>
                 </motion.div>
@@ -287,37 +351,57 @@ export default function ChatThreadPage() {
           </AnimatePresence>
         </div>
 
-        <div className="border-t border-white/[0.06] p-3">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[4.9rem] z-10 px-4">
           <AnimatePresence>
             {showNewMessagesPill ? (
               <motion.button
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.2 }}
                 onClick={() => {
                   scrollToBottom("smooth");
                   setShowNewMessagesPill(false);
                 }}
-                className="mx-auto mb-2 block rounded-full border border-[#FF2E63]/35 bg-black/70 px-3 py-1 text-[11px] text-[#FF8FB1]"
+                className="pointer-events-auto mx-auto block rounded-full border border-[#6f1a2c]/70 bg-black/70 px-3 py-1 text-xs text-[#c88495] backdrop-blur"
               >
                 New messages
               </motion.button>
             ) : null}
           </AnimatePresence>
-          <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/40 p-2">
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Type a message"
-              className="w-full bg-transparent px-2 text-sm outline-none placeholder:text-white/45"
-              disabled={expired}
-            />
-            <motion.button whileTap={{ scale: 0.94 }} disabled={!input.trim() || expired} onClick={() => void send()} className="rounded-xl border border-white/20 px-3 py-2 text-xs disabled:opacity-40">
-              Send
-            </motion.button>
-          </div>
         </div>
-      </div>
+      </section>
+
+      <motion.footer
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: "easeOut", delay: 0.14 }}
+        className="z-20 border-t border-white/[0.08] bg-black/45 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-md"
+      >
+        <div className="flex items-center gap-2 rounded-full bg-white/[0.04] p-1.5">
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Type a message"
+            className="w-full bg-transparent px-4 text-base leading-6 text-white outline-none placeholder:text-white/45"
+            disabled={expired}
+          />
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            animate={{ scale: isSendDisabled ? 1 : 1.08, opacity: isSendDisabled ? 0.4 : 1 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            disabled={isSendDisabled}
+            onClick={() => void send()}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(120,0,20,0.45)] text-white"
+            aria-label="Send message"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M5 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="m13 6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </motion.button>
+        </div>
+      </motion.footer>
     </motion.main>
   );
 }
