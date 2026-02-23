@@ -26,11 +26,13 @@ function MeetIcon() {
   return <SvjHeartIcon className={iconClassName()} />;
 }
 
-function ConnectIcon() {
+function ChatsIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
-      <path d="M7.2 12.8 12.8 7.2M6.4 6.4h3.2M10.4 13.6h3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7.6 14.8H5.4A2.4 2.4 0 0 1 3 12.4v-2a2.4 2.4 0 0 1 2.4-2.4h2.2M12.4 5.2h2.2A2.4 2.4 0 0 1 17 7.6v2a2.4 2.4 0 0 1-2.4 2.4h-2.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 6.6A2.6 2.6 0 0 1 6.6 4h6.8A2.6 2.6 0 0 1 16 6.6v4.5a2.6 2.6 0 0 1-2.6 2.6H9.2l-3.6 2.3.9-2.3H6.6A2.6 2.6 0 0 1 4 11.1V6.6Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="8.1" cy="8.9" r=".8" fill="currentColor" />
+      <circle cx="10" cy="8.9" r=".8" fill="currentColor" />
+      <circle cx="11.9" cy="8.9" r=".8" fill="currentColor" />
     </svg>
   );
 }
@@ -87,7 +89,7 @@ const items: MenuItem[] = [
   { href: "/", label: "Home", match: (pathname) => pathname === "/", Icon: HomeIcon },
   { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
   { href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
-  { href: "/connect", label: "Connect", match: (pathname) => pathname === "/connect", Icon: ConnectIcon },
+  { href: "/chats", label: "Chats", match: (pathname) => pathname === "/chats" || pathname.startsWith("/chats/"), Icon: ChatsIcon },
   { href: "/friends", label: "Friends", match: (pathname) => pathname === "/friends", Icon: FriendsIcon },
   { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
   { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me", Icon: FavoritesIcon }
