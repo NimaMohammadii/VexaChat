@@ -63,7 +63,6 @@ const placeholderSections: HomeSectionItem[] = [
 ];
 
 export function HomePageRedesign({ profiles, homeSections, homepageImages, homeHeroConfig }: HomePageRedesignProps) {
-  const featuredProfiles = profiles.slice(0, 8);
   const sortedHomepageImages = [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
   const displaySections = homeSections.length ? homeSections : placeholderSections;
   const displaySectionsWithImages = displaySections.map((section, index) => ({
@@ -72,37 +71,46 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
   }));
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="flex min-h-screen items-center justify-center px-6 py-32">
+    <main className="min-h-screen overflow-hidden bg-black text-white">
+      <section className="relative flex min-h-[82vh] items-center justify-center px-6 py-20 md:py-24">
+        <svg aria-hidden="true" className="pointer-events-none absolute -left-24 top-10 h-64 w-64 text-[#FF2E63]/20 blur-[1px] md:h-80 md:w-80" viewBox="0 0 200 200" fill="none">
+          <path d="M100 10C149.706 10 190 50.2944 190 100C190 149.706 149.706 190 100 190C50.2944 190 10 149.706 10 100C10 50.2944 50.2944 10 100 10Z" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M40 100C40 66.8629 66.8629 40 100 40" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+        <svg aria-hidden="true" className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 text-white/20 md:h-[24rem] md:w-[24rem]" viewBox="0 0 240 240" fill="none">
+          <rect x="30" y="30" width="180" height="180" rx="36" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M70 170L170 70" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="120" cy="120" r="16" fill="currentColor" fillOpacity="0.22" />
+        </svg>
         <motion.div
-          className="mx-auto max-w-4xl text-center"
+          className="relative z-10 mx-auto max-w-4xl text-center"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.16 } } }}
         >
-          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-8 inline-flex rounded-full border border-white/[0.06] px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-[#d6d6d6]">
-            Private social editorial
+          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
+            Minimal • Modern • Private
           </motion.p>
           <motion.h1
             variants={fadeInUp}
             transition={{ duration: 0.75, ease: "easeOut" }}
-            className="text-5xl font-semibold leading-[1.08] tracking-[0.02em] md:text-7xl"
+            className="text-4xl font-semibold leading-[1.08] tracking-[0.01em] md:text-6xl lg:text-7xl"
           >
-            {homeHeroConfig.heroTitle} {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
+            Bold connections, zero clutter. {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
           </motion.h1>
           <motion.p
             variants={fadeInUp}
             transition={{ duration: 0.75, ease: "easeOut" }}
-            className="mx-auto mt-10 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-lg"
+            className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base"
           >
-            {homeHeroConfig.heroSubtitle}
+            طراحی مدرن، ریتم سریع، و فضای خلوت‌تر برای دیده‌شدن آدم‌های واقعی. {homeHeroConfig.heroSubtitle}
           </motion.p>
-          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-12 flex justify-center gap-3">
-            <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
+          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-8 flex justify-center gap-2.5">
+            <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
               {homeHeroConfig.primaryCtaText}
             </Link>
             {homeHeroConfig.secondaryCtaText ? (
-              <Link href="/me/create-profile" className="inline-flex rounded-full border border-white/[0.2] px-9 py-4 text-sm font-medium tracking-[0.03em] text-white transition-all duration-300 hover:border-[#FF2E63]/70 md:text-base">
+              <Link href="/me/create-profile" className="inline-flex rounded-full border border-white/[0.2] px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-all duration-300 hover:border-[#FF2E63]/70 md:text-base">
                 {homeHeroConfig.secondaryCtaText}
               </Link>
             ) : null}
@@ -110,14 +118,14 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
         </motion.div>
       </section>
 
-      <section id="home-sections" className="mx-auto w-full max-w-7xl px-6 pb-20">
+      <section id="home-sections" className="mx-auto w-full max-w-7xl px-6 pb-12 md:pb-14">
         {displaySectionsWithImages.map((section, index) => {
           const flip = index % 2 === 1;
 
           return (
             <motion.article
               key={section.id}
-              className="grid items-center gap-10 py-24 md:py-28 lg:grid-cols-2 lg:gap-16"
+              className="grid items-center gap-7 py-14 md:py-16 lg:grid-cols-2 lg:gap-10"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
@@ -129,21 +137,21 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
                 </div>
               </motion.div>
               <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-1" : ""}>
-                <h2 className="text-3xl font-medium leading-tight tracking-[0.02em] md:text-5xl">{section.title}</h2>
-                {section.subtitle ? <p className="mt-6 max-w-xl text-base leading-relaxed text-[#A1A1A1] md:text-lg">{section.subtitle}</p> : null}
+                <h2 className="text-3xl font-medium leading-tight tracking-[0.01em] md:text-4xl">{section.title}</h2>
+                {section.subtitle ? <p className="mt-4 max-w-xl text-base leading-relaxed text-[#A1A1A1] md:text-lg">{section.subtitle}</p> : null}
               </motion.div>
             </motion.article>
           );
         })}
       </section>
 
-      <section id="featured-profiles" className="mx-auto w-full max-w-7xl px-6 py-24">
+      <section id="featured-profiles" className="mx-auto w-full max-w-7xl px-6 py-16 md:py-18">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }}>
-          <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">Featured Preview</h2>
-          <div className="mt-6 h-px w-full bg-white/10" />
+          <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">Magnetic Preview</h2>
+          <div className="mt-4 h-px w-full bg-white/10" />
         </motion.div>
 
-        <motion.div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
+        <motion.div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
           {displaySectionsWithImages.slice(0, 6).map((section) => (
             <motion.article key={`preview-${section.id}`} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]">
               <div className="aspect-[4/5] overflow-hidden bg-black">
@@ -157,19 +165,19 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
         </motion.div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-6 py-24 text-center">
+      <section className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.8, ease: "easeOut" }}>
-          <h2 className="text-4xl font-semibold tracking-[0.04em] md:text-6xl">Privacy is luxury.</h2>
-          <p className="mx-auto mt-8 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
-            Every connection is intentional. Verified access, curated profiles, and a discreet environment for people who value quality over noise.
+          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">کم، دقیق، جذاب.</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
+            اینجا هر کارت، هر متن و هر حرکت حساب‌شده‌ست؛ بدون شلوغی اضافه و با حس لوکس مینیمال.
           </p>
         </motion.div>
       </section>
 
-      <section className="px-6 pb-28 pt-10">
+      <section className="px-6 pb-20 pt-4">
         <motion.div className="mx-auto max-w-3xl text-center" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }}>
-          <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Enter the experience.</p>
-          <Link href="/me/create-profile" className="mt-10 inline-flex rounded-full border border-white px-9 py-4 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
+          <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Ready to stand out?</p>
+          <Link href="/me/create-profile" className="mt-7 inline-flex rounded-full border border-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
             Create Your Profile
           </Link>
         </motion.div>
