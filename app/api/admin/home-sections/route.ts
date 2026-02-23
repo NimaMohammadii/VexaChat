@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { ensureDefaultHomeSections, getPlaceholderSection } from "@/lib/homepage-config";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
 
@@ -24,6 +25,12 @@ function parseOptionalString(value: unknown) {
   return trimmed.length ? trimmed : undefined;
 }
 
+function parseRequiredString(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
 export async function GET() {
   const hasAdminAccess = await isAdminAccessAllowed();
 
@@ -32,10 +39,8 @@ export async function GET() {
   }
 
   try {
-    const sections = await prisma.homeSection.findMany({
-      orderBy: [{ order: "asc" }, { createdAt: "desc" }]
-    });
-
+    await ensureDefaultHomeSections();
+    const sections = await prisma.homeSection.findMany({ orderBy: [{ order: "asc" }, { createdAt: "desc" }] });
     return NextResponse.json({ sections });
   } catch (err) {
     logPrismaError("[admin/home-sections][GET] Prisma query failed", err);
@@ -51,31 +56,34 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = (await request.json()) as {
+    const body = (await request.json().catch(() => ({}))) as {
+      key?: string;
       title?: string;
       subtitle?: string;
       imageUrl?: string;
+      ctaText?: string;
+      ctaHref?: string;
       order?: number;
       isActive?: boolean;
     };
 
-    const title = String(body.title ?? "").trim();
-    const imageUrl = String(body.imageUrl ?? "").trim();
-
-    if (!title || !imageUrl) {
-      return NextResponse.json({ error: "title and imageUrl are required" }, { status: 400 });
-    }
-
     const latest = await prisma.homeSection.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
     const nextOrder = (latest?.order ?? -1) + 1;
+    const fallback = getPlaceholderSection(nextOrder);
+
+    const title = parseRequiredString(body.title) ?? fallback.title;
+    const imageUrl = parseRequiredString(body.imageUrl) ?? fallback.imageUrl;
 
     const created = await prisma.homeSection.create({
       data: {
+        key: parseOptionalString(body.key) ?? fallback.key,
         title,
-        subtitle: parseOptionalString(body.subtitle) ?? null,
+        subtitle: parseOptionalString(body.subtitle),
         imageUrl,
+        ctaText: parseOptionalString(body.ctaText),
+        ctaHref: parseOptionalString(body.ctaHref),
         order: Number.isFinite(body.order) ? Number(body.order) : nextOrder,
-        isActive: body.isActive ?? true
+        isActive: typeof body.isActive === "boolean" ? body.isActive : true
       }
     });
 

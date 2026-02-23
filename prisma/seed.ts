@@ -1,6 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from "@prisma/client";
 
-export const defaultHomePageConfig = {
+const prisma = new PrismaClient();
+
+const defaultHomePageConfig = {
   heroTitle: "Where Desire Meets",
   heroAccentWord: "Discretion",
   heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.",
@@ -8,14 +10,12 @@ export const defaultHomePageConfig = {
   secondaryCtaText: "Create Your Profile"
 };
 
-const defaultSectionImage = "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80";
-
-export const defaultHomeSections = [
+const defaultHomeSections = [
   {
     key: "hero_bg",
     title: "Curated introductions built for calm attention",
     subtitle: "A quieter way to discover verified people and meaningful chemistry.",
-    imageUrl: defaultSectionImage,
+    imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80",
     ctaText: "Start Exploring",
     ctaHref: "#featured-profiles",
     order: 0,
@@ -53,55 +53,23 @@ export const defaultHomeSections = [
   }
 ];
 
-function homeSectionKeyFromOrder(order: number) {
-  return `section_${order}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-export async function ensureHomePageConfig() {
-  const existing = await prisma.homePageConfig.findFirst();
-
-  if (existing) {
-    return existing;
+async function main() {
+  const existingConfig = await prisma.homePageConfig.findFirst();
+  if (!existingConfig) {
+    await prisma.homePageConfig.create({ data: defaultHomePageConfig });
   }
 
-  return prisma.homePageConfig.create({
-    data: defaultHomePageConfig
-  });
-}
-
-export async function ensureDefaultHomeSections() {
-  const existingCount = await prisma.homeSection.count();
-
-  if (existingCount > 0) {
-    return;
+  const sectionCount = await prisma.homeSection.count();
+  if (sectionCount === 0) {
+    await prisma.homeSection.createMany({ data: defaultHomeSections });
   }
+}
 
-  await prisma.homeSection.createMany({
-    data: defaultHomeSections.map((section, index) => ({
-      ...section,
-      key: section.key || homeSectionKeyFromOrder(index)
-    }))
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
-
-}
-
-export async function getActiveHomeSections() {
-  return prisma.homeSection.findMany({
-    where: { isActive: true },
-    orderBy: [{ order: "asc" }, { createdAt: "desc" }]
-  });
-}
-
-
-export function getPlaceholderSection(index: number) {
-  return {
-    key: homeSectionKeyFromOrder(index),
-    title: `New Section ${index + 1}`,
-    subtitle: "Add a short subtitle to describe this block.",
-    imageUrl: defaultSectionImage,
-    ctaText: "Learn More",
-    ctaHref: "/",
-    order: index,
-    isActive: true
-  };
-}

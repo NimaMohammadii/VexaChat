@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 enum VerificationStatus {
   pending
   approved
@@ -15,25 +14,25 @@ enum VerificationStatus {
 }
 
 model Profile {
-  id              String   @id @default(uuid())
+  id              String     @id @default(uuid())
   name            String
   age             Int
   city            String
   price           Int
   description     String
   images          String[]
-  height          String   @default("")
-  languages       String[] @default([])
-  availability    String   @default("Unavailable")
-  verified        Boolean  @default(false)
-  isTop           Boolean  @default(false)
-  experienceYears Int      @default(0)
-  rating          Float    @default(0)
-  services        String[] @default([])
-  imageUrl        String   @default("")
+  height          String     @default("")
+  languages       String[]   @default([])
+  availability    String     @default("Unavailable")
+  verified        Boolean    @default(false)
+  isTop           Boolean    @default(false)
+  experienceYears Int        @default(0)
+  rating          Float      @default(0)
+  services        String[]   @default([])
+  imageUrl        String     @default("")
   ownerUserId     String?
   rejectionNote   String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime   @default(now())
   favorites       Favorite[]
 
   @@index([ownerUserId])
@@ -53,11 +52,11 @@ model Favorite {
 }
 
 model UserProfile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  name      String
-  username  String   @unique
-  bio       String   @default("")
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  name             String
+  username         String   @unique
+  bio              String   @default("")
   avatarUrl        String   @default("")
   identityVerified Boolean  @default(false)
   identityStatus   String   @default("none")
@@ -87,8 +86,8 @@ enum MeetRequestStatus {
 }
 
 model MeetCard {
-  id               String   @id @default(cuid())
-  userId           String   @unique
+  id               String    @id @default(cuid())
+  userId           String    @unique
   displayName      String
   age              Int
   city             String
@@ -97,11 +96,11 @@ model MeetCard {
   intentTags       String[]
   bio              String?
   imageUrl         String
-  isAdultConfirmed Boolean  @default(false)
+  isAdultConfirmed Boolean   @default(false)
   adultConfirmedAt DateTime?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model MeetLikeRequest {
@@ -126,12 +125,12 @@ model MeetMatch {
 }
 
 model MeetNotification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   type      String
   data      Json
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model MeetPass {
@@ -152,9 +151,12 @@ model MeetBlock {
 
 model HomeSection {
   id        String   @id @default(cuid())
+  key       String   @unique
   title     String
   subtitle  String?
   imageUrl  String
+  ctaText   String?
+  ctaHref   String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

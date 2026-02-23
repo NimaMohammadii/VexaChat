@@ -1,7 +1,7 @@
 import { GoogleAuthControl } from "@/components/google-auth-control";
 import { HomePageRedesign } from "@/components/home-page-redesign";
 import { PublicHeader } from "@/components/public-header";
-import { ensureHomePageConfig } from "@/lib/homepage-config";
+import { ensureDefaultHomeSections, ensureHomePageConfig, getActiveHomeSections } from "@/lib/homepage-config";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
@@ -77,10 +77,8 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   const homeSections = await (async () => {
     try {
-      return await prisma.homeSection.findMany({
-        where: { isActive: true },
-        orderBy: [{ order: "asc" }, { createdAt: "desc" }]
-      });
+      await ensureDefaultHomeSections();
+      return await getActiveHomeSections();
     } catch {
       return [];
     }
