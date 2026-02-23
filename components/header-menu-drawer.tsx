@@ -82,10 +82,10 @@ const items: MenuItem[] = [
 
 function MenuIcon({ open }: { open: boolean }) {
   return (
-    <span className="relative block h-4 w-5" aria-hidden>
-      <span className={`absolute left-0 top-0 h-[1.5px] w-5 rounded-full bg-white transition ${open ? "translate-y-[7px] rotate-45" : ""}`} />
-      <span className={`absolute left-0 top-[7px] h-[1.5px] w-5 rounded-full bg-white transition ${open ? "opacity-0" : "opacity-100"}`} />
-      <span className={`absolute left-0 top-[14px] h-[1.5px] w-5 rounded-full bg-white transition ${open ? "-translate-y-[7px] -rotate-45" : ""}`} />
+    <span className="relative block h-5 w-6" aria-hidden>
+      <span className={`absolute left-0 top-0 h-[2px] w-6 rounded-full bg-gradient-to-r from-white via-white to-[#FF2E63] shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 ${open ? "translate-y-[9px] rotate-45" : ""}`} />
+      <span className={`absolute left-0 top-[9px] h-[2px] w-6 rounded-full bg-white/95 transition-all duration-300 ${open ? "scale-x-0 opacity-0" : "opacity-100"}`} />
+      <span className={`absolute left-0 top-[18px] h-[2px] w-6 rounded-full bg-gradient-to-r from-[#FF2E63] via-white to-white shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 ${open ? "-translate-y-[9px] -rotate-45" : ""}`} />
     </span>
   );
 }
@@ -153,7 +153,7 @@ export function HeaderMenuDrawer() {
         aria-label="Open navigation menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-line/80 bg-white/[0.03] transition hover:border-white/30 hover:bg-white/[0.08] hover:shadow-[0_0_24px_rgba(255,255,255,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        className="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-[radial-gradient(circle_at_20%_20%,rgba(255,46,99,0.24),rgba(255,255,255,0.04)_55%,rgba(255,255,255,0.02))] transition-all duration-300 hover:scale-[1.03] hover:border-[#FF2E63]/60 hover:shadow-[0_0_30px_rgba(255,46,99,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2E63]/70"
       >
         <MenuIcon open={isOpen} />
       </button>
