@@ -1,17 +1,6 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
-
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
-function extensionFromType(type: string) {
-  if (type === "image/png") return "png";
-  if (type === "image/webp") return "webp";
-  if (type === "image/gif") return "gif";
-  if (type === "image/avif") return "avif";
-  return "jpg";
-}
+import { saveHomeImageFile } from "@/lib/media-storage";
 
 export async function POST(request: NextRequest) {
   const hasAdminAccess = await isAdminAccessAllowed();
@@ -27,22 +16,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
 
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
+  try {
+    const uploaded = await saveHomeImageFile(file);
+    return NextResponse.json(uploaded);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to upload image";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  if (file.size > MAX_FILE_BYTES) {
-    return NextResponse.json({ error: "File must be 5MB or smaller" }, { status: 400 });
-  }
-
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const extension = extensionFromType(file.type);
-  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-  const relativeDir = path.join("uploads", "home");
-  const publicDir = path.join(process.cwd(), "public", relativeDir);
-
-  await mkdir(publicDir, { recursive: true });
-  await writeFile(path.join(publicDir, fileName), bytes);
-
-  return NextResponse.json({ url: `/${relativeDir}/${fileName}` });
 }
