@@ -18,6 +18,12 @@ function logPrismaError(context: string, err: unknown) {
   console.error(context, err);
 }
 
+function parseOptionalString(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
 export async function GET() {
   const hasAdminAccess = await isAdminAccessAllowed();
 
@@ -60,12 +66,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "title and imageUrl are required" }, { status: 400 });
     }
 
+    const latest = await prisma.homeSection.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
+    const nextOrder = (latest?.order ?? -1) + 1;
+
     const created = await prisma.homeSection.create({
       data: {
         title,
-        subtitle: String(body.subtitle ?? "").trim(),
+        subtitle: parseOptionalString(body.subtitle) ?? null,
         imageUrl,
-        order: Number.isFinite(body.order) ? Number(body.order) : 0,
+        order: Number.isFinite(body.order) ? Number(body.order) : nextOrder,
         isActive: body.isActive ?? true
       }
     });

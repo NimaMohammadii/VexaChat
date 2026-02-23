@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-
 function extensionFromType(type: string) {
   if (type === "image/png") return "png";
   if (type === "image/webp") return "webp";
+  if (type === "image/gif") return "gif";
+  if (type === "image/avif") return "avif";
   return "jpg";
 }
 
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
 
-  if (!allowedTypes.has(file.type)) {
-    return NextResponse.json({ error: "Only JPG, PNG, WebP are allowed" }, { status: 400 });
+  if (!file.type.startsWith("image/")) {
+    return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
   }
 
   if (file.size > MAX_FILE_BYTES) {

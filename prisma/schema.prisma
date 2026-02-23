@@ -153,7 +153,7 @@ model MeetBlock {
 model HomeSection {
   id        String   @id @default(cuid())
   title     String
-  subtitle  String
+  subtitle  String?
   imageUrl  String
   order     Int      @default(0)
   isActive  Boolean  @default(true)
@@ -161,4 +161,14 @@ model HomeSection {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, order])
+}
+
+model HomePageConfig {
+  id               String   @id @default(cuid())
+  heroTitle        String
+  heroAccentWord   String?
+  heroSubtitle     String
+  primaryCtaText   String
+  secondaryCtaText String?
+  updatedAt        DateTime @updatedAt
 }

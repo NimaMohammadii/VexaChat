@@ -1,6 +1,7 @@
 import { GoogleAuthControl } from "@/components/google-auth-control";
 import { HomePageRedesign } from "@/components/home-page-redesign";
 import { PublicHeader } from "@/components/public-header";
+import { ensureHomePageConfig } from "@/lib/homepage-config";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
@@ -66,6 +67,14 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   const favoriteProfileIds = favorites.map((item) => item.profileId);
 
+  const homeHeroConfig = await (async () => {
+    try {
+      return await ensureHomePageConfig();
+    } catch {
+      return null;
+    }
+  })();
+
   const homeSections = await (async () => {
     try {
       return await prisma.homeSection.findMany({
@@ -80,7 +89,7 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
   return (
     <>
       <PublicHeader rightSlot={<GoogleAuthControl />} />
-      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} />
+      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
     </>
   );
 }
