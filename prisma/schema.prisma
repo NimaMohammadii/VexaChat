@@ -177,8 +177,10 @@ model HomepageImage {
   id          String   @id @default(cuid())
   slot        String
   order       Int      @default(0)
-  url         String
-  storagePath String
+  url         String   @default("")
+  storagePath String   @default("")
+  contentType String   @default("image/jpeg")
+  data        Bytes?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
