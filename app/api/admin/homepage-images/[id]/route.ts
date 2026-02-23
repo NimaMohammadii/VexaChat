@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
-import { deleteHomepageImage, uploadHomepageImage } from "@/lib/homepage-image-storage";
+import { buildHomepageImageUrl, prepareHomepageImageUpload } from "@/lib/homepage-image-storage";
 import { prisma } from "@/lib/prisma";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -36,14 +36,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         return NextResponse.json({ error: "File must be 5MB or smaller" }, { status: 400 });
       }
 
-      const { url, storagePath } = await uploadHomepageImage(file);
+      const preparedUpload = await prepareHomepageImageUpload(file);
       const updated = await prisma.homepageImage.update({
         where: { id: params.id },
-        data: { url, storagePath }
+        data: {
+          url: "",
+          storagePath: preparedUpload.storagePath,
+          contentType: preparedUpload.contentType,
+          data: preparedUpload.data
+        }
       });
 
-      await deleteHomepageImage(existing.storagePath);
-      return NextResponse.json({ image: updated });
+      return NextResponse.json({ image: { ...updated, url: buildHomepageImageUrl(updated.id) } });
     }
 
     const body = (await request.json()) as { order?: number };
@@ -56,7 +60,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: { order: body.order }
     });
 
-    return NextResponse.json({ image: updated });
+    return NextResponse.json({ image: { ...updated, url: updated.data ? buildHomepageImageUrl(updated.id) : updated.url } });
   } catch (error) {
     console.error("[admin/homepage-images/:id][PATCH]", error);
     return NextResponse.json({ error: "Unable to update homepage image" }, { status: 500 });
@@ -75,7 +79,6 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
-    await deleteHomepageImage(existing.storagePath);
     await prisma.homepageImage.delete({ where: { id: params.id } });
     return NextResponse.json({ ok: true });
   } catch (error) {

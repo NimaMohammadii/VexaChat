@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
-import { uploadHomepageImage } from "@/lib/homepage-image-storage";
+import { buildHomepageImageUrl, prepareHomepageImageUpload } from "@/lib/homepage-image-storage";
 import { prisma } from "@/lib/prisma";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -31,7 +31,12 @@ export async function GET() {
       orderBy: [{ order: "asc" }, { createdAt: "desc" }]
     });
 
-    return NextResponse.json({ images });
+    const normalizedImages = images.map((image) => ({
+      ...image,
+      url: image.data ? buildHomepageImageUrl(image.id) : image.url
+    }));
+
+    return NextResponse.json({ images: normalizedImages });
   } catch (error) {
     logPrismaError("[admin/homepage-images][GET] Prisma query failed", error);
     return NextResponse.json({ error: "Unable to load homepage images" }, { status: 500 });
@@ -66,18 +71,20 @@ export async function POST(request: Request) {
       select: { order: true }
     });
 
-    const { url, storagePath } = await uploadHomepageImage(file);
+    const preparedUpload = await prepareHomepageImageUpload(file);
 
     const image = await prisma.homepageImage.create({
       data: {
         slot: "homepage",
         order: (latest?.order ?? -1) + 1,
-        url,
-        storagePath
+        url: "",
+        storagePath: preparedUpload.storagePath,
+        contentType: preparedUpload.contentType,
+        data: preparedUpload.data
       }
     });
 
-    return NextResponse.json({ image }, { status: 201 });
+    return NextResponse.json({ image: { ...image, url: buildHomepageImageUrl(image.id) } }, { status: 201 });
   } catch (error) {
     console.error("[admin/homepage-images][POST]", error);
     return NextResponse.json({ error: "Unable to upload homepage image" }, { status: 500 });

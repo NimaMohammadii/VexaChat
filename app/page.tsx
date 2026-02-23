@@ -3,6 +3,7 @@ import { HomePageRedesign } from "@/components/home-page-redesign";
 import { PublicHeader } from "@/components/public-header";
 import { ensureHomePageConfig } from "@/lib/homepage-config";
 import { prisma } from "@/lib/prisma";
+import { buildHomepageImageUrl } from "@/lib/homepage-image-storage";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -88,11 +89,17 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   const homepageImages = await (async () => {
     try {
-      return await prisma.homepageImage.findMany({
+      const images = await prisma.homepageImage.findMany({
         where: { slot: "homepage" },
         orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-        select: { id: true, url: true, order: true }
+        select: { id: true, url: true, order: true, data: true }
       });
+
+      return images.map((image) => ({
+        id: image.id,
+        order: image.order,
+        url: image.data ? buildHomepageImageUrl(image.id) : image.url
+      }));
     } catch {
       return [];
     }
