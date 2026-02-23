@@ -104,6 +104,38 @@ model Notification {
   @@index([isRead])
 }
 
+model Conversation {
+  id            String   @id @default(cuid())
+  userAId       String
+  userBId       String
+  startedAt     DateTime @default(now())
+  expiresAt     DateTime
+  lastMessageAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+  @@index([expiresAt])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  type           String
+  text           String?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
 model VerificationRequest {
   id        String             @id @default(uuid())
   userId    String
