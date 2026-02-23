@@ -54,6 +54,18 @@ function ProfileIcon() {
   );
 }
 
+
+function FriendsIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
+      <circle cx="7" cy="7.2" r="2.2" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="13.2" cy="8.2" r="1.8" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3.9 15.6a3.6 3.6 0 0 1 6.2-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M10.3 15.6a3 3 0 0 1 5.1-2.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function FavoritesIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
@@ -76,6 +88,7 @@ const items: MenuItem[] = [
   { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
   { href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
   { href: "/connect", label: "Connect", match: (pathname) => pathname === "/connect", Icon: ConnectIcon },
+  { href: "/friends", label: "Friends", match: (pathname) => pathname === "/friends", Icon: FriendsIcon },
   { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
   { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me", Icon: FavoritesIcon }
 ];
