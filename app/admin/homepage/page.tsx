@@ -34,6 +34,24 @@ const fadeUp = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
 
 type AdminHomepageTab = "hero" | "sections" | "images";
 
+const homepageImagePlaceholders = [
+  {
+    id: "placeholder-featured-1",
+    title: "Featured section 1",
+    subtitle: "Shown in the first homepage spotlight"
+  },
+  {
+    id: "placeholder-featured-2",
+    title: "Featured section 2",
+    subtitle: "Shown in the second homepage spotlight"
+  },
+  {
+    id: "placeholder-featured-3",
+    title: "Featured section 3",
+    subtitle: "Shown in the third homepage spotlight"
+  }
+] as const;
+
 export default function AdminHomepageManagerPage() {
   const [activeTab, setActiveTab] = useState<AdminHomepageTab>("hero");
   const [sections, setSections] = useState<HomeSection[]>([]);
@@ -60,6 +78,18 @@ export default function AdminHomepageManagerPage() {
     () => [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id)),
     [homepageImages]
   );
+
+  const homepageImageTargets = useMemo(() => {
+    if (sortedSections.length) {
+      return sortedSections.map((section) => ({
+        id: section.id,
+        title: section.title,
+        subtitle: section.subtitle
+      }));
+    }
+
+    return [...homepageImagePlaceholders];
+  }, [sortedSections]);
 
   useEffect(() => {
     if (!toast) return;
@@ -340,6 +370,32 @@ export default function AdminHomepageManagerPage() {
         {activeTab === "images" ? (
           <motion.article key="images" className="space-y-4 rounded-2xl border border-white/[0.08] bg-black/35 p-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
             <p className="text-sm text-white/75">These images are used for main homepage visuals in order. You can upload, replace, and reorder them.</p>
+
+            <div className="rounded-2xl border border-white/[0.08] bg-black/35 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Homepage image preview map</p>
+              <p className="mt-2 text-xs text-white/70">Each card shows where an image is used on the homepage. Change order to change placement.</p>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {homepageImageTargets.map((target, index) => {
+                  const mappedImage = sortedHomepageImages[index];
+
+                  return (
+                    <div key={target.id} className="rounded-xl border border-white/[0.08] bg-black/40 p-3">
+                      <p className="text-xs text-white/60">Slot {index + 1}</p>
+                      <p className="mt-1 text-sm font-medium text-white">{target.title}</p>
+                      <p className="mt-1 text-xs text-white/65">{target.subtitle?.trim() ? target.subtitle : "No subtitle"}</p>
+                      <div className="relative mt-3 h-24 overflow-hidden rounded-lg border border-white/[0.08] bg-black">
+                        {mappedImage ? (
+                          <Image src={mappedImage.url} alt={`${target.title} preview`} fill className="object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center px-3 text-center text-xs text-white/40">No image assigned yet</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <label className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">
                 Upload new image
