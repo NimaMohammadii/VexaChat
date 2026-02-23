@@ -13,6 +13,14 @@ type HomeSection = {
   isActive: boolean;
 };
 
+type HomepageImage = {
+  id: string;
+  slot: string;
+  order: number;
+  url: string;
+  storagePath: string;
+};
+
 type HomeConfig = {
   id: string;
   heroTitle: string;
@@ -27,6 +35,7 @@ const fadeUp = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
 export default function AdminHomepageManagerPage() {
   const [activeTab, setActiveTab] = useState<"hero" | "sections">("hero");
   const [sections, setSections] = useState<HomeSection[]>([]);
+  const [homepageImages, setHomepageImages] = useState<HomepageImage[]>([]);
   const [heroForm, setHeroForm] = useState({
     heroTitle: "",
     heroAccentWord: "",
@@ -45,6 +54,11 @@ export default function AdminHomepageManagerPage() {
     [sections]
   );
 
+  const sortedHomepageImages = useMemo(
+    () => [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id)),
+    [homepageImages]
+  );
+
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 1800);
@@ -59,19 +73,37 @@ export default function AdminHomepageManagerPage() {
     return (await response.json() as { url: string }).url;
   };
 
+  const uploadHomepageImage = async (file: File) => {
+    const data = new FormData();
+    data.set("file", file);
+    const response = await fetch("/api/admin/homepage-images", { method: "POST", body: data });
+    if (!response.ok) throw new Error("Upload failed");
+    return (await response.json() as { image: HomepageImage }).image;
+  };
+
+  const replaceHomepageImage = async (id: string, file: File) => {
+    const data = new FormData();
+    data.set("file", file);
+    const response = await fetch(`/api/admin/homepage-images/${id}`, { method: "PATCH", body: data });
+    if (!response.ok) throw new Error("Replace failed");
+    return (await response.json() as { image: HomepageImage }).image;
+  };
+
   const loadAll = async () => {
     setStatus("loading");
-    const [configResponse, sectionsResponse] = await Promise.all([
+    const [configResponse, sectionsResponse, imagesResponse] = await Promise.all([
       fetch("/api/admin/home-config", { cache: "no-store" }).catch(() => null),
-      fetch("/api/admin/home-sections", { cache: "no-store" }).catch(() => null)
+      fetch("/api/admin/home-sections", { cache: "no-store" }).catch(() => null),
+      fetch("/api/admin/homepage-images", { cache: "no-store" }).catch(() => null)
     ]);
 
-    if (!configResponse || !sectionsResponse) return setStatus("error");
-    if (configResponse.status === 403 || sectionsResponse.status === 403) return setStatus("forbidden");
-    if (!configResponse.ok || !sectionsResponse.ok) return setStatus("error");
+    if (!configResponse || !sectionsResponse || !imagesResponse) return setStatus("error");
+    if (configResponse.status === 403 || sectionsResponse.status === 403 || imagesResponse.status === 403) return setStatus("forbidden");
+    if (!configResponse.ok || !sectionsResponse.ok || !imagesResponse.ok) return setStatus("error");
 
     const configPayload = await configResponse.json() as { config: HomeConfig };
     const sectionsPayload = await sectionsResponse.json() as { sections: HomeSection[] };
+    const imagesPayload = await imagesResponse.json() as { images: HomepageImage[] };
 
     setHeroForm({
       heroTitle: configPayload.config.heroTitle,
@@ -81,6 +113,7 @@ export default function AdminHomepageManagerPage() {
       secondaryCtaText: configPayload.config.secondaryCtaText ?? ""
     });
     setSections(sectionsPayload.sections);
+    setHomepageImages(imagesPayload.images);
     setStatus("ready");
   };
 
@@ -120,6 +153,22 @@ export default function AdminHomepageManagerPage() {
     await Promise.all([
       fetch(`/api/admin/home-sections/${current.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: target.order }) }),
       fetch(`/api/admin/home-sections/${target.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: current.order }) })
+    ]);
+
+    await loadAll();
+  };
+
+  const moveHomepageImage = async (id: string, direction: -1 | 1) => {
+    const index = sortedHomepageImages.findIndex((item) => item.id === id);
+    const swapIndex = index + direction;
+    if (index < 0 || swapIndex < 0 || swapIndex >= sortedHomepageImages.length) return;
+
+    const current = sortedHomepageImages[index];
+    const target = sortedHomepageImages[swapIndex];
+
+    await Promise.all([
+      fetch(`/api/admin/homepage-images/${current.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: target.order }) }),
+      fetch(`/api/admin/homepage-images/${target.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: current.order }) })
     ]);
 
     await loadAll();
@@ -240,6 +289,77 @@ export default function AdminHomepageManagerPage() {
                 </motion.article>
               ))}
             </AnimatePresence>
+
+            <motion.article className="space-y-4 rounded-2xl border border-white/[0.08] bg-black/35 p-4" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const created = await uploadHomepageImage(file);
+                        setHomepageImages((current) => [...current, created]);
+                        setToast("Saved");
+                      } catch {
+                        setToast("Error");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-3">
+                {sortedHomepageImages.map((image, index) => (
+                  <div key={image.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.08] p-3">
+                    <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-white/[0.08]">
+                      <Image src={image.url} alt={`Homepage image ${index + 1}`} fill className="object-cover" />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, -1)} disabled={index === 0}>Up</button>
+                      <button className="rounded-full border border-white/20 px-3 py-1.5 text-xs" onClick={() => void moveHomepageImage(image.id, 1)} disabled={index === sortedHomepageImages.length - 1}>Down</button>
+                      <label className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70">
+                        Replace
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              const updated = await replaceHomepageImage(image.id, file);
+                              setHomepageImages((current) => current.map((item) => item.id === image.id ? updated : item));
+                              setToast("Saved");
+                            } catch {
+                              setToast("Error");
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        className="rounded-full border border-white/20 px-3 py-1.5 text-xs hover:border-[#FF2E63]/70"
+                        onClick={async () => {
+                          const response = await fetch(`/api/admin/homepage-images/${image.id}`, { method: "DELETE" });
+                          if (!response.ok) {
+                            setToast("Error");
+                            return;
+                          }
+                          setHomepageImages((current) => current.filter((item) => item.id !== image.id));
+                          setToast("Saved");
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.article>
           </motion.div>
         )}
       </AnimatePresence>

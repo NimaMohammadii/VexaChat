@@ -172,3 +172,15 @@ model HomePageConfig {
   secondaryCtaText String?
   updatedAt        DateTime @updatedAt
 }
+
+model HomepageImage {
+  id          String   @id @default(cuid())
+  slot        String
+  order       Int      @default(0)
+  url         String
+  storagePath String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slot, order])
+}
