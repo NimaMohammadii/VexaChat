@@ -1,9 +1,9 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
 import { createSupabaseClient } from "@/lib/supabase-client";
 import { SvjHeartIcon, SvjHomeIcon } from "@/components/svj-icons";
 
@@ -105,7 +105,7 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
-export function HeaderMenuDrawer() {
+function HeaderMenuDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -154,6 +154,12 @@ export function HeaderMenuDrawer() {
     setIsOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Performance testing should be done in production build.");
+    }
+  }, []);
+
   const handleSignOut = async () => {
     const supabase = createSupabaseClient();
     await supabase.auth.signOut();
@@ -190,11 +196,12 @@ export function HeaderMenuDrawer() {
 
             <motion.aside
               key="drawer-content"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 280, damping: 30 }}
-              className="fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[380px] min-w-[270px] flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur"
+              initial={{ x: "-100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "-100%", opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[380px] min-w-[270px] flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[rgba(0,0,0,0.75)] px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)]"
+              style={{ willChange: "transform", transform: "translate3d(0,0,0)", backfaceVisibility: "hidden" }}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -left-14 top-[-12%] h-44 w-44 rounded-full bg-[#FF2E63]/18 blur-3xl" />
@@ -208,12 +215,12 @@ export function HeaderMenuDrawer() {
               </div>
 
               <nav className="relative z-10 space-y-2">
-                {items.map((item) => {
+                {items.map((item, index) => {
                   const isActive = item.match(pathname);
                   const Icon = item.Icon;
 
                   return (
-                    <motion.div key={item.href} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, delay: 0.04 * items.indexOf(item) }}>
+                    <motion.div key={item.href} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2, delay: 0.02 * index, ease: "easeOut" }}>
                       <Link
                         key={item.href}
                         href={item.href}
@@ -248,3 +255,8 @@ export function HeaderMenuDrawer() {
     </>
   );
 }
+
+const MemoizedHeaderMenuDrawer = React.memo(HeaderMenuDrawer);
+
+export { MemoizedHeaderMenuDrawer as HeaderMenuDrawer };
+export default MemoizedHeaderMenuDrawer;
