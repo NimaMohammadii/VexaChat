@@ -202,12 +202,14 @@ export default function ChatThreadPage() {
       setUploading(true);
       setUploadStatus("Preparing media...");
       let mediaType: "image" | "video";
-      let uploadFile = file;
+      let uploadPayload: Blob = file;
+      let uploadFileName = file.name || "upload";
 
       if (file.type.startsWith("image/")) {
         mediaType = "image";
         const compressed = await compressChatImage(file);
-        uploadFile = new File([compressed.blob], compressed.fileName, { type: compressed.mimeType });
+        uploadPayload = compressed.blob;
+        uploadFileName = compressed.fileName;
       } else if (file.type.startsWith("video/")) {
         mediaType = "video";
         await validateVideo(file);
@@ -218,7 +220,7 @@ export default function ChatThreadPage() {
       setUploadStatus("Uploading...");
       const formData = new FormData();
       formData.append("type", mediaType);
-      formData.append("file", uploadFile);
+      formData.append("file", uploadPayload, uploadFileName);
 
       const response = await fetch(`/api/chats/${params.id}/media/upload`, { method: "POST", body: formData });
       if (response.status === 410) return setExpired(true);
