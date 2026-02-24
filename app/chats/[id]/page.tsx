@@ -245,13 +245,20 @@ export default function ChatThreadPage() {
       if (response.status === 410) return setExpired(true);
 
       let payload: { error?: string } | null = null;
+      let failedToParseJson = false;
       try {
         payload = (await response.json()) as { error?: string };
       } catch {
         payload = null;
+        failedToParseJson = true;
       }
 
-      if (!response.ok) throw new Error(payload?.error || "Upload failed.");
+      if (!response.ok) {
+        if (payload?.error) {
+          throw new Error(payload.error);
+        }
+        throw new Error(failedToParseJson ? "Upload failed (server error)." : "Upload failed.");
+      }
 
       setUploadStatus("Uploaded");
       await pollForNewMessages();
