@@ -2,21 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 import { uploadChatMedia } from "@/lib/storage";
+import { extensionFromMime, resolveContentType, validateConversationId } from "./helpers";
 
 const VIDEO_MAX_SIZE_BYTES = 8 * 1024 * 1024;
 const IMAGE_TTL_HOURS = 6;
 const VIDEO_TTL_HOURS = 2;
 
-function extensionFromMime(mime: string) {
-  if (mime === "image/jpeg") return "jpg";
-  if (mime === "image/png") return "png";
-  if (mime === "video/mp4") return "mp4";
-  if (mime === "video/webm") return "webm";
-  if (mime === "video/quicktime") return "mov";
-  return "bin";
-}
-
 export async function POST(request: Request, { params }: { params: { conversationId: string } }) {
+  if (!validateConversationId(params.conversationId)) {
+    return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
+  }
+
   const user = await getAuthenticatedUser({ canSetCookies: true });
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,14 +36,24 @@ export async function POST(request: Request, { params }: { params: { conversatio
   const file = formData.get("file");
 
   if ((mediaType !== "image" && mediaType !== "video") || !(file instanceof File)) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Invalid upload payload", {
+        conversationId: params.conversationId,
+        mediaType,
+        fileType: file instanceof File ? file.type : null,
+        fileSize: file instanceof File ? file.size : null
+      });
+    }
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  if (mediaType === "image" && !file.type.startsWith("image/")) {
+  const contentType = resolveContentType(mediaType, file.type);
+
+  if (mediaType === "image" && !contentType.startsWith("image/")) {
     return NextResponse.json({ error: "Invalid image file" }, { status: 400 });
   }
 
-  if (mediaType === "video" && !file.type.startsWith("video/")) {
+  if (mediaType === "video" && !contentType.startsWith("video/")) {
     return NextResponse.json({ error: "Invalid video file" }, { status: 400 });
   }
 
@@ -56,13 +62,13 @@ export async function POST(request: Request, { params }: { params: { conversatio
   }
 
   const mediaId = crypto.randomUUID();
-  const extension = extensionFromMime(file.type);
+  const extension = extensionFromMime(file.type, mediaType);
   const storageKey = `${params.conversationId}/${mediaId}.${extension}`;
 
   const { publicUrl } = await uploadChatMedia({
     file,
     key: storageKey,
-    contentType: file.type || (mediaType === "image" ? "image/jpeg" : "video/mp4")
+    contentType
   });
 
   const now = new Date();
@@ -90,7 +96,7 @@ export async function POST(request: Request, { params }: { params: { conversatio
         url: storageKey,
         expiresAt,
         fileSize: file.size,
-        mimeType: file.type || null
+        mimeType: contentType
       }
     })
   ]);
