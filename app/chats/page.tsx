@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 type SearchUser = { id: string; username: string; avatarUrl: string; bio: string };
 type ConversationRow = {
@@ -76,17 +77,27 @@ export default function ChatsPage() {
   };
 
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="min-h-screen bg-black px-4 py-8 text-white"
-    >
-      <div className="mx-auto max-w-3xl rounded-3xl border border-white/[0.06] bg-white/[0.04] p-5 backdrop-blur-xl">
-        <h1 className="text-2xl font-semibold">Chats</h1>
+    <motion.main initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="min-h-screen overflow-hidden bg-[#030303] px-4 pb-14 text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-15%] top-16 h-56 w-56 rounded-full bg-[#FF2E63]/18 blur-[110px]" />
+        <div className="absolute right-[-20%] top-1/3 h-72 w-72 rounded-full bg-white/8 blur-[140px]" />
+      </div>
 
-        <div className="mt-4 rounded-2xl border border-white/[0.06] bg-[#111]/70 p-3">
-          <label className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-black/40 px-3 py-2">
+      <header className="relative mx-auto flex w-full max-w-3xl items-center gap-3 pt-6">
+        <HeaderMenuDrawer />
+      </header>
+
+      <div className="relative mx-auto mt-8 max-w-3xl">
+        <div className="mb-7 flex items-end justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.28em] text-white/45">private messaging</p>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight">Chats</h1>
+          </div>
+          <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-white/65">{sortedConversations.length} active</div>
+        </div>
+
+        <div>
+          <label className="group flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 backdrop-blur-xl transition-all duration-300 focus-within:border-[#FF2E63]/45 focus-within:bg-white/[0.05] focus-within:shadow-[0_0_28px_rgba(255,46,99,0.22)]">
             <svg viewBox="0 0 20 20" className="h-4 w-4 text-white/60" fill="none" aria-hidden>
               <circle cx="9" cy="9" r="5" stroke="currentColor" strokeWidth="1.5" />
               <path d="M13 13l3.2 3.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -110,14 +121,14 @@ export default function ChatsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/40 p-3"
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/45 p-3 backdrop-blur"
                   >
                     <img src={item.avatarUrl || "https://placehold.co/48x48/111111/FFFFFF?text=%40"} alt={item.username} className="h-10 w-10 rounded-full object-cover" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">@{item.username}</p>
                       <p className="truncate text-xs text-white/60">{item.bio || "Verified friend"}</p>
                     </div>
-                    <button onClick={() => void openConversation(item.id)} className="rounded-lg border border-white/15 px-3 py-1 text-xs hover:border-white/35">
+                    <button onClick={() => void openConversation(item.id)} className="rounded-xl border border-[#FF2E63]/35 bg-[#FF2E63]/12 px-3 py-1 text-xs text-white transition hover:border-[#FF2E63]/70 hover:bg-[#FF2E63]/20">
                       Message
                     </button>
                   </motion.div>
@@ -127,9 +138,9 @@ export default function ChatsPage() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-6">
-          <h2 className="text-sm text-white/75">Recent Chats</h2>
-          <div className="mt-2 space-y-2">
+        <div className="mt-8">
+          <h2 className="text-sm tracking-wide text-white/75">Recent Chats</h2>
+          <div className="mt-3 space-y-2.5">
             <AnimatePresence>
               {sortedConversations.map((chat, index) => {
                 const left = daysLeft(chat.expiresAt);
@@ -141,7 +152,7 @@ export default function ChatsPage() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ delay: index * 0.04 }}
                     onClick={() => router.push(`/chats/${chat.id}`)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-[#111]/70 p-3 text-left"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left backdrop-blur transition hover:border-[#FF2E63]/45 hover:bg-white/[0.05]"
                   >
                     <img src={chat.friendUser.avatarUrl || "https://placehold.co/40x40/111111/FFFFFF?text=%40"} alt={chat.friendUser.username} className="h-9 w-9 rounded-full object-cover" />
                     <div className="min-w-0 flex-1">
@@ -157,7 +168,7 @@ export default function ChatsPage() {
             </AnimatePresence>
 
             {!sortedConversations.length ? (
-              <div className="rounded-xl border border-white/[0.06] bg-black/35 p-8 text-center text-sm text-white/60">
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-8 text-center text-sm text-white/60">
                 No chats yet. Start by searching a username.
               </div>
             ) : null}
