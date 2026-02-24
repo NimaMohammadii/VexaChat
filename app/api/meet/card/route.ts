@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseMeetImageStorageKey, validateMeetCardPayload, type MeetCardPayload } from "@/lib/meet";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { deleteObjectByKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { deleteObjectByKey, isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 export async function GET() {
   const user = await getAuthenticatedUser({ canSetCookies: true });
@@ -22,6 +22,10 @@ export async function POST(request: Request) {
   const validated = validateMeetCardPayload(body, "create");
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
+  }
+
+  if (validated.data.imageUrl && isLegacyUrl(validated.data.imageUrl)) {
+    return NextResponse.json({ error: "imageUrl must be a storage key, not a direct URL." }, { status: 400 });
   }
 
   const existing = await prisma.meetCard.findUnique({ where: { userId: user.id } });
