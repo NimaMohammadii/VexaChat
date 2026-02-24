@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization") ?? "";
+  const cronSecret = request.headers.get("x-cron-secret") ?? "";
   const expected = process.env.CRON_SECRET;
 
-  if (!expected || authHeader !== `Bearer ${expected}`) {
+  if (!expected || cronSecret !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -386,7 +386,7 @@ export default function ChatThreadPage() {
         ) : null}
       </AnimatePresence>
 
-      {expired ? <div className="px-4 pb-2 pt-4 text-center text-sm text-white/60">This chat expired.</div> : null}
+      {expired ? <div className="px-4 pb-2 pt-4 text-center text-sm text-white/60">Chat expired</div> : null}
 
       <section className="relative flex min-h-0 flex-1 flex-col">
         <div

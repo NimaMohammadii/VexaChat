@@ -9,6 +9,24 @@ export async function GET() {
   }
 
   const now = new Date();
+
+  await prisma.$transaction([
+    prisma.message.deleteMany({
+      where: {
+        conversation: {
+          OR: [{ userAId: user.id }, { userBId: user.id }],
+          expiresAt: { lte: now }
+        }
+      }
+    }),
+    prisma.conversation.deleteMany({
+      where: {
+        OR: [{ userAId: user.id }, { userBId: user.id }],
+        expiresAt: { lte: now }
+      }
+    })
+  ]);
+
   const conversations = await prisma.conversation.findMany({
     where: {
       expiresAt: { gt: now },
