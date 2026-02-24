@@ -198,21 +198,40 @@ export default function ChatThreadPage() {
     event.target.value = "";
     if (!file || expired) return;
 
+    if (typeof params.id !== "string" || !params.id.trim()) {
+      setUploadStatus("Invalid conversation.");
+      return;
+    }
+
     try {
       setUploading(true);
       setUploadStatus("Preparing media...");
       let mediaType: "image" | "video";
       let uploadPayload: Blob = file;
       let uploadFileName = file.name || "upload";
+      const fileType = file.type || "";
+      const normalizedFileType = fileType.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      const looksLikeImage = normalizedFileType.startsWith("image/") || (!fileType && /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(fileName));
+      const looksLikeVideo = normalizedFileType.startsWith("video/") || (!fileType && /\.(mp4|mov|webm|m4v)$/i.test(fileName));
 
-      if (file.type.startsWith("image/")) {
+      if (looksLikeImage) {
         mediaType = "image";
-        const compressed = await compressChatImage(file);
+        const normalizedImageType = normalizedFileType || "image/jpeg";
+        const imageFile = fileType
+          ? file
+          : new File([file], uploadFileName, { type: normalizedImageType, lastModified: file.lastModified });
+        const compressed = await compressChatImage(imageFile);
         uploadPayload = compressed.blob;
         uploadFileName = compressed.fileName;
-      } else if (file.type.startsWith("video/")) {
+      } else if (looksLikeVideo) {
         mediaType = "video";
-        await validateVideo(file);
+        const normalizedVideoType = normalizedFileType || "video/mp4";
+        const videoFile = fileType
+          ? file
+          : new File([file], uploadFileName, { type: normalizedVideoType, lastModified: file.lastModified });
+        await validateVideo(videoFile);
+        uploadPayload = videoFile;
       } else {
         throw new Error("Please select an image or video file.");
       }
@@ -224,8 +243,15 @@ export default function ChatThreadPage() {
 
       const response = await fetch(`/api/chats/${params.id}/media/upload`, { method: "POST", body: formData });
       if (response.status === 410) return setExpired(true);
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error || "Upload failed.");
+
+      let payload: { error?: string } | null = null;
+      try {
+        payload = (await response.json()) as { error?: string };
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok) throw new Error(payload?.error || "Upload failed.");
 
       setUploadStatus("Uploaded");
       await pollForNewMessages();
