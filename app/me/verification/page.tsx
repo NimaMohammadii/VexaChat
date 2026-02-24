@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { createSupabaseClient } from "@/lib/supabase-client";
+import { deleteStoredObject, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 import { previewUrl, processImageFile } from "@/lib/image-processing";
 
 type VerificationRequest = {
@@ -109,27 +109,19 @@ export default function VerificationWizardPage() {
     setSubmitting(true);
     setStatus("Uploading verification images...");
 
-    const supabase = createSupabaseClient();
     const requestId = crypto.randomUUID();
-    const uploadedPaths: string[] = [];
+    const uploadedKeys: string[] = [];
 
     try {
       const docUrls: string[] = [];
       for (const file of selectedFiles) {
         const extension = file.name.split(".").pop() || "jpg";
-        const path = `${userId}/${requestId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error } = await supabase.storage.from("verification-docs").upload(path, file, {
-          upsert: false,
-          contentType: file.type
-        });
+        const key = `verification-docs/${userId}/${requestId}-${crypto.randomUUID()}.${extension}`;
+        const { uploadUrl } = await presignUpload(key, file.type || "application/octet-stream");
+        await uploadFileWithPresignedUrl(uploadUrl, file);
 
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        uploadedPaths.push(path);
-        const { data } = supabase.storage.from("verification-docs").getPublicUrl(path);
-        docUrls.push(data.publicUrl);
+        uploadedKeys.push(key);
+        docUrls.push(key);
       }
 
       const response = await fetch("/api/me/verification", {
@@ -148,8 +140,8 @@ export default function VerificationWizardPage() {
       setSelectedFiles([]);
       setStatus("Pending review.");
     } catch (error) {
-      if (uploadedPaths.length > 0) {
-        await supabase.storage.from("verification-docs").remove(uploadedPaths);
+      if (uploadedKeys.length > 0) {
+        await Promise.all(uploadedKeys.map((key) => deleteStoredObject(key)));
       }
       setStatus(error instanceof Error ? error.message : "Failed to submit verification.");
     } finally {

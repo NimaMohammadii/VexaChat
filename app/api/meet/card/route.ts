@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { parseStoragePathFromUrl, validateMeetCardPayload, type MeetCardPayload } from "@/lib/meet";
-import { createSupabaseServerClient, getAuthenticatedUser } from "@/lib/supabase-server";
+import { parseMeetImageStorageKey, validateMeetCardPayload, type MeetCardPayload } from "@/lib/meet";
+import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { deleteObjectByKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 export async function GET() {
   const user = await getAuthenticatedUser({ canSetCookies: true });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const card = await prisma.meetCard.findUnique({ where: { userId: user.id } });
-  return NextResponse.json({ card });
+  if (!card) return NextResponse.json({ card: null });
+
+  return NextResponse.json({ card: { ...card, imageUrl: await resolveStoredFileUrl(card.imageUrl) } });
 }
 
 export async function POST(request: Request) {
@@ -54,10 +57,9 @@ export async function POST(request: Request) {
   });
 
   if (existing?.imageUrl && existing.imageUrl !== card.imageUrl) {
-    const oldPath = parseStoragePathFromUrl(existing.imageUrl);
-    if (oldPath) {
-      const supabase = createSupabaseServerClient({ canSetCookies: false });
-      await supabase.storage.from("meet-images").remove([oldPath]);
+    const oldKey = parseMeetImageStorageKey(existing.imageUrl);
+    if (oldKey) {
+      await deleteObjectByKey(oldKey);
     }
   }
 

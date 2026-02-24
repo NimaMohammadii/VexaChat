@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSupabaseServerClient, getAuthenticatedUser } from "@/lib/supabase-server";
+import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { deleteObjectByKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type UpdatePayload = {
   verified?: unknown;
@@ -46,29 +47,13 @@ function readStringArray(value: unknown) {
   return value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean);
 }
 
-async function deleteProfileStorageObjects(userId: string, profileId: string) {
-  const supabase = createSupabaseServerClient();
-  const bucket = "profile-images";
-  const prefix = `${userId}/${profileId}`;
-
-  const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 100 });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  if (!data || data.length === 0) {
+async function deleteProfileStorageObjects(keys: string[]) {
+  try {
+    await Promise.all(keys.map((key) => deleteObjectByKey(key)));
     return { error: null };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "unknown error" };
   }
-
-  const paths = data.map((item) => `${prefix}/${item.name}`);
-  const { error: removeError } = await supabase.storage.from(bucket).remove(paths);
-
-  if (removeError) {
-    return { error: removeError.message };
-  }
-
-  return { error: null };
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
@@ -84,7 +69,8 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const storageResult = await deleteProfileStorageObjects(user.id, params.id);
+  const existingKeys = [existing.imageUrl, ...(Array.isArray(existing.images) ? existing.images : [])].filter(Boolean);
+  const storageResult = await deleteProfileStorageObjects(existingKeys);
   if (storageResult.error) {
     return NextResponse.json({ error: `Failed to remove profile images: ${storageResult.error}` }, { status: 500 });
   }
@@ -159,6 +145,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
   }
 
+  if (imageUrls !== undefined) {
+    const previousKeys = [existing.imageUrl, ...(Array.isArray(existing.images) ? existing.images : [])].filter(Boolean);
+    const nextSet = new Set(imageUrls);
+    const removed = previousKeys.filter((value) => !nextSet.has(value));
+    await Promise.all(removed.map((key) => deleteObjectByKey(key)));
+  }
+
   const data = {
     ...(body.name !== undefined ? { name: readString(body.name) } : {}),
     ...(body.age !== undefined ? { age: readNumber(body.age) } : {}),
@@ -180,5 +173,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     data
   });
 
-  return NextResponse.json({ profile });
+  return NextResponse.json({
+    profile: {
+      ...profile,
+      imageUrl: await resolveStoredFileUrl(profile.imageUrl),
+      images: await Promise.all((Array.isArray(profile.images) ? profile.images : []).map((v) => resolveStoredFileUrl(v)))
+    }
+  });
 }

@@ -17,19 +17,19 @@ export type MeetCardPayload = {
   isActive?: boolean;
 };
 
-export function parseStoragePathFromUrl(url: string) {
-  const marker = "/storage/v1/object/public/meet-images/";
-  const authenticatedMarker = "/storage/v1/object/authenticated/meet-images/";
+export function parseMeetImageStorageKey(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    const marker = "/storage/v1/object/public/meet-images/";
+    const authenticatedMarker = "/storage/v1/object/authenticated/meet-images/";
 
-  if (url.includes(marker)) {
-    return url.split(marker)[1] ?? null;
+    if (trimmed.includes(marker)) return trimmed.split(marker)[1] ?? null;
+    if (trimmed.includes(authenticatedMarker)) return trimmed.split(authenticatedMarker)[1] ?? null;
+    return null;
   }
 
-  if (url.includes(authenticatedMarker)) {
-    return url.split(authenticatedMarker)[1] ?? null;
-  }
-
-  return null;
+  return trimmed;
 }
 
 export function orderedUserPair(firstUserId: string, secondUserId: string) {

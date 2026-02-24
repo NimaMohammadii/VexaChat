@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const statusRank = {
   pending: 0,
@@ -33,12 +34,12 @@ export async function GET() {
 
   const profileByUserId = new Map(userProfiles.map((profile) => [profile.userId, profile]));
 
-  const verifications = requests
-    .map((item) => ({
+  const verifications = await Promise.all(requests
+    .map(async (item) => ({
       ...item,
-      docUrls: Array.isArray(item.docUrls) ? item.docUrls.filter((doc): doc is string => typeof doc === "string") : [],
+      docUrls: await Promise.all((Array.isArray(item.docUrls) ? item.docUrls.filter((doc): doc is string => typeof doc === "string") : []).map((doc) => resolveStoredFileUrl(doc))),
       userProfile: profileByUserId.get(item.userId) ?? null
-    }))
+    })))
     .sort((a, b) => {
       const statusDiff = statusRank[a.status] - statusRank[b.status];
       if (statusDiff !== 0) {

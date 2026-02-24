@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { createSupabaseClient } from "@/lib/supabase-client";
+import { deleteStoredObject, presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 
 type ListingForm = {
   name: string;
@@ -47,6 +47,7 @@ export default function EditProfilePage() {
   const [profile, setProfile] = useState<OwnedProfile | null>(null);
   const [listingForm, setListingForm] = useState<ListingForm | null>(null);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [displayImageUrls, setDisplayImageUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -93,6 +94,12 @@ export default function EditProfilePage() {
     void load();
   }, []);
 
+
+  useEffect(() => {
+    Promise.all(uploadedImageUrls.map((value) => presignRead(value).catch(() => ""))).then((urls) => {
+      setDisplayImageUrls(urls.filter(Boolean));
+    });
+  }, [uploadedImageUrls]);
   const uploadedCountLabel = useMemo(() => `${uploadedImageUrls.length}/2 uploaded`, [uploadedImageUrls.length]);
 
   const onFileSelected = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -121,56 +128,36 @@ export default function EditProfilePage() {
       return;
     }
 
-    const supabase = createSupabaseClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const meResponse = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+    if (!meResponse || !meResponse.ok) {
       setStatus("You must be signed in to upload.");
       return;
     }
+    const mePayload = (await meResponse.json()) as { user: { id: string } };
 
     setUploading(true);
     setStatus("Uploading images...");
 
-    const prefix = `${user.id}/${profile.id}`;
-    const uploadedPaths: string[] = [];
+    const uploadedKeys: string[] = [];
 
     try {
-      const { data: existingFiles, error: listError } = await supabase.storage.from("profile-images").list(prefix, { limit: 100 });
-      if (listError) {
-        throw new Error(listError.message);
-      }
-
-      if (existingFiles && existingFiles.length > 0) {
-        const existingPaths = existingFiles.map((item) => `${prefix}/${item.name}`);
-        const { error: removeError } = await supabase.storage.from("profile-images").remove(existingPaths);
-        if (removeError) {
-          throw new Error(removeError.message);
-        }
-      }
-
+      await Promise.all(uploadedImageUrls.map((key) => deleteStoredObject(key)));
       const nextUrls: string[] = [];
       for (const file of files) {
         const extension = file.name.split(".").pop() || "jpg";
-        const path = `${prefix}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage.from("profile-images").upload(path, file, { upsert: false, contentType: file.type });
+        const key = `profile-images/${mePayload.user.id}/${crypto.randomUUID()}-${profile.id}.${extension}`;
+        const { uploadUrl } = await presignUpload(key, file.type || "application/octet-stream");
+        await uploadFileWithPresignedUrl(uploadUrl, file);
 
-        if (uploadError) {
-          throw new Error(uploadError.message);
-        }
-
-        uploadedPaths.push(path);
-        const { data } = supabase.storage.from("profile-images").getPublicUrl(path);
-        nextUrls.push(data.publicUrl);
+        uploadedKeys.push(key);
+        nextUrls.push(key);
       }
 
       setUploadedImageUrls(nextUrls.slice(0, 2));
       setStatus("Images uploaded.");
     } catch (error) {
-      if (uploadedPaths.length > 0) {
-        await supabase.storage.from("profile-images").remove(uploadedPaths);
+      if (uploadedKeys.length > 0) {
+        await Promise.all(uploadedKeys.map((key) => deleteStoredObject(key)));
       }
       setStatus(error instanceof Error ? error.message : "Upload failed.");
     } finally {
@@ -277,6 +264,7 @@ export default function EditProfilePage() {
           </div>
 
           <textarea className="bw-input min-h-28" placeholder="Description" value={listingForm.description} onChange={(e) => setListingForm((p) => p ? ({ ...p, description: e.target.value }) : p)} required />
+          {displayImageUrls.length ? <div className="grid grid-cols-2 gap-2">{displayImageUrls.map((src) => <img key={src} src={src} className="h-24 w-full rounded-lg object-cover" alt="Preview" />)}</div> : null}
           <div className="flex items-center gap-3">
             <button type="submit" className="bw-button" disabled={saving || uploading}>{saving ? "Saving..." : "Update Profile"}</button>
             <Link href="/me" className="bw-button-muted">Cancel</Link>

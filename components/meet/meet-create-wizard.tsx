@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChangeEvent, useState } from "react";
-import { createSupabaseClient } from "@/lib/supabase-client";
+import { presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 
 type FormState = {
   displayName: string;
@@ -33,22 +33,31 @@ export function MeetCreateWizard() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
 
   const onUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setUploading(true);
     setError(null);
-    const supabase = createSupabaseClient();
-    const path = `cards/${crypto.randomUUID()}-${file.name.replace(/\s+/g, "-")}`;
-    const upload = await supabase.storage.from("meet-images").upload(path, file, { cacheControl: "3600", upsert: false });
-    if (upload.error) {
-      setError(upload.error.message);
+    const meResponse = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+    if (!meResponse || !meResponse.ok) {
+      setError("You must be signed in to upload.");
       setUploading(false);
       return;
     }
-    const { data } = supabase.storage.from("meet-images").getPublicUrl(path);
-    setForm((current) => ({ ...current, imageUrl: data.publicUrl }));
+    const mePayload = (await meResponse.json()) as { user: { id: string } };
+    const extension = file.name.split(".").pop() || "jpg";
+    const key = `meet-images/${mePayload.user.id}/${crypto.randomUUID()}.${extension}`;
+    try {
+      const { uploadUrl } = await presignUpload(key, file.type || "application/octet-stream");
+      await uploadFileWithPresignedUrl(uploadUrl, file);
+      setForm((current) => ({ ...current, imageUrl: key }));
+      const readUrl = await presignRead(key);
+      setPreviewUrl(readUrl);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Unable to upload image.");
+    }
     setUploading(false);
   };
 
@@ -99,7 +108,7 @@ export function MeetCreateWizard() {
               Upload profile image (gallery/files)
               <input type="file" accept="image/*" className="mt-3 block w-full text-xs" onChange={onUpload} />
             </label>
-            {form.imageUrl && <img src={form.imageUrl} alt="preview" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
+            {previewUrl && <img src={previewUrl} alt="preview" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
             {error && <p className="text-sm text-white/70">{error}</p>}
             <motion.button whileTap={{ scale: 0.97 }} className="bw-button" disabled={uploading || saving || !form.imageUrl} onClick={() => void submit()}>{saving ? "Saving..." : uploading ? "Uploading..." : "Save card"}</motion.button>
           </>

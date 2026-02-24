@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type VerificationPayload = {
   requestId?: string;
@@ -38,14 +39,14 @@ export async function GET() {
     orderBy: { createdAt: "desc" }
   });
 
-  return NextResponse.json({
-    request: latestRequest
-      ? {
-        ...latestRequest,
-        docUrls: Array.isArray(latestRequest.docUrls) ? latestRequest.docUrls.filter((doc): doc is string => typeof doc === "string") : []
-      }
-      : null
-  });
+  const requestPayload = latestRequest
+    ? {
+      ...latestRequest,
+      docUrls: await Promise.all((Array.isArray(latestRequest.docUrls) ? latestRequest.docUrls.filter((doc): doc is string => typeof doc === "string") : []).map((doc) => resolveStoredFileUrl(doc)))
+    }
+    : null;
+
+  return NextResponse.json({ request: requestPayload });
 }
 
 export async function POST(request: Request) {
