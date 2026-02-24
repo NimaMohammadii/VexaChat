@@ -36,6 +36,7 @@ export default function ChatThreadPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const [showExpiryInfo, setShowExpiryInfo] = useState(false);
+  const didInitialScrollRef = useRef(false);
 
   const isNearBottom = useCallback(() => {
     const node = messagesContainerRef.current;
@@ -213,8 +214,18 @@ export default function ChatThreadPage() {
   }, [clearPolling, expired, isAuthenticated, isPageVisible, startPolling]);
 
   useEffect(() => {
-    if (messages.length && isNearBottom()) {
+    if (!messages.length) {
+      return;
+    }
+
+    if (!didInitialScrollRef.current) {
+      didInitialScrollRef.current = true;
       scrollToBottom("auto");
+      return;
+    }
+
+    if (isNearBottom()) {
+      scrollToBottom("smooth");
     }
   }, [isNearBottom, messages.length, scrollToBottom]);
 
@@ -262,30 +273,31 @@ export default function ChatThreadPage() {
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
       style={{
-        backgroundImage:
-          "radial-gradient(circle at 50% 0%, rgba(95,0,32,0.3), transparent 40%), radial-gradient(circle at 20% 100%, rgba(56,0,16,0.36), transparent 55%), #050203"
+        background: "#000"
       }}
     >
       <div className="pointer-events-none absolute inset-0">
         <motion.div
-          animate={{ y: [0, 14, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 opacity-70"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(134,15,52,0.65) 0.7px, transparent 0.8px), radial-gradient(circle, rgba(134,15,52,0.45) 0.5px, transparent 0.8px)",
-            backgroundSize: "24px 24px, 18px 18px",
-            backgroundPosition: "0 0, 9px 11px"
-          }}
+          animate={{ y: [0, -14, 0], x: [0, 8, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -left-20 top-16 h-56 w-56 rounded-full bg-white/[0.06] blur-3xl"
         />
         <motion.div
-          animate={{ y: [0, 18, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 opacity-45"
+          animate={{ y: [0, 10, 0], x: [0, -8, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -right-16 top-40 h-44 w-44 rounded-full border border-white/[0.08]"
+        />
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-32 left-1/2 h-40 w-40 -translate-x-1/2 rounded-[2.5rem] border border-white/[0.06]"
+        />
+        <motion.div
+          animate={{ opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0"
           style={{
-            backgroundImage: "radial-gradient(circle, rgba(176,32,80,0.45) 0.6px, transparent 0.7px)",
-            backgroundSize: "30px 30px",
-            backgroundPosition: "12px 7px"
+            backgroundImage: "radial-gradient(circle at 15% 10%, rgba(255,255,255,0.07) 0, rgba(255,255,255,0) 30%), radial-gradient(circle at 85% 80%, rgba(255,255,255,0.06) 0, rgba(255,255,255,0) 35%)"
           }}
         />
       </div>
@@ -310,7 +322,17 @@ export default function ChatThreadPage() {
             </svg>
           </motion.button>
 
-          <div className="flex-1" />
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2">
+            <img
+              src={friend?.avatarUrl || "https://placehold.co/40x40/111111/ffffff?text=U"}
+              alt={friend?.username || "User avatar"}
+              className="h-10 w-10 rounded-full border border-white/15 object-cover"
+            />
+            <div className="min-w-0 text-left">
+              <p className="truncate text-sm font-semibold text-white">{friend?.username ? `@${friend.username}` : "User"}</p>
+              <p className="text-xs text-white/50">Private chat</p>
+            </div>
+          </div>
 
           <motion.button
             initial={{ opacity: 0, x: 6 }}
@@ -346,18 +368,18 @@ export default function ChatThreadPage() {
               exit={{ opacity: 0, scale: 0.92, y: 10 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={(event) => event.stopPropagation()}
-              className="w-full max-w-sm rounded-3xl border border-[#8f2447]/45 bg-[linear-gradient(170deg,rgba(30,3,12,0.95)_0%,rgba(9,2,6,0.95)_100%)] p-5 text-right shadow-[0_18px_70px_rgba(56,0,18,0.65)]"
+              className="w-full max-w-sm rounded-3xl border border-white/10 bg-black p-5 text-left shadow-[0_18px_70px_rgba(0,0,0,0.65)]"
             >
-              <p className="text-base font-semibold text-[#ffd3df]">زمان ماندگاری چت</p>
-              <p className="mt-3 text-sm leading-7 text-white/80">
-                این صفحه‌ی چت از لحظه شروع، تا <span className="font-semibold text-[#ffb5c8]">۱۵ روز</span> فعال می‌مونه.
-                بعد از پایان این بازه، گفتگوها به‌صورت خودکار پاک می‌شن تا حریم خصوصی بهتر حفظ بشه.
+              <p className="text-base font-semibold text-white">Chat expiration</p>
+              <p className="mt-3 text-sm leading-7 text-white/75">
+                This conversation stays active for <span className="font-semibold text-white">15 days</span> from the moment it starts.
+                After that window, messages are automatically removed to keep the chat private.
               </p>
               <button
                 onClick={() => setShowExpiryInfo(false)}
-                className="mt-5 w-full rounded-2xl border border-[#8f2447]/70 bg-[#6f1734]/35 py-2.5 text-sm font-medium text-[#ffd6e2]"
+                className="mt-5 w-full rounded-2xl border border-white/15 bg-white/[0.06] py-2.5 text-sm font-medium text-white"
               >
-                متوجه شدم
+                Got it
               </button>
             </motion.div>
           </motion.div>
@@ -374,7 +396,7 @@ export default function ChatThreadPage() {
               setShowNewMessagesPill(false);
             }
           }}
-          className="min-h-0 flex-1 overflow-y-auto px-4 pb-28 pt-4 [scrollbar-width:thin] [scroll-behavior:smooth]"
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3 [scrollbar-width:thin] [scroll-behavior:smooth]"
         >
           {nextCursor ? (
             <button
@@ -394,13 +416,13 @@ export default function ChatThreadPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className={`mb-2.5 flex ${mine ? "justify-end" : "justify-start"}`}
+                  className={`mb-2 flex ${mine ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       mine
-                        ? "border border-[rgba(120,0,30,0.35)] bg-[linear-gradient(180deg,rgba(255,255,255,0.085)_0%,rgba(255,255,255,0.03)_32%)] text-white backdrop-blur-md"
-                        : "border border-white/[0.08] bg-[rgba(255,255,255,0.04)] text-white/90"
+                        ? "border border-white/[0.15] bg-white/[0.08] text-white backdrop-blur-md"
+                        : "border border-white/[0.08] bg-[rgba(255,255,255,0.03)] text-white/90"
                     }`}
                   >
                     {message.text}
@@ -436,7 +458,7 @@ export default function ChatThreadPage() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: "easeOut", delay: 0.14 }}
-        className="z-20 border-t border-transparent bg-[rgba(0,0,0,0.65)] p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-lg"
+        className="z-20 border-t border-transparent bg-[rgba(0,0,0,0.86)] p-3 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-lg"
         style={{
           borderImage: "linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.16), rgba(255,255,255,0.02)) 1",
           boxShadow: "0 -28px 42px rgba(0,0,0,0.55)"
