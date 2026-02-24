@@ -1,7 +1,7 @@
 "use client";
 
-import { ChangeEvent, useRef, useState } from "react";
-import { createSupabaseClient } from "@/lib/supabase-client";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { deleteStoredObject, presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 import { previewUrl, processImageFile } from "@/lib/image-processing";
 
 type MeData = {
@@ -42,6 +42,7 @@ export function MeProfileForm({ data }: { data: MeData }) {
   const [bio, setBio] = useState(data.profile?.bio ?? "");
   const [avatarUrl, setAvatarUrl] = useState(data.profile?.avatarUrl ?? data.user.avatarUrl ?? "");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarDisplayUrl, setAvatarDisplayUrl] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -49,6 +50,15 @@ export function MeProfileForm({ data }: { data: MeData }) {
   const cameraFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const shownName = name || data.user.email;
+
+  useEffect(() => {
+    if (!avatarUrl) {
+      setAvatarDisplayUrl("");
+      return;
+    }
+
+    presignRead(avatarUrl).then(setAvatarDisplayUrl).catch(() => setAvatarDisplayUrl(""));
+  }, [avatarUrl]);
 
   const onSave = async () => {
     setIsSaving(true);
@@ -99,53 +109,22 @@ export function MeProfileForm({ data }: { data: MeData }) {
         return;
       }
       setAvatarPreview(previewUrl(processedFile));
-      const supabase = createSupabaseClient();
       const ext = extensionFromFile(processedFile);
       const userId = data.user.id;
+      const key = `avatars/${userId}/${crypto.randomUUID()}.${ext}`;
 
-      const { data: existing, error: listError } = await supabase.storage.from("avatars").list(userId, { limit: 100 });
+      const { uploadUrl } = await presignUpload(key, processedFile.type || "application/octet-stream");
+      await uploadFileWithPresignedUrl(uploadUrl, processedFile);
+      await deleteStoredObject(avatarUrl);
 
-      if (listError) {
-        setStatus(listError.message || "Unable to prepare avatar upload.");
-        return;
-      }
-
-      const paths = (existing ?? []).map((f) => `${userId}/${f.name}`);
-
-      if (paths.length) {
-        const { error: removeError } = await supabase.storage.from("avatars").remove(paths);
-
-        if (removeError) {
-          setStatus(removeError.message || "Unable to replace existing avatar.");
-          return;
-        }
-      }
-
-      const path = `${userId}/avatar.${ext}`;
-
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, processedFile, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: processedFile.type
-      });
-
-      if (uploadError) {
-        setStatus(uploadError.message || "Unable to upload avatar.");
-        return;
-      }
-
-      const {
-        data: { publicUrl }
-      } = supabase.storage.from("avatars").getPublicUrl(path);
-
-      const nextPublicUrl = `${publicUrl}?v=${Date.now()}`;
+      const nextAvatarKey = key;
 
       const profileResponse = await fetch("/api/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ avatarUrl: nextPublicUrl })
+        body: JSON.stringify({ avatarUrl: nextAvatarKey })
       });
 
       const profileResult = (await profileResponse.json()) as { error?: string; profile?: { avatarUrl: string } };
@@ -155,9 +134,10 @@ export function MeProfileForm({ data }: { data: MeData }) {
         return;
       }
 
-      const nextAvatarUrl = profileResult.profile?.avatarUrl ?? nextPublicUrl;
+      const nextAvatarUrl = profileResult.profile?.avatarUrl ?? nextAvatarKey;
       setAvatarUrl(nextAvatarUrl);
-      window.dispatchEvent(new CustomEvent("profile-avatar-updated", { detail: { avatarUrl: nextAvatarUrl } }));
+      const nextDisplayUrl = await presignRead(nextAvatarUrl).catch(() => "");
+      window.dispatchEvent(new CustomEvent("profile-avatar-updated", { detail: { avatarUrl: nextDisplayUrl || nextAvatarUrl } }));
       setStatus("Avatar uploaded.");
     } catch (_error) {
       setStatus("Unable to upload avatar right now.");
@@ -181,8 +161,8 @@ export function MeProfileForm({ data }: { data: MeData }) {
   return (
     <div className="bw-card mx-auto w-full max-w-2xl space-y-6 p-6 md:p-8">
       <div className="flex items-center gap-4 border-b border-line pb-5">
-        {(avatarPreview || avatarUrl) ? (
-          <img src={avatarPreview || avatarUrl} alt={shownName} className="h-14 w-14 rounded-full object-cover" />
+        {(avatarPreview || avatarDisplayUrl) ? (
+          <img src={avatarPreview || avatarDisplayUrl} alt={shownName} className="h-14 w-14 rounded-full object-cover" />
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-lg font-semibold text-paper">
             {initial(shownName)}

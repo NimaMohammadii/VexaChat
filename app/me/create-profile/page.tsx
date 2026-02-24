@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { createSupabaseClient } from "@/lib/supabase-client";
+import { deleteStoredObject, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 import { processImageFile, previewUrl } from "@/lib/image-processing";
 
 type CreateListingForm = {
@@ -86,30 +86,21 @@ export default function CreateProfilePage() {
       return;
     }
 
-    const supabase = createSupabaseClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const meResponse = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+    if (!meResponse || !meResponse.ok) {
       setStatus("You must be signed in to upload.");
       return;
     }
+    const mePayload = (await meResponse.json()) as { user: { id: string } };
+    const user = mePayload.user;
 
     setUploading(true);
     setStatus("Uploading images...");
 
     const profileId = draftProfileId;
-    const uploadedPaths: string[] = [];
+    const uploadedKeys: string[] = [];
 
     try {
-      const prefix = `${user.id}/${profileId}`;
-      const { data: existingFiles } = await supabase.storage.from("profile-images").list(prefix, { limit: 100 });
-      if (existingFiles && existingFiles.length > 0) {
-        const existingPaths = existingFiles.map((item) => `${prefix}/${item.name}`);
-        await supabase.storage.from("profile-images").remove(existingPaths);
-      }
-
       const nextUrls: string[] = [];
 
       const processedFiles = await Promise.all(files.map((file) => processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: "square" })));
@@ -120,23 +111,19 @@ export default function CreateProfilePage() {
 
       for (const file of processedFiles) {
         const extension = file.name.split(".").pop() || "webp";
-        const path = `${user.id}/${profileId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error } = await supabase.storage.from("profile-images").upload(path, file, { upsert: false });
+        const key = `profile-images/${user.id}/${crypto.randomUUID()}-${profileId}.${extension}`;
+        const { uploadUrl } = await presignUpload(key, file.type || "application/octet-stream");
+        await uploadFileWithPresignedUrl(uploadUrl, file);
 
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        uploadedPaths.push(path);
-        const { data } = supabase.storage.from("profile-images").getPublicUrl(path);
-        nextUrls.push(data.publicUrl);
+        uploadedKeys.push(key);
+        nextUrls.push(key);
       }
 
       setUploadedImageUrls(nextUrls.slice(0, 2));
       setStatus(`Images uploaded (${nextUrls.length}/2).`);
     } catch (error) {
-      if (uploadedPaths.length > 0) {
-        await supabase.storage.from("profile-images").remove(uploadedPaths);
+      if (uploadedKeys.length > 0) {
+        await Promise.all(uploadedKeys.map((key) => deleteStoredObject(key)));
       }
       setUploadedImageUrls([]);
       setStatus(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);

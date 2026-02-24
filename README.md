@@ -108,7 +108,7 @@ Required environment variable:
 
 ## Ephemeral chat media cron (Render)
 
-Image and video chat media are stored in Supabase Storage bucket `chat-media` and cleaned after their TTL:
+Image and video chat media are stored in Cloudflare R2 and cleaned after their TTL:
 
 - images: 6 hours
 - videos: 2 hours
@@ -121,7 +121,20 @@ Configure Render Cron to call:
 
 Required environment variables:
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_ANON_KEY` (if used by your client stack)
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_ENDPOINT`
 - `CRON_SECRET`
+
+
+### Cloudflare R2 storage configuration
+
+Required environment variables:
+
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_ENDPOINT`

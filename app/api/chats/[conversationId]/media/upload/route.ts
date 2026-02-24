@@ -79,20 +79,13 @@ export async function POST(
 
     const mediaId = crypto.randomUUID();
     const extension = extensionFromMime(file.type, mediaType);
-    const storageKey = `${conversationId}/${mediaId}.${extension}`;
-
-    const { publicUrl } = await uploadChatMedia({
-      file,
-      key: storageKey,
-      contentType
-    });
 
     const now = new Date();
     const expiresAt = new Date(
       now.getTime() + (mediaType === "image" ? IMAGE_TTL_HOURS : VIDEO_TTL_HOURS) * 60 * 60 * 1000
     );
 
-    const [, message, media] = await prisma.$transaction([
+    const [, message] = await prisma.$transaction([
       prisma.conversation.update({ where: { id: conversation.id }, data: { lastMessageAt: now } }),
       prisma.message.create({
         data: {
@@ -101,23 +94,30 @@ export async function POST(
           type: mediaType,
           text: null
         }
-      }),
-      prisma.chatMedia.create({
-        data: {
-          id: mediaId,
-          conversationId: conversation.id,
-          senderId: user.id,
-          type: mediaType,
-          storageKey,
-          url: storageKey,
-          expiresAt,
-          fileSize: file.size,
-          mimeType: contentType
-        }
       })
     ]);
 
-    const linked = await prisma.chatMedia.update({ where: { id: media.id }, data: { messageId: message.id } });
+    const storageKey = `chat/${conversationId}/${message.id}/${mediaId}.${extension}`;
+    const { publicUrl } = await uploadChatMedia({
+      file,
+      key: storageKey,
+      contentType
+    });
+
+    const linked = await prisma.chatMedia.create({
+      data: {
+        id: mediaId,
+        conversationId: conversation.id,
+        senderId: user.id,
+        type: mediaType,
+        storageKey,
+        url: storageKey,
+        expiresAt,
+        fileSize: file.size,
+        mimeType: contentType,
+        messageId: message.id
+      }
+    });
 
     return NextResponse.json({
       media: {
@@ -138,7 +138,7 @@ export async function POST(
       error: errorMessage
     });
 
-    if (errorMessage.includes("Missing SUPABASE_URL") || errorMessage.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+    if (errorMessage.includes("Missing required environment variable: R2_")) {
       return NextResponse.json({ error: "Server storage is not configured." }, { status: 500 });
     }
 

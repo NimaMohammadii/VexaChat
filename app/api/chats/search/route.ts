@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 import { areUsersFriends, areUsersBlocked } from "@/lib/chats";
 
 export async function GET(request: Request) {
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       filtered.push({
         id: profile.userId,
         username: profile.username,
-        avatarUrl: profile.avatarUrl,
+        avatarUrl: profile.avatarUrl ? await resolveStoredFileUrl(profile.avatarUrl) : "",
         bio: profile.bio.slice(0, 120)
       });
     }

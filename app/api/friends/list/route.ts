@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 export async function GET() {
   const user = await getAuthenticatedUser({ canSetCookies: true });
@@ -28,15 +29,15 @@ export async function GET() {
   const profileMap = new Map(profiles.map((item) => [item.userId, item]));
 
   return NextResponse.json({
-    friends: friendIds.map((friendId) => {
+    friends: await Promise.all(friendIds.map(async (friendId) => {
       const profile = profileMap.get(friendId);
       return {
         id: friendId,
         username: profile?.username ?? "unknown",
-        avatarUrl: profile?.avatarUrl ?? "",
+        avatarUrl: profile?.avatarUrl ? await resolveStoredFileUrl(profile.avatarUrl) : "",
         bio: (profile?.bio ?? "").slice(0, 120),
         verified: Boolean(profile?.identityVerified)
       };
-    })
+    }))
   });
 }

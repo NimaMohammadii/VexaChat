@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 export async function GET() {
   const user = await getAuthenticatedUser({ canSetCookies: true });
@@ -25,7 +26,8 @@ export async function GET() {
     select: { userId: true, displayName: true, age: true, city: true, imageUrl: true }
   });
 
-  const cardByUser = Object.fromEntries(cards.map((card) => [card.userId, card]));
+  const cardsWithUrls = await Promise.all(cards.map(async (card) => ({ ...card, imageUrl: await resolveStoredFileUrl(card.imageUrl) })));
+  const cardByUser = Object.fromEntries(cardsWithUrls.map((card) => [card.userId, card]));
 
   return NextResponse.json({ incoming, outgoing, matches, notifications, cardByUser, currentUserId: user.id });
 }

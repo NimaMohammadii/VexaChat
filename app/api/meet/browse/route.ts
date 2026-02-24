@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const TAKE_COUNT = 25;
 
@@ -39,5 +40,7 @@ export async function GET() {
     take: TAKE_COUNT
   });
 
-  return NextResponse.json({ cards });
+  const cardsWithUrls = await Promise.all(cards.map(async (card) => ({ ...card, imageUrl: await resolveStoredFileUrl(card.imageUrl) })));
+
+  return NextResponse.json({ cards: cardsWithUrls });
 }

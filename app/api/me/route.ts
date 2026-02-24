@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type MePayload = {
   name?: string;
@@ -81,7 +82,7 @@ export async function GET() {
       name: user.user_metadata.full_name ?? user.user_metadata.name ?? "",
       avatarUrl: user.user_metadata.avatar_url ?? ""
     },
-    profile
+    profile: profile ? { ...profile, avatarUrl: await resolveStoredFileUrl(profile.avatarUrl) } : null
   });
 }
 
