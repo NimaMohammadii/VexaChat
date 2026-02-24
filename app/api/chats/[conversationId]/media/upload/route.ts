@@ -8,8 +8,21 @@ const VIDEO_MAX_SIZE_BYTES = 8 * 1024 * 1024;
 const IMAGE_TTL_HOURS = 6;
 const VIDEO_TTL_HOURS = 2;
 
-export async function POST(request: Request, { params }: { params: { conversationId: string } }) {
-  if (!validateConversationId(params.conversationId)) {
+export async function POST(
+  request: Request,
+  { params }: { params?: { conversationId?: string | null } | null }
+) {
+  const conversationId = typeof params?.conversationId === "string" ? params.conversationId.trim() : "";
+
+  if (!validateConversationId(conversationId)) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Invalid upload conversation id", {
+        conversationId: params?.conversationId ?? null,
+        mediaType: null,
+        fileType: null,
+        fileSize: null
+      });
+    }
     return NextResponse.json({ error: "Invalid conversation id" }, { status: 400 });
   }
 
@@ -18,7 +31,7 @@ export async function POST(request: Request, { params }: { params: { conversatio
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const conversation = await prisma.conversation.findUnique({ where: { id: params.conversationId } });
+  const conversation = await prisma.conversation.findUnique({ where: { id: conversationId } });
   if (!conversation) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -38,7 +51,7 @@ export async function POST(request: Request, { params }: { params: { conversatio
   if ((mediaType !== "image" && mediaType !== "video") || !(file instanceof File)) {
     if (process.env.NODE_ENV === "development") {
       console.error("Invalid upload payload", {
-        conversationId: params.conversationId,
+        conversationId,
         mediaType,
         fileType: file instanceof File ? file.type : null,
         fileSize: file instanceof File ? file.size : null
@@ -63,7 +76,7 @@ export async function POST(request: Request, { params }: { params: { conversatio
 
   const mediaId = crypto.randomUUID();
   const extension = extensionFromMime(file.type, mediaType);
-  const storageKey = `${params.conversationId}/${mediaId}.${extension}`;
+  const storageKey = `${conversationId}/${mediaId}.${extension}`;
 
   const { publicUrl } = await uploadChatMedia({
     file,
