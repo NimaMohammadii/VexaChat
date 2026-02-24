@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 function parseOptionalString(value: unknown) {
   if (value === null || value === undefined) return undefined;
@@ -48,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
     });
 
-    return NextResponse.json({ section: updated });
+    return NextResponse.json({ section: { ...updated, imageUrl: await resolveStoredFileUrl(updated.imageUrl) } });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return NextResponse.json({ error: "Section not found" }, { status: 404 });

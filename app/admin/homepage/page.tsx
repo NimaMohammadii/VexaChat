@@ -102,7 +102,16 @@ export default function AdminHomepageManagerPage() {
     data.set("file", file);
     const response = await fetch("/api/admin/upload", { method: "POST", body: data });
     if (!response.ok) throw new Error("Upload failed");
-    return ((await response.json()) as { url: string }).url;
+
+    const payload = (await response.json()) as { key: string; uploadUrl: string };
+    const uploadResponse = await fetch(payload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file
+    });
+
+    if (!uploadResponse.ok) throw new Error("Upload failed");
+    return payload.key;
   };
 
   const uploadHomepageImage = async (file: File) => {
