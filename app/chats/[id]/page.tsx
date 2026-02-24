@@ -206,7 +206,8 @@ export default function ChatThreadPage() {
 
       if (file.type.startsWith("image/")) {
         mediaType = "image";
-        uploadFile = await compressChatImage(file);
+        const compressed = await compressChatImage(file);
+        uploadFile = new File([compressed.blob], compressed.fileName, { type: compressed.mimeType });
       } else if (file.type.startsWith("video/")) {
         mediaType = "video";
         await validateVideo(file);

@@ -3,6 +3,12 @@ const IMAGE_QUALITY = 0.72;
 const VIDEO_MAX_DURATION_SECONDS = 12;
 export const VIDEO_MAX_SIZE_BYTES = 8 * 1024 * 1024;
 
+export type CompressedChatImage = {
+  blob: Blob;
+  fileName: string;
+  mimeType: string;
+};
+
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -43,7 +49,7 @@ function hasTransparency(image: HTMLImageElement) {
   return false;
 }
 
-export async function compressChatImage(file: File) {
+export async function compressChatImage(file: File): Promise<CompressedChatImage> {
   const image = await loadImage(file);
   const scale = Math.min(1, IMAGE_MAX_DIMENSION / Math.max(image.width, image.height));
   const width = Math.max(1, Math.round(image.width * scale));
@@ -75,7 +81,11 @@ export async function compressChatImage(file: File) {
 
   const extension = keepPng ? "png" : "jpg";
   const fileName = `${file.name.replace(/\.[^/.]+$/, "")}.${extension}`;
-  return new File([blob], fileName, { type: mimeType });
+  return {
+    blob,
+    fileName,
+    mimeType
+  };
 }
 
 function getVideoDuration(file: File): Promise<number> {
