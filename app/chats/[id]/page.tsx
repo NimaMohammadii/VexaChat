@@ -35,6 +35,7 @@ export default function ChatThreadPage() {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
+  const [showExpiryInfo, setShowExpiryInfo] = useState(false);
 
   const isNearBottom = useCallback(() => {
     const node = messagesContainerRef.current;
@@ -262,12 +263,31 @@ export default function ChatThreadPage() {
       className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
       style={{
         backgroundImage:
-          "radial-gradient(circle at 14% 16%, rgba(255,46,99,0.13), transparent 40%), radial-gradient(circle at 86% 76%, rgba(255,255,255,0.08), transparent 50%), radial-gradient(circle at 50% 105%, rgba(120,0,30,0.12), transparent 58%), #000"
+          "radial-gradient(circle at 50% 0%, rgba(95,0,32,0.3), transparent 40%), radial-gradient(circle at 20% 100%, rgba(56,0,16,0.36), transparent 55%), #050203"
       }}
     >
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-20 top-16 h-64 w-64 rounded-full border border-[#ff2e63]/25 blur-[1px]" />
-        <div className="absolute bottom-24 right-[-4.5rem] h-72 w-72 rounded-[2.5rem] border border-white/15" />
+        <motion.div
+          animate={{ y: [0, 14, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(134,15,52,0.65) 0.7px, transparent 0.8px), radial-gradient(circle, rgba(134,15,52,0.45) 0.5px, transparent 0.8px)",
+            backgroundSize: "24px 24px, 18px 18px",
+            backgroundPosition: "0 0, 9px 11px"
+          }}
+        />
+        <motion.div
+          animate={{ y: [0, 18, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 opacity-45"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(176,32,80,0.45) 0.6px, transparent 0.7px)",
+            backgroundSize: "30px 30px",
+            backgroundPosition: "12px 7px"
+          }}
+        />
       </div>
 
       <motion.header
@@ -290,41 +310,59 @@ export default function ChatThreadPage() {
             </svg>
           </motion.button>
 
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: 0.12 }}
-            className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 backdrop-blur-md"
-          >
-            <img
-              src={friend?.avatarUrl || "https://placehold.co/44x44/111111/FFFFFF?text=%40"}
-              alt={friend?.username ?? "User"}
-              className="h-11 w-11 rounded-full border border-white/20 object-cover"
-            />
-            <div className="min-w-0 text-left">
-              <p className="truncate text-base font-semibold tracking-tight text-white">{friend?.username ?? "Chat"}</p>
-              <p className="truncate text-xs text-white/50">@{friend?.username ?? "username"}</p>
-            </div>
-          </motion.div>
+          <div className="flex-1" />
 
-          <motion.div
+          <motion.button
             initial={{ opacity: 0, x: 6 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.24, delay: 0.18 }}
+            onClick={() => setShowExpiryInfo(true)}
             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-md ${
               left <= 2 ? "border-[#7a001e]/70 bg-[#7a001e]/20 text-[#f3a4bb]" : "border-white/15 bg-white/[0.05] text-white/80"
             }`}
+            aria-label="Show chat expiration details"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
               <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
             </svg>
             <span>{left}d</span>
-          </motion.div>
+          </motion.button>
         </div>
-
-        <p className="pt-2 text-center text-xs text-white/55">Deletes in {left} day{left === 1 ? "" : "s"}</p>
       </motion.header>
+
+      <AnimatePresence>
+        {showExpiryInfo ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowExpiryInfo(false)}
+            className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 10 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              onClick={(event) => event.stopPropagation()}
+              className="w-full max-w-sm rounded-3xl border border-[#8f2447]/45 bg-[linear-gradient(170deg,rgba(30,3,12,0.95)_0%,rgba(9,2,6,0.95)_100%)] p-5 text-right shadow-[0_18px_70px_rgba(56,0,18,0.65)]"
+            >
+              <p className="text-base font-semibold text-[#ffd3df]">زمان ماندگاری چت</p>
+              <p className="mt-3 text-sm leading-7 text-white/80">
+                این صفحه‌ی چت از لحظه شروع، تا <span className="font-semibold text-[#ffb5c8]">۱۵ روز</span> فعال می‌مونه.
+                بعد از پایان این بازه، گفتگوها به‌صورت خودکار پاک می‌شن تا حریم خصوصی بهتر حفظ بشه.
+              </p>
+              <button
+                onClick={() => setShowExpiryInfo(false)}
+                className="mt-5 w-full rounded-2xl border border-[#8f2447]/70 bg-[#6f1734]/35 py-2.5 text-sm font-medium text-[#ffd6e2]"
+              >
+                متوجه شدم
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {expired ? <div className="px-4 pb-2 pt-4 text-center text-sm text-white/60">This chat expired.</div> : null}
 
