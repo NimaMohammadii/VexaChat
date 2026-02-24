@@ -252,14 +252,14 @@ export default function ChatThreadPage() {
       className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
       style={{
         backgroundImage:
-          "radial-gradient(circle at 20% 30%, rgba(120,0,20,0.15), transparent 40%), radial-gradient(circle at 80% 70%, rgba(120,0,20,0.10), transparent 50%), linear-gradient(#000,#000)"
+          "radial-gradient(circle at 15% 20%, rgba(120,0,30,0.08), transparent 40%), radial-gradient(circle at 80% 75%, rgba(120,0,30,0.06), transparent 50%), #000"
       }}
     >
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut", delay: 0.05 }}
-        className="z-20 border-b border-white/[0.08] bg-black/45 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)] backdrop-blur-xl"
+        className="z-20 border-b border-white/[0.08] bg-black px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)]"
       >
         <div className="flex items-center justify-between">
           <motion.button
@@ -279,7 +279,7 @@ export default function ChatThreadPage() {
             <img
               src={friend?.avatarUrl || "https://placehold.co/44x44/111111/FFFFFF?text=%40"}
               alt={friend?.username ?? "User"}
-              className="h-11 w-11 rounded-full object-cover ring-1 ring-white/20"
+              className="h-11 w-11 rounded-full border border-white/15 object-cover"
             />
             <div className="min-w-0 text-center">
               <p className="truncate text-base font-semibold tracking-tight text-white">{friend?.username ?? "Chat"}</p>
@@ -297,8 +297,8 @@ export default function ChatThreadPage() {
           className="pt-3"
         >
           <p
-            className={`mx-auto w-fit rounded-full border border-white/[0.08] bg-white/[0.06] px-4 py-1.5 text-xs backdrop-blur-md ${
-              left <= 2 ? "text-[#cf6f83]" : "text-white/70"
+              className={`mx-auto w-fit rounded-full border border-white/[0.08] bg-white/[0.05] px-4 py-1.5 text-xs backdrop-blur-md ${
+              left <= 2 ? "text-[#7a001e]" : "text-white/80"
             }`}
           >
             Deletes in {left} day{left === 1 ? "" : "s"}
@@ -340,7 +340,9 @@ export default function ChatThreadPage() {
                 >
                   <div
                     className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                      mine ? "bg-[rgba(120,0,20,0.25)] text-white backdrop-blur-md" : "bg-white/[0.05] text-white/90"
+                      mine
+                        ? "border border-[rgba(120,0,30,0.35)] bg-[rgba(255,255,255,0.03)] text-white backdrop-blur-md"
+                        : "border border-white/[0.08] bg-[rgba(255,255,255,0.04)] text-white/90"
                     }`}
                   >
                     {message.text}
@@ -363,7 +365,7 @@ export default function ChatThreadPage() {
                   scrollToBottom("smooth");
                   setShowNewMessagesPill(false);
                 }}
-                className="pointer-events-auto mx-auto block rounded-full border border-[#6f1a2c]/70 bg-black/70 px-3 py-1 text-xs text-[#c88495] backdrop-blur"
+                className="pointer-events-auto mx-auto block rounded-full border border-[#6f1a2c]/55 bg-black/70 px-3 py-1 text-xs text-[#b96d81] backdrop-blur"
               >
                 New messages
               </motion.button>
@@ -376,9 +378,9 @@ export default function ChatThreadPage() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: "easeOut", delay: 0.14 }}
-        className="z-20 border-t border-white/[0.08] bg-black/45 p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-md"
+        className="z-20 border-t border-white/[0.08] bg-black p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
       >
-        <div className="flex items-center gap-2 rounded-full bg-white/[0.04] p-1.5">
+        <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] p-1.5 backdrop-blur-md">
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -387,12 +389,13 @@ export default function ChatThreadPage() {
             disabled={expired}
           />
           <motion.button
-            whileTap={{ scale: 0.94 }}
-            animate={{ scale: isSendDisabled ? 1 : 1.08, opacity: isSendDisabled ? 0.4 : 1 }}
+            whileTap={{ scale: isSendDisabled ? 1 : 1.02 }}
+            whileHover={isSendDisabled ? undefined : { scale: 1.05, boxShadow: "0 0 18px rgba(120,0,30,0.25)" }}
+            animate={{ opacity: isSendDisabled ? 0.4 : 1 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             disabled={isSendDisabled}
             onClick={() => void send()}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(120,0,20,0.45)] text-white"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(120,0,30,0.55)] bg-transparent text-[#7a001e]"
             aria-label="Send message"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
