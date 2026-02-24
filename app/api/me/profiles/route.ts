@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { isLegacyUrl } from "@/lib/storage/object-storage";
 
 type CreateProfilePayload = {
   profileId?: unknown;
@@ -109,6 +110,10 @@ function validateCreatePayload(body: CreateProfilePayload) {
   const imageUrls = readStringArray(body.imageUrls);
   if (imageUrls.length > 2) {
     return { error: "A profile can include at most 2 images." };
+  }
+
+  if (imageUrls.some((imageUrl) => isLegacyUrl(imageUrl))) {
+    return { error: "imageUrls must contain storage keys, not direct URLs." };
   }
 
   const data: ValidatedProfileCreateData = {

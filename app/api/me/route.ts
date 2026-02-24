@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type MePayload = {
   name?: string;
@@ -50,6 +50,10 @@ function validateProfileBody(body: MePayload, mode: "full" | "partial") {
 
     if (!avatarUrl) {
       return { error: "Avatar URL must be a non-empty string." };
+    }
+
+    if (isLegacyUrl(avatarUrl)) {
+      return { error: "avatarUrl must be a storage key, not a direct URL." };
     }
 
     data.avatarUrl = avatarUrl;

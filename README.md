@@ -168,4 +168,19 @@ Required environment variables:
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET_NAME`
-- `R2_ENDPOINT`
+- `R2_ENDPOINT` (must be account endpoint only, no bucket), e.g. `https://<accountid>.r2.cloudflarestorage.com`
+
+`R2_ENDPOINT` must **not** include the bucket in host or path.
+Correct: `https://<accountid>.r2.cloudflarestorage.com`
+Incorrect: `https://<bucket>.<accountid>.r2.cloudflarestorage.com` or `https://<accountid>.r2.cloudflarestorage.com/<bucket>`
+
+For browser-based presigned PUT uploads, configure your R2 bucket CORS:
+
+- Allowed methods: `PUT`, `GET`, `HEAD`, `OPTIONS`
+- Allowed headers: `Content-Type`
+- Allowed origins: your deployed app origin (Render) and `http://localhost:3000` for local development
+
+Storage diagnostics endpoint (protected by `CRON_SECRET`):
+
+- Endpoint: `GET /api/storage/health`
+- Header: `x-cron-secret: <CRON_SECRET>`
