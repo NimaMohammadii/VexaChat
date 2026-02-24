@@ -262,22 +262,27 @@ export default function ChatThreadPage() {
       className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
       style={{
         backgroundImage:
-          "radial-gradient(circle at 15% 20%, rgba(120,0,30,0.07), transparent 40%), radial-gradient(circle at 80% 75%, rgba(120,0,30,0.05), transparent 50%), #000"
+          "radial-gradient(circle at 14% 16%, rgba(255,46,99,0.13), transparent 40%), radial-gradient(circle at 86% 76%, rgba(255,255,255,0.08), transparent 50%), radial-gradient(circle at 50% 105%, rgba(120,0,30,0.12), transparent 58%), #000"
       }}
     >
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-20 top-16 h-64 w-64 rounded-full border border-[#ff2e63]/25 blur-[1px]" />
+        <div className="absolute bottom-24 right-[-4.5rem] h-72 w-72 rounded-[2.5rem] border border-white/15" />
+      </div>
+
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut", delay: 0.05 }}
-        className="z-20 border-b border-white/[0.08] bg-black px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)]"
+        className="z-20 border-b border-white/[0.1] bg-black/35 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)] backdrop-blur-2xl"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <motion.button
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.04 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={handleBack}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] backdrop-blur-md"
             aria-label="Back to chats"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -285,37 +290,40 @@ export default function ChatThreadPage() {
             </svg>
           </motion.button>
 
-          <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.12 }} className="flex min-w-0 items-center gap-3">
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.12 }}
+            className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 backdrop-blur-md"
+          >
             <img
               src={friend?.avatarUrl || "https://placehold.co/44x44/111111/FFFFFF?text=%40"}
               alt={friend?.username ?? "User"}
-              className="h-11 w-11 rounded-full border border-white/15 object-cover"
+              className="h-11 w-11 rounded-full border border-white/20 object-cover"
             />
-            <div className="min-w-0 text-center">
+            <div className="min-w-0 text-left">
               <p className="truncate text-base font-semibold tracking-tight text-white">{friend?.username ?? "Chat"}</p>
               <p className="truncate text-xs text-white/50">@{friend?.username ?? "username"}</p>
             </div>
           </motion.div>
 
-          <div className="h-10 w-10" />
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut", delay: 0.18 }}
-          className="pt-3"
-        >
-          <motion.p
-            animate={{ opacity: [0.9, 1, 0.9], scale: [1, 1.015, 1] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className={`mx-auto w-fit rounded-full border bg-white/[0.05] px-4 py-1.5 text-xs backdrop-blur-md ${
-              left <= 2 ? "border-[rgba(122,0,30,0.45)] text-[#7a001e]" : "border-white/[0.08] text-white/80"
+          <motion.div
+            initial={{ opacity: 0, x: 6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.24, delay: 0.18 }}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-md ${
+              left <= 2 ? "border-[#7a001e]/70 bg-[#7a001e]/20 text-[#f3a4bb]" : "border-white/15 bg-white/[0.05] text-white/80"
             }`}
           >
-            Deletes in {left} day{left === 1 ? "" : "s"}
-          </motion.p>
-        </motion.div>
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
+              <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
+            </svg>
+            <span>{left}d</span>
+          </motion.div>
+        </div>
+
+        <p className="pt-2 text-center text-xs text-white/55">Deletes in {left} day{left === 1 ? "" : "s"}</p>
       </motion.header>
 
       {expired ? <div className="px-4 pb-2 pt-4 text-center text-sm text-white/60">This chat expired.</div> : null}
