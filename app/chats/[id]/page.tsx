@@ -34,6 +34,7 @@ export default function ChatThreadPage() {
   const [showNewMessagesPill, setShowNewMessagesPill] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
 
   const isNearBottom = useCallback(() => {
     const node = messagesContainerRef.current;
@@ -243,16 +244,25 @@ export default function ChatThreadPage() {
 
   const left = useMemo(() => (expiresAt ? daysLeft(expiresAt) : 0), [expiresAt]);
   const isSendDisabled = !input.trim() || expired;
+  const hasInput = input.trim().length > 0;
+
+  const handleBack = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      router.push("/chats");
+    }, 250);
+  };
 
   return (
     <motion.main
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
+      initial={{ x: 40, opacity: 0 }}
+      animate={isExiting ? { x: 40, opacity: 0 } : { x: 0, opacity: 1 }}
+      exit={{ x: -40, opacity: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
       className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-black text-white"
       style={{
         backgroundImage:
-          "radial-gradient(circle at 15% 20%, rgba(120,0,30,0.08), transparent 40%), radial-gradient(circle at 80% 75%, rgba(120,0,30,0.06), transparent 50%), #000"
+          "radial-gradient(circle at 15% 20%, rgba(120,0,30,0.07), transparent 40%), radial-gradient(circle at 80% 75%, rgba(120,0,30,0.05), transparent 50%), #000"
       }}
     >
       <motion.header
@@ -263,10 +273,10 @@ export default function ChatThreadPage() {
       >
         <div className="flex items-center justify-between">
           <motion.button
-            whileTap={{ scale: 0.92 }}
+            whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.04 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            onClick={() => router.push("/chats")}
+            onClick={handleBack}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]"
             aria-label="Back to chats"
           >
@@ -296,13 +306,15 @@ export default function ChatThreadPage() {
           transition={{ duration: 0.25, ease: "easeOut", delay: 0.18 }}
           className="pt-3"
         >
-          <p
-              className={`mx-auto w-fit rounded-full border border-white/[0.08] bg-white/[0.05] px-4 py-1.5 text-xs backdrop-blur-md ${
-              left <= 2 ? "text-[#7a001e]" : "text-white/80"
+          <motion.p
+            animate={{ opacity: [0.9, 1, 0.9], scale: [1, 1.015, 1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className={`mx-auto w-fit rounded-full border bg-white/[0.05] px-4 py-1.5 text-xs backdrop-blur-md ${
+              left <= 2 ? "border-[rgba(122,0,30,0.45)] text-[#7a001e]" : "border-white/[0.08] text-white/80"
             }`}
           >
             Deletes in {left} day{left === 1 ? "" : "s"}
-          </p>
+          </motion.p>
         </motion.div>
       </motion.header>
 
@@ -341,7 +353,7 @@ export default function ChatThreadPage() {
                   <div
                     className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       mine
-                        ? "border border-[rgba(120,0,30,0.35)] bg-[rgba(255,255,255,0.03)] text-white backdrop-blur-md"
+                        ? "border border-[rgba(120,0,30,0.35)] bg-[linear-gradient(180deg,rgba(255,255,255,0.085)_0%,rgba(255,255,255,0.03)_32%)] text-white backdrop-blur-md"
                         : "border border-white/[0.08] bg-[rgba(255,255,255,0.04)] text-white/90"
                     }`}
                   >
@@ -378,7 +390,11 @@ export default function ChatThreadPage() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: "easeOut", delay: 0.14 }}
-        className="z-20 border-t border-white/[0.08] bg-black p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
+        className="z-20 border-t border-transparent bg-[rgba(0,0,0,0.65)] p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur-lg"
+        style={{
+          borderImage: "linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.16), rgba(255,255,255,0.02)) 1",
+          boxShadow: "0 -28px 42px rgba(0,0,0,0.55)"
+        }}
       >
         <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] p-1.5 backdrop-blur-md">
           <input
@@ -389,15 +405,27 @@ export default function ChatThreadPage() {
             disabled={expired}
           />
           <motion.button
-            whileTap={{ scale: isSendDisabled ? 1 : 1.02 }}
-            whileHover={isSendDisabled ? undefined : { scale: 1.05, boxShadow: "0 0 18px rgba(120,0,30,0.25)" }}
-            animate={{ opacity: isSendDisabled ? 0.4 : 1 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            whileTap={isSendDisabled ? undefined : { scale: 0.92 }}
+            whileHover={isSendDisabled ? undefined : { scale: 1.06 }}
+            animate={
+              isSendDisabled
+                ? { opacity: 0.45, scale: 1, boxShadow: "0 0 0 rgba(120,0,30,0)" }
+                : hasInput
+                  ? { opacity: 1, scale: 1.1, boxShadow: "0 0 22px rgba(120,0,30,0.4)" }
+                  : { opacity: 1, scale: 1, boxShadow: "0 0 0 rgba(120,0,30,0)" }
+            }
+            transition={{ duration: 0.2, ease: "easeOut" }}
             disabled={isSendDisabled}
             onClick={() => void send()}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(120,0,30,0.55)] bg-transparent text-[#7a001e]"
+            className="relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[rgba(120,0,30,0.55)] bg-transparent text-[#7a001e]"
             aria-label="Send message"
           >
+            <motion.span
+              initial={{ opacity: 0, scale: 0.5 }}
+              whileTap={isSendDisabled ? undefined : { opacity: [0.2, 0], scale: 1.6 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(120,0,30,0.28)_0%,rgba(120,0,30,0)_70%)]"
+            />
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M5 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               <path d="m13 6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
