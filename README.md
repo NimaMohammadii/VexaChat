@@ -105,3 +105,23 @@ To permanently remove expired conversations/messages from the database, configur
 Required environment variable:
 
 - `CRON_SECRET=<random-long-secret>`
+
+## Ephemeral chat media cron (Render)
+
+Image and video chat media are stored in Supabase Storage bucket `chat-media` and cleaned after their TTL:
+
+- images: 6 hours
+- videos: 2 hours
+
+Configure Render Cron to call:
+
+- Endpoint: `POST https://<your-domain>/api/cron/cleanup-media`
+- Header: `x-cron-secret: <CRON_SECRET>`
+- Schedule: every 10 minutes (example: `*/10 * * * *`)
+
+Required environment variables:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_ANON_KEY` (if used by your client stack)
+- `CRON_SECRET`
