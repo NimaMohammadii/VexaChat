@@ -92,3 +92,16 @@ npm run start:prod:safe
 ```
 
 Use this if you want startup to run the Prisma repair script first for fresh/misaligned databases, then start Next.js.
+
+## Chat TTL cleanup cron (Render)
+
+Conversations expire exactly 15 days after they start (`startedAt + 15 days`) and are excluded from chat APIs once expired.
+To permanently remove expired conversations/messages from the database, configure Render Cron:
+
+- Endpoint: `POST https://<your-domain>/api/cron/cleanup-chats`
+- Header: `x-cron-secret: <CRON_SECRET>`
+- Schedule: daily (example: `0 3 * * *` for 03:00)
+
+Required environment variable:
+
+- `CRON_SECRET=<random-long-secret>`
