@@ -1,8 +1,75 @@
 # VexaChat
 
-## Fixing Prisma P3009 on Render Postgres
+## Prisma is the source of truth for database schema
 
-Use this when Render deploy logs show:
+All application tables are defined only in `prisma/schema.prisma` and managed through Prisma migrations in `prisma/migrations`.
+Do **not** create or alter app tables manually in the Supabase SQL editor.
+
+Core Prisma models include:
+`Profile`, `Favorite`, `UserProfile`, `FriendRequest`, `UserBlock`, `Notification`, `Conversation`, `Message`, `ChatMedia`, `VerificationRequest`, `MeetCard`, `MeetLikeRequest`, `MeetMatch`, `MeetNotification`, `MeetPass`, `MeetBlock`, `HomeSection`, `HomePageConfig`, `HomepageImage`.
+
+## Production database configuration (Supabase Postgres)
+
+- `DATABASE_URL` must point to your **Supabase Postgres connection string** in production.
+- Prisma runtime and migrations use only `DATABASE_URL`.
+- Keep using production-safe Prisma flow:
+  - `prisma migrate deploy`
+  - `npm run start:prod` or `npm run start:prod:safe`
+- Do **not** use `prisma migrate dev` or `prisma db push` in production.
+
+## One-time migration: Render Postgres -> Supabase Postgres
+
+This repo includes an idempotent copy script at `scripts/migrate-render-to-supabase.js`.
+
+### Required environment variables
+
+- `SOURCE_DATABASE_URL` = old Render Postgres URL
+- `TARGET_DATABASE_URL` = new Supabase Postgres URL
+
+### Steps
+
+1. **Apply schema on Supabase (target) via Prisma migrations**
+
+```bash
+DATABASE_URL="$TARGET_DATABASE_URL" npx prisma migrate deploy
+```
+
+2. **Copy data from Render to Supabase**
+
+```bash
+node scripts/migrate-render-to-supabase.js
+```
+
+The script:
+- connects to both databases,
+- prints per-table row counts before and after,
+- copies records model-by-model in FK-safe order,
+- preserves IDs and timestamps,
+- uses `createMany(..., skipDuplicates: true)` for idempotent re-runs,
+- syncs serial/identity sequences when present,
+- exits non-zero on failure.
+
+3. **Verify counts without copying (optional)**
+
+```bash
+npm run db:verify:counts
+```
+
+4. **Switch production**
+- Set production `DATABASE_URL` to `TARGET_DATABASE_URL` (Supabase).
+- Redeploy.
+
+### Convenience script
+
+```bash
+npm run db:migrate:to-supabase
+```
+
+This runs Prisma migrations against `TARGET_DATABASE_URL` and then executes the copy script.
+
+## Fixing Prisma P3009 in production
+
+Use this when deploy logs show:
 
 - `P3009 migrate found failed migrations`
 - failed migration: `20260227090000_add_meet_mvp`
@@ -30,7 +97,7 @@ The repair script will:
 
 ### 3) SQL fallback only if Prisma resolve cannot run
 
-> Backup your Render Postgres DB first.
+> Backup your database first.
 
 ```bash
 npm run db:repair -- --confirm-sql-repair
@@ -42,7 +109,7 @@ Optional cleanup for partially-created meet MVP tables:
 npm run db:repair -- --confirm-sql-repair --drop-meet-tables
 ```
 
-### Render production workflow
+## Deployment commands
 
 - Build Command:
 
@@ -57,41 +124,6 @@ npm run start:prod
 ```
 
 This keeps build independent from database migrations while guaranteeing `prisma migrate deploy` runs right before `next start` in production.
-
-
-## Render deployment settings for Homepage Manager
-
-Homepage Manager depends on Prisma migration `20260302120000_add_home_sections`.
-If this migration is not applied, `/api/admin/home-sections` will fail and Admin → Homepage Manager will not load.
-
-### Required environment variables
-
-- `DATABASE_URL`: set this to your **Render Internal Postgres URL**.
-- `DIRECT_URL`: set this only if your Prisma schema/environment explicitly uses `DIRECT_URL`.
-
-### Render commands
-
-- Build Command:
-
-```bash
-npm install && npm run build
-```
-
-- Start Command (recommended):
-
-```bash
-npm run start:prod
-```
-
-This runs `prisma migrate deploy` before starting Next.js.
-
-- Start Command (safe auto-repair option):
-
-```bash
-npm run start:prod:safe
-```
-
-Use this if you want startup to run the Prisma repair script first for fresh/misaligned databases, then start Next.js.
 
 ## Chat TTL cleanup cron (Render)
 
@@ -127,7 +159,6 @@ Required environment variables:
 - `R2_BUCKET_NAME`
 - `R2_ENDPOINT`
 - `CRON_SECRET`
-
 
 ### Cloudflare R2 storage configuration
 

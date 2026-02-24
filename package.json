@@ -11,7 +11,9 @@
     "db:deploy": "npx prisma migrate deploy",
     "postinstall": "prisma generate",
     "db:status": "prisma migrate status",
-    "db:repair": "node scripts/db-repair-prisma.js"
+    "db:repair": "node scripts/db-repair-prisma.js",
+    "db:migrate:to-supabase": "DATABASE_URL=\"$TARGET_DATABASE_URL\" npx prisma migrate deploy && node scripts/migrate-render-to-supabase.js",
+    "db:verify:counts": "node scripts/migrate-render-to-supabase.js --verify-only"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",
