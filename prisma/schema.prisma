@@ -115,6 +115,7 @@ model Conversation {
   updatedAt     DateTime @updatedAt
 
   messages Message[]
+  chatMedia ChatMedia[]
 
   @@unique([userAId, userBId])
   @@index([userAId])
@@ -131,9 +132,29 @@ model Message {
   text           String?
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  media          ChatMedia?
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model ChatMedia {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  type           String
+  storageKey     String
+  url            String
+  createdAt      DateTime     @default(now())
+  expiresAt      DateTime
+  messageId      String?      @unique
+  fileSize       Int?
+  mimeType       String?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message        Message?     @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([expiresAt])
 }
 
 model VerificationRequest {
