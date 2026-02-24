@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
+import { getR2EnvPresence } from "@/lib/r2/client";
+import { getSignedUploadUrl } from "@/lib/storage/object-storage";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
 function extensionFromType(type: string) {
   if (type === "image/png") return "png";
   if (type === "image/webp") return "webp";
@@ -18,6 +19,11 @@ export async function POST(request: NextRequest) {
 
   if (!hasAdminAccess) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const envPresence = getR2EnvPresence();
+  if (Object.values(envPresence).some((present) => !present)) {
+    return NextResponse.json({ error: "Storage is not configured" }, { status: 500 });
   }
 
   const formData = await request.formData();
@@ -35,14 +41,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "File must be 5MB or smaller" }, { status: 400 });
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
   const extension = extensionFromType(file.type);
-  const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-  const relativeDir = path.join("uploads", "home");
-  const publicDir = path.join(process.cwd(), "public", relativeDir);
+  const key = `homepage/sections/${Date.now()}-${randomUUID()}.${extension}`;
 
-  await mkdir(publicDir, { recursive: true });
-  await writeFile(path.join(publicDir, fileName), bytes);
-
-  return NextResponse.json({ url: `/${relativeDir}/${fileName}` });
+  try {
+    const uploadUrl = await getSignedUploadUrl(key, file.type, 10 * 60);
+    return NextResponse.json({ key, uploadUrl });
+  } catch (error) {
+    console.error("[admin/upload][POST]", error);
+    return NextResponse.json({ error: "Unable to prepare upload" }, { status: 500 });
+  }
 }

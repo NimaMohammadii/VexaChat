@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const DB_NOT_READY_MESSAGE = "Database not ready. Run migrations on production DB.";
 
@@ -36,7 +37,14 @@ export async function GET() {
       orderBy: [{ order: "asc" }, { createdAt: "desc" }]
     });
 
-    return NextResponse.json({ sections });
+    const sectionsWithResolvedUrls = await Promise.all(
+      sections.map(async (section) => ({
+        ...section,
+        imageUrl: await resolveStoredFileUrl(section.imageUrl)
+      }))
+    );
+
+    return NextResponse.json({ sections: sectionsWithResolvedUrls });
   } catch (err) {
     logPrismaError("[admin/home-sections][GET] Prisma query failed", err);
     return NextResponse.json({ error: DB_NOT_READY_MESSAGE }, { status: 500 });
@@ -79,7 +87,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ section: created }, { status: 201 });
+    return NextResponse.json({ section: { ...created, imageUrl: await resolveStoredFileUrl(created.imageUrl) } }, { status: 201 });
   } catch (err) {
     logPrismaError("[admin/home-sections][POST] Prisma mutation failed", err);
     return NextResponse.json({ error: DB_NOT_READY_MESSAGE }, { status: 500 });

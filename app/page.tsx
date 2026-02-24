@@ -4,6 +4,7 @@ import { PublicHeader } from "@/components/public-header";
 import { ensureHomePageConfig } from "@/lib/homepage-config";
 import { prisma } from "@/lib/prisma";
 import { buildHomepageImageUrl } from "@/lib/homepage-image-storage";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -78,10 +79,17 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   const homeSections = await (async () => {
     try {
-      return await prisma.homeSection.findMany({
+      const sections = await prisma.homeSection.findMany({
         where: { isActive: true },
         orderBy: [{ order: "asc" }, { createdAt: "desc" }]
       });
+
+      return Promise.all(
+        sections.map(async (section) => ({
+          ...section,
+          imageUrl: await resolveStoredFileUrl(section.imageUrl)
+        }))
+      );
     } catch {
       return [];
     }
