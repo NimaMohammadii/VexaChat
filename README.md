@@ -95,7 +95,7 @@ Storage diagnostics endpoint (protected by `CRON_SECRET`):
 
 ## Storage is R2-only
 
-Supabase is used only for auth/session. All user-uploaded files (avatars, profile images, meet images, verification docs, chat media, homepage section images, homepage hero images) must be stored as **R2 object keys** in the database.
+Supabase is used only for auth/session and Postgres. Supabase Storage is no longer supported. All user-uploaded files (avatars, profile images, meet images, verification docs, chat media, homepage section images, homepage hero images) must be stored as **R2 object keys** in the database, and http(s) values are rejected by API validation.
 
 ### Required storage environment variables (Render)
 
@@ -105,7 +105,7 @@ Supabase is used only for auth/session. All user-uploaded files (avatars, profil
 - `R2_BUCKET_NAME`
 - `R2_ENDPOINT`
 
-### One-time migration: Supabase Storage URLs -> R2 keys
+### One-time migration: legacy storage URLs -> R2 keys
 
 1. Deploy code and run Prisma migrations:
 
@@ -116,7 +116,7 @@ npm run db:deploy
 2. Run the storage migration script (idempotent/restartable):
 
 ```bash
-npm run storage:migrate-supabase-to-r2
+npm run storage:migrate-legacy-urls-to-r2
 ```
 
 Script requirements:
@@ -142,3 +142,14 @@ What the script migrates:
 
 - verification counts for `storage/v1/object` and `supabase` references should be `0`.
 - all migrated DB values should now be R2 keys (not URLs).
+
+
+### Storage integrity check
+
+Run this check in CI/local to enforce R2-only storage invariants:
+
+```bash
+npm run storage:assert-r2-only
+```
+
+This verifies there are no forbidden Supabase Storage code references and that storage resolvers validate keys-only semantics.

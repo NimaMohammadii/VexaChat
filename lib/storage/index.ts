@@ -28,7 +28,7 @@ export async function uploadChatMedia({ file, fileBuffer, key, contentType }: Up
 
   return {
     key,
-    publicUrl: await getPublicUrl({ key })
+    signedUrl: await getSignedMediaReadUrl({ key })
   };
 }
 
@@ -37,6 +37,6 @@ export async function deleteChatMedia({ key }: { key: string }) {
   await getR2Client().send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }
 
-export async function getPublicUrl({ key }: { key: string }) {
+export async function getSignedMediaReadUrl({ key }: { key: string }) {
   return getSignedReadUrl(key, 60 * 60);
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { getPublicUrl } from "@/lib/storage";
+import { getSignedMediaReadUrl } from "@/lib/storage";
 
 export async function GET(_request: Request, { params }: { params: { conversationId: string } }) {
   const user = await getAuthenticatedUser({ canSetCookies: true });
@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: { conversatio
   });
 
   const payload = await Promise.all(
-    media.map(async (item) => ({ ...item, url: await getPublicUrl({ key: item.storageKey }) }))
+    media.map(async (item) => ({ ...item, url: await getSignedMediaReadUrl({ key: item.storageKey }) }))
   );
 
   return NextResponse.json({ media: payload });
