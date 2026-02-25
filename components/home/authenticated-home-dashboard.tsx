@@ -60,12 +60,25 @@ export function AuthenticatedHomeDashboard({
   recentChats
 }: AuthenticatedHomeDashboardProps) {
   return (
-    <main className="min-h-screen bg-black px-4 pb-12 text-white">
-      <header className="mx-auto grid w-full max-w-3xl grid-cols-[auto_auto_1fr_auto] items-center gap-2.5 pt-6">
+    <main className="relative min-h-screen overflow-hidden px-4 pb-12 text-white">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[#02030a]" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(60% 70% at 12% 8%, rgba(116,197,255,0.30) 0%, rgba(116,197,255,0) 68%), radial-gradient(65% 70% at 86% 20%, rgba(214,153,255,0.24) 0%, rgba(214,153,255,0) 64%), radial-gradient(75% 80% at 50% 100%, rgba(106,131,255,0.20) 0%, rgba(106,131,255,0) 62%), linear-gradient(160deg, #050710 0%, #060912 40%, #090d1a 100%)"
+        }}
+      />
+      <div aria-hidden className="pointer-events-none absolute -left-20 top-10 -z-10 h-72 w-72 rounded-full bg-cyan-300/25 blur-[130px]" />
+      <div aria-hidden className="pointer-events-none absolute -right-16 top-36 -z-10 h-72 w-72 rounded-full bg-fuchsia-300/25 blur-[140px]" />
+      <div aria-hidden className="pointer-events-none absolute bottom-0 left-1/3 -z-10 h-80 w-80 rounded-full bg-indigo-400/20 blur-[150px]" />
+
+      <header className="liquid-glass mx-auto mt-4 grid w-full max-w-3xl grid-cols-[auto_auto_1fr_auto] items-center gap-2.5 rounded-[30px] px-3 py-3 md:mt-6">
         <HeaderMenuDrawer />
-        <p className="text-sm tracking-[0.2em]">VEXA</p>
-        <label className="flex w-full items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.04] px-3 py-2.5 backdrop-blur-[12px] focus-within:border-[#7A1E2C]/45 focus-within:shadow-[0_0_20px_rgba(122,30,44,0.24)]">
-          <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-white/55" aria-hidden>
+        <p className="text-sm tracking-[0.24em] text-white/90">VEXA</p>
+        <label className="liquid-glass-soft flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 focus-within:border-white/45 focus-within:shadow-[0_0_20px_rgba(141,210,255,0.32)]">
+          <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-white/65" aria-hidden>
             <circle cx="9" cy="9" r="5" stroke="currentColor" strokeWidth="1.4" />
             <path d="M12.8 12.8 16 16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
@@ -76,11 +89,11 @@ export function AuthenticatedHomeDashboard({
           />
         </label>
         <div className="flex items-center gap-2">
-          <Link href="/me" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-white/80 transition hover:border-[#7A1E2C]/45 hover:text-white">
+          <Link href="/me" className="liquid-glass-soft relative inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:text-white">
             <BellIcon />
-            {notificationCount > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-[#7A1E2C] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">{notificationCount > 99 ? "99+" : notificationCount}</span> : null}
+            {notificationCount > 0 ? <span className="absolute -right-1 -top-1 rounded-full bg-[#90d1ff] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[#0b1020]">{notificationCount > 99 ? "99+" : notificationCount}</span> : null}
           </Link>
-          <Link href="/me" className="h-10 w-10 overflow-hidden rounded-full border border-white/20">
+          <Link href="/me" className="liquid-glass-soft h-10 w-10 overflow-hidden rounded-full">
             <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
           </Link>
         </div>
