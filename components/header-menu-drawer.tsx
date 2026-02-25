@@ -167,7 +167,7 @@ export function HeaderMenuDrawer() {
         aria-label="Open navigation menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="liquid-glass group inline-flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:border-white/50 hover:shadow-[0_0_30px_rgba(141,210,255,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#90d1ff]/70"
+        className="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-[radial-gradient(circle_at_20%_20%,rgba(255,46,99,0.24),rgba(255,255,255,0.04)_55%,rgba(255,255,255,0.02))] transition-all duration-300 hover:scale-[1.03] hover:border-[#FF2E63]/60 hover:shadow-[0_0_30px_rgba(255,46,99,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2E63]/70"
       >
         <MenuIcon open={isOpen} />
       </button>
@@ -176,23 +176,23 @@ export function HeaderMenuDrawer() {
         type="button"
         aria-label="Close navigation menu"
         tabIndex={isOpen ? 0 : -1}
-        className={`fixed inset-0 z-40 bg-[#020611]/70 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
         onClick={() => setIsOpen(false)}
       />
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-white/30 bg-[#0a1120]/80 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(125,186,255,0.22)] backdrop-blur-2xl transition-transform duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-transform duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
         aria-hidden={!isOpen}
       >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                <div className="absolute -left-14 top-[-12%] h-44 w-44 rounded-full bg-[#8cd2ff]/20 blur-3xl" />
+                <div className="absolute -left-14 top-[-12%] h-44 w-44 rounded-full bg-[#FF2E63]/18 blur-3xl" />
                 <div className="absolute right-[-30%] top-1/3 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-                <div className="absolute bottom-[-10%] left-1/4 h-36 w-36 rounded-full bg-[#bca4ff]/16 blur-2xl" />
+                <div className="absolute bottom-[-10%] left-1/4 h-36 w-36 rounded-full bg-[#FF2E63]/16 blur-2xl" />
               </div>
 
-              <div className="liquid-glass-soft relative z-10 mb-5 rounded-2xl px-4 py-3">
-                <p className="text-[11px] tracking-[0.3em] text-white/70">NAVIGATION</p>
-                <p className="mt-1 text-sm text-white/90">Choose your next vibe</p>
+              <div className="relative z-10 mb-5 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3">
+                <p className="text-[11px] tracking-[0.3em] text-white/55">NAVIGATION</p>
+                <p className="mt-1 text-sm text-white/85">Choose your next vibe</p>
               </div>
 
               <nav className="relative z-10 space-y-2">
@@ -205,9 +205,9 @@ export function HeaderMenuDrawer() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition duration-300 ${isActive ? "border-white/45 bg-gradient-to-r from-[#90d1ff]/30 via-white/[0.1] to-transparent text-white shadow-[0_0_24px_rgba(141,210,255,0.3)]" : "border-white/20 bg-white/[0.06] text-white/85 hover:border-white/45 hover:bg-gradient-to-r hover:from-[#90d1ff]/20 hover:via-white/[0.08] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(141,210,255,0.22)]"}`}
+                        className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition duration-300 ${isActive ? "border-[#FF2E63]/45 bg-gradient-to-r from-[#FF2E63]/25 via-white/[0.08] to-transparent text-white shadow-[0_0_24px_rgba(255,46,99,0.25)]" : "border-white/10 bg-white/[0.02] text-white/80 hover:border-[#FF2E63]/35 hover:bg-gradient-to-r hover:from-[#FF2E63]/15 hover:via-white/[0.06] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(255,46,99,0.18)]"}`}
                       >
-                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${isActive ? "border-white/45 bg-white/20 text-white" : "border-white/25 bg-black/20 text-white/80 group-hover:border-white/45 group-hover:text-white"}`}>
+                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${isActive ? "border-[#FF2E63]/45 bg-[#FF2E63]/20 text-white" : "border-white/15 bg-black/25 text-white/75 group-hover:border-[#FF2E63]/35 group-hover:text-white"}`}>
                           <Icon />
                         </span>
                         <span className="font-medium tracking-wide">{item.label}</span>
@@ -223,7 +223,7 @@ export function HeaderMenuDrawer() {
                   type="button"
                   onClick={() => void handleSignOut()}
                   disabled={!hasSession}
-                  className="liquid-glass-soft flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm text-white/90 transition duration-300 hover:border-white/45 hover:shadow-[0_0_18px_rgba(141,210,255,0.22)] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/20 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/85 transition duration-300 hover:border-[#FF2E63]/40 hover:bg-[#FF2E63]/12 hover:shadow-[0_0_18px_rgba(255,46,99,0.18)] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <SignOutIcon />
                   <span>Sign out</span>
