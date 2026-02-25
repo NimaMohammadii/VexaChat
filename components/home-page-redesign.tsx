@@ -65,9 +65,11 @@ const placeholderSections: HomeSectionItem[] = [
 export function HomePageRedesign({ profiles, homeSections, homepageImages, homeHeroConfig }: HomePageRedesignProps) {
   const sortedHomepageImages = [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
   const displaySections = homeSections.length ? homeSections : placeholderSections;
+  const hasCustomSectionBackgrounds = homeSections.length > 0;
   const displaySectionsWithImages = displaySections.map((section, index) => ({
     ...section,
-    imageUrl: sortedHomepageImages[index]?.url ?? section.imageUrl
+    imageUrl: sortedHomepageImages[index]?.url ?? section.imageUrl,
+    hasBlurredBackground: hasCustomSectionBackgrounds && Boolean(sortedHomepageImages[index]?.url || section.imageUrl)
   }));
 
   return (
@@ -125,20 +127,29 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
           return (
             <motion.article
               key={section.id}
-              className="grid items-center gap-7 py-14 md:py-16 lg:grid-cols-2 lg:gap-10"
+              className="relative grid min-h-[100svh] items-center gap-7 overflow-hidden rounded-[28px] border border-white/[0.08] py-14 md:py-16 lg:grid-cols-2 lg:gap-10"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
               variants={{ visible: { transition: { staggerChildren: 0.14 } } }}
             >
-              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-2" : ""}>
-                <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0a0a0a]">
+              {section.hasBlurredBackground ? (
+                <>
+                  <Image src={section.imageUrl} alt="" aria-hidden fill className="object-cover blur-3xl scale-110" />
+                  <div className="absolute inset-0 bg-black/45" aria-hidden />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/[0.10] via-transparent to-white/[0.03]" aria-hidden />
+                </>
+              ) : null}
+              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={`relative z-10 ${flip ? "lg:order-2" : ""}`}>
+                <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0a0a0a]/70 backdrop-blur-xl">
                   <Image src={section.imageUrl} alt={section.title} width={1400} height={1000} className="h-[420px] w-full object-cover md:h-[520px]" />
                 </div>
               </motion.div>
-              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-1" : ""}>
-                <h2 className="text-3xl font-medium leading-tight tracking-[0.01em] md:text-4xl">{section.title}</h2>
-                {section.subtitle ? <p className="mt-4 max-w-xl text-base leading-relaxed text-[#A1A1A1] md:text-lg">{section.subtitle}</p> : null}
+              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={`relative z-10 ${flip ? "lg:order-1" : ""}`}>
+                <div className="rounded-[24px] border border-white/[0.12] bg-black/35 p-6 backdrop-blur-xl md:p-8">
+                  <h2 className="text-3xl font-medium leading-tight tracking-[0.01em] md:text-4xl">{section.title}</h2>
+                  {section.subtitle ? <p className="mt-4 max-w-xl text-base leading-relaxed text-[#D1D1D1] md:text-lg">{section.subtitle}</p> : null}
+                </div>
               </motion.div>
             </motion.article>
           );
