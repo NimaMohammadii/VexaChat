@@ -40,7 +40,7 @@ export function MeProfileForm({ data }: { data: MeData }) {
   const [name, setName] = useState(data.profile?.name ?? data.user.name ?? "");
   const [username, setUsername] = useState(data.profile?.username ?? "");
   const [bio, setBio] = useState(data.profile?.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(data.profile?.avatarUrl ?? data.user.avatarUrl ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(data.profile?.avatarUrl ?? "");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarDisplayUrl, setAvatarDisplayUrl] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
@@ -53,12 +53,12 @@ export function MeProfileForm({ data }: { data: MeData }) {
 
   useEffect(() => {
     if (!avatarUrl) {
-      setAvatarDisplayUrl("");
+      setAvatarDisplayUrl(data.user.avatarUrl ?? "");
       return;
     }
 
     presignRead(avatarUrl).then(setAvatarDisplayUrl).catch(() => setAvatarDisplayUrl(""));
-  }, [avatarUrl]);
+  }, [avatarUrl, data.user.avatarUrl]);
 
   const onSave = async () => {
     setIsSaving(true);
