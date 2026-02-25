@@ -11,6 +11,7 @@ Core Prisma models include:
 ## Production database configuration (Supabase Postgres)
 
 - `DATABASE_URL` must point to your **Supabase Postgres connection string** in production.
+- On Render, prefer Supabase **Session pooler** host (port `6543`) with `?sslmode=require` to avoid `PrismaClientInitializationError: Can't reach database server`.
 - Prisma runtime and migrations use only `DATABASE_URL`.
 - Keep using production-safe Prisma flow:
   - `prisma migrate deploy`
