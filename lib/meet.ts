@@ -17,13 +17,6 @@ export type MeetCardPayload = {
   isActive?: boolean;
 };
 
-export function parseMeetImageStorageKey(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return null;
-  return trimmed;
-}
-
 export function orderedUserPair(firstUserId: string, secondUserId: string) {
   return firstUserId < secondUserId
     ? { userLowId: firstUserId, userHighId: secondUserId }
@@ -67,6 +60,10 @@ export function validateMeetCardPayload(payload: MeetCardPayload, mode: "create"
 
   if ((mode === "create" || payload.imageUrl !== undefined) && !imageUrl) {
     return { error: "Image is required." } as const;
+  }
+
+  if (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+    return { error: "imageUrl must be a storage key, not a direct URL." } as const;
   }
 
   if (mode === "create") {

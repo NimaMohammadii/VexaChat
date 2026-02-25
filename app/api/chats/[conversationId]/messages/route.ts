@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { getPublicUrl } from "@/lib/storage";
+import { getSignedMediaReadUrl } from "@/lib/storage";
 
 const PAGE_SIZE = 30;
 const INCREMENTAL_PAGE_SIZE = 50;
@@ -17,7 +17,7 @@ async function withSignedMediaUrl<T extends { media: { id: string; type: string;
         media: {
           id: row.media.id,
           type: row.media.type,
-          url: await getPublicUrl({ key: row.media.storageKey }),
+          url: await getSignedMediaReadUrl({ key: row.media.storageKey }),
           expiresAt: row.media.expiresAt
         }
       };

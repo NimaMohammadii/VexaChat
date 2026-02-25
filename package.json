@@ -12,7 +12,9 @@
     "postinstall": "prisma generate",
     "db:status": "prisma migrate status",
     "db:repair": "node scripts/db-repair-prisma.js",
-    "storage:migrate-supabase-to-r2": "node scripts/migrate-supabase-storage-urls-to-r2.js"
+    "storage:migrate-supabase-to-r2": "node scripts/migrate-legacy-storage-urls-to-r2.js",
+    "storage:migrate-legacy-urls-to-r2": "node scripts/migrate-legacy-storage-urls-to-r2.js",
+    "storage:assert-r2-only": "node scripts/assert-r2-only.js"
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",

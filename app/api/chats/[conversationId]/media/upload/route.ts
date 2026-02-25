@@ -98,7 +98,7 @@ export async function POST(
     ]);
 
     const storageKey = `chat/${conversationId}/${message.id}/${mediaId}.${extension}`;
-    const { publicUrl } = await uploadChatMedia({
+    const { signedUrl } = await uploadChatMedia({
       file,
       key: storageKey,
       contentType
@@ -124,7 +124,7 @@ export async function POST(
         id: linked.id,
         messageId: message.id,
         type: linked.type,
-        url: publicUrl,
+        url: signedUrl,
         expiresAt: linked.expiresAt
       }
     });
