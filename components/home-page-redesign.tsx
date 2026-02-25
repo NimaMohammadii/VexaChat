@@ -30,163 +30,158 @@ type HomePageRedesignProps = {
   homeHeroConfig: HomeHeroConfig;
 };
 
+const fadeInUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0 }
+};
+
 const placeholderSections: HomeSectionItem[] = [
   {
     id: "placeholder-1",
-    title: "Private matching",
-    subtitle: "Precision discovery for intentional connections.",
+    title: "Curated introductions built for calm attention",
+    subtitle: "A quieter way to discover verified people and meaningful chemistry.",
     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80",
     order: 0,
     isActive: true
   },
   {
     id: "placeholder-2",
-    title: "Premium moments",
-    subtitle: "Designed for style, calm, and confidence.",
+    title: "Intentional moments, designed with privacy first",
+    subtitle: "Every touchpoint favors discretion, clarity, and premium simplicity.",
     imageUrl: "https://images.unsplash.com/photo-1470259078422-826894b933aa?auto=format&fit=crop&w=1600&q=80",
     order: 1,
     isActive: true
   },
   {
     id: "placeholder-3",
-    title: "Effortless booking",
-    subtitle: "Fast flow with elegant UI.",
+    title: "Editorial quality across every profile surface",
+    subtitle: "Minimal visuals and thoughtful pacing keep the experience refined.",
     imageUrl: "https://images.unsplash.com/photo-1496128858413-b36217c2ce36?auto=format&fit=crop&w=1600&q=80",
     order: 2,
     isActive: true
   }
 ];
 
-export function HomePageRedesign({ homeSections, homepageImages, homeHeroConfig }: HomePageRedesignProps) {
+export function HomePageRedesign({ profiles, homeSections, homepageImages, homeHeroConfig }: HomePageRedesignProps) {
   const sortedHomepageImages = [...homepageImages].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
   const displaySections = homeSections.length ? homeSections : placeholderSections;
-  const displaySectionsWithImages = displaySections.slice(0, 3).map((section, index) => ({
+  const displaySectionsWithImages = displaySections.map((section, index) => ({
     ...section,
     imageUrl: sortedHomepageImages[index]?.url ?? section.imageUrl
   }));
 
   return (
-    <main className="relative min-h-[calc(100svh-86px)] overflow-hidden bg-[#04050a] text-white">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,46,99,0.16),transparent_45%),radial-gradient(circle_at_80%_20%,rgba(69,232,255,0.14),transparent_42%),radial-gradient(circle_at_50%_100%,rgba(104,76,255,0.24),transparent_56%)]" />
+    <main className="min-h-screen overflow-hidden bg-black text-white">
+      <section className="relative flex min-h-[82vh] items-center justify-center px-6 py-20 md:py-24">
+        <svg aria-hidden="true" className="pointer-events-none absolute -left-24 top-10 h-64 w-64 text-[#FF2E63]/20 blur-[1px] md:h-80 md:w-80" viewBox="0 0 200 200" fill="none">
+          <path d="M100 10C149.706 10 190 50.2944 190 100C190 149.706 149.706 190 100 190C50.2944 190 10 149.706 10 100C10 50.2944 50.2944 10 100 10Z" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M40 100C40 66.8629 66.8629 40 100 40" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+        <svg aria-hidden="true" className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 text-white/20 md:h-[24rem] md:w-[24rem]" viewBox="0 0 240 240" fill="none">
+          <rect x="30" y="30" width="180" height="180" rx="36" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M70 170L170 70" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="120" cy="120" r="16" fill="currentColor" fillOpacity="0.22" />
+        </svg>
         <motion.div
-          className="absolute -left-10 top-20 h-56 w-56 rounded-full bg-[#FF2E63]/20 blur-3xl md:h-80 md:w-80"
-          animate={{ y: [0, -32, 0], opacity: [0.35, 0.8, 0.35] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute right-0 top-1/3 h-52 w-52 rounded-full bg-cyan-300/20 blur-3xl md:h-72 md:w-72"
-          animate={{ y: [0, 20, 0], opacity: [0.4, 0.72, 0.4] }}
-          transition={{ duration: 7.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
-      <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-8 px-4 pb-28 pt-8 md:grid-cols-[1.05fr_0.95fr] md:items-center md:px-6 md:pb-36 md:pt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-6"
+          className="relative z-10 mx-auto max-w-4xl text-center"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.16 } } }}
         >
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-[10px] uppercase tracking-[0.28em] text-white/80 md:text-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#FF2E63]" />
-            Cinematic Discovery
-          </p>
-
-          <div>
-            <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
-              {homeHeroConfig.heroTitle}{" "}
-              {homeHeroConfig.heroAccentWord ? (
-                <span className="bg-gradient-to-r from-[#ff3f76] via-[#ff7ca7] to-[#6bf3ff] bg-clip-text text-transparent">{homeHeroConfig.heroAccentWord}</span>
-              ) : null}
-            </h1>
-            <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/70 md:text-base">{homeHeroConfig.heroSubtitle}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2.5 pt-1">
-            {displaySectionsWithImages.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + index * 0.1, duration: 0.45 }}
-                className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs text-white/85 backdrop-blur-md"
-              >
-                {item.title}
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-5 pt-2 text-xs text-white/60 md:text-sm">
-            <Link href="/profiles" className="group inline-flex items-center gap-1 font-medium text-white transition hover:text-cyan-200">
-              Start browsing
-              <span className="transition group-hover:translate-x-1">→</span>
+          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
+            Minimal • Modern • Private
+          </motion.p>
+          <motion.h1
+            variants={fadeInUp}
+            transition={{ duration: 0.75, ease: "easeOut" }}
+            className="text-4xl font-semibold leading-[1.08] tracking-[0.01em] md:text-6xl lg:text-7xl"
+          >
+            Bold connections, zero clutter. {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
+          </motion.h1>
+          <motion.p
+            variants={fadeInUp}
+            transition={{ duration: 0.75, ease: "easeOut" }}
+            className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base"
+          >
+            Modern design, faster rhythm, and cleaner space to spotlight real people. {homeHeroConfig.heroSubtitle}
+          </motion.p>
+          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-8 flex justify-center gap-2.5">
+            <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
+              {homeHeroConfig.primaryCtaText}
             </Link>
-            <span className="h-1 w-1 rounded-full bg-white/35" />
-            <Link href="/connect" className="transition hover:text-white">Join the private flow</Link>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-          className="relative mx-auto flex w-full max-w-[430px] items-center justify-center"
-        >
-          <motion.div
-            className="pointer-events-none absolute inset-0 rounded-[38px] bg-gradient-to-tr from-[#ff2e63]/20 via-transparent to-cyan-300/20 blur-2xl"
-            animate={{ opacity: [0.45, 0.9, 0.45] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          />
-
-          <div className="relative grid w-full grid-cols-2 gap-3">
-            {displaySectionsWithImages.slice(0, 2).map((item, index) => (
-              <motion.article
-                key={`scene-${item.id}`}
-                animate={{ y: [0, index === 0 ? -12 : 12, 0], rotate: [0, index === 0 ? -1 : 1, 0] }}
-                transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut" }}
-                className={`relative overflow-hidden rounded-[28px] border border-white/20 bg-white/10 p-2 backdrop-blur-xl ${index === 0 ? "mt-8" : "mb-8"}`}
-              >
-                <div className="relative aspect-[3/4] overflow-hidden rounded-[22px]">
-                  <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 rounded-2xl border border-white/20 bg-black/35 px-3 py-2 backdrop-blur-md">
-                    <p className="line-clamp-1 text-sm font-medium">{item.title}</p>
-                    <p className="line-clamp-1 text-[11px] text-white/65">{item.subtitle}</p>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </div>
+            {homeHeroConfig.secondaryCtaText ? (
+              <Link href="/me/create-profile" className="inline-flex rounded-full border border-white/[0.2] px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-all duration-300 hover:border-[#FF2E63]/70 md:text-base">
+                {homeHeroConfig.secondaryCtaText}
+              </Link>
+            ) : null}
+          </motion.div>
         </motion.div>
       </section>
 
-      <motion.section
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.75 }}
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-4 pb-4 md:px-6 md:pb-6"
-      >
-        <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-white/[0.08] p-4 backdrop-blur-2xl md:p-5">
-          <motion.div
-            className="absolute -left-1/4 top-1/2 h-16 w-1/2 -translate-y-1/2 bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent blur-2xl"
-            animate={{ x: ["0%", "220%"] }}
-            transition={{ duration: 4.6, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="relative flex flex-wrap items-center gap-2 md:gap-3">
-            {["AI Mood Sync", "Live Aura Pulse", "Private Spectrum", "Zero-Friction Match"].map((feature, index) => (
-              <motion.span
-                key={feature}
-                className="rounded-full border border-white/20 bg-black/30 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-white/85 md:text-xs"
-                animate={{ opacity: [0.55, 1, 0.55] }}
-                transition={{ duration: 2.8, delay: index * 0.25, repeat: Infinity, ease: "easeInOut" }}
-              >
-                {feature}
-              </motion.span>
-            ))}
-          </div>
-        </div>
-      </motion.section>
+      <section id="home-sections" className="mx-auto w-full max-w-7xl px-6 pb-12 md:pb-14">
+        {displaySectionsWithImages.map((section, index) => {
+          const flip = index % 2 === 1;
+
+          return (
+            <motion.article
+              key={section.id}
+              className="grid items-center gap-7 py-14 md:py-16 lg:grid-cols-2 lg:gap-10"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={{ visible: { transition: { staggerChildren: 0.14 } } }}
+            >
+              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-2" : ""}>
+                <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0a0a0a]">
+                  <Image src={section.imageUrl} alt={section.title} width={1400} height={1000} className="h-[420px] w-full object-cover md:h-[520px]" />
+                </div>
+              </motion.div>
+              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-1" : ""}>
+                <h2 className="text-3xl font-medium leading-tight tracking-[0.01em] md:text-4xl">{section.title}</h2>
+                {section.subtitle ? <p className="mt-4 max-w-xl text-base leading-relaxed text-[#A1A1A1] md:text-lg">{section.subtitle}</p> : null}
+              </motion.div>
+            </motion.article>
+          );
+        })}
+      </section>
+
+      <section id="featured-profiles" className="mx-auto w-full max-w-7xl px-6 py-16 md:py-18">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }}>
+          <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">Magnetic Preview</h2>
+          <div className="mt-4 h-px w-full bg-white/10" />
+        </motion.div>
+
+        <motion.div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
+          {displaySectionsWithImages.slice(0, 6).map((section) => (
+            <motion.article key={`preview-${section.id}`} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]">
+              <div className="aspect-[4/5] overflow-hidden bg-black">
+                <Image src={section.imageUrl} alt={section.title} width={800} height={1000} className="h-full w-full object-cover" />
+              </div>
+              <div className="px-4 py-4">
+                <h3 className="text-sm font-medium tracking-[0.02em] text-white md:text-base">{section.title}</h3>
+              </div>
+            </motion.article>
+          ))}
+        </motion.div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.8, ease: "easeOut" }}>
+          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">Less noise, more impact.</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
+            Every card, every line, and every motion is intentional—clean, focused, and unmistakably premium.
+          </p>
+        </motion.div>
+      </section>
+
+      <section className="px-6 pb-20 pt-4">
+        <motion.div className="mx-auto max-w-3xl text-center" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }}>
+          <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Ready to stand out?</p>
+          <Link href="/me/create-profile" className="mt-7 inline-flex rounded-full border border-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
+            Create Your Profile
+          </Link>
+        </motion.div>
+      </section>
     </main>
   );
 }
