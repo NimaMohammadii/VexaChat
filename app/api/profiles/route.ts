@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isLegacyUrl } from "@/lib/storage/object-storage";
 
 function createSupabaseServerClient() {
   const cookieStore = cookies();
@@ -28,6 +29,12 @@ async function getAuthenticatedUser() {
   } = await supabase.auth.getUser();
 
   return user;
+}
+
+function normalizeImageKeys(value: unknown) {
+  const list = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean) : [];
+  if (list.some((item) => isLegacyUrl(item))) return null;
+  return list;
 }
 
 export async function GET() {
@@ -62,6 +69,11 @@ export async function POST(request: Request) {
     services?: string[];
   };
 
+  const images = normalizeImageKeys(body.images);
+  if (!images) {
+    return NextResponse.json({ error: "images must contain storage keys, not direct URLs." }, { status: 400 });
+  }
+
   const created = await prisma.profile.create({
     data: {
       name: body.name ?? "",
@@ -69,7 +81,8 @@ export async function POST(request: Request) {
       city: body.city ?? "",
       price: Number(body.price),
       description: body.description ?? "",
-      images: body.images ?? [],
+      imageUrl: images[0] ?? "",
+      images,
       height: body.height ?? "",
       languages: body.languages ?? [],
       availability: body.availability ?? "Unavailable",

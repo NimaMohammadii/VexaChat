@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
-import { buildHomepageImageUrl, prepareHomepageImageUpload } from "@/lib/homepage-image-storage";
+import { uploadHomepageImage } from "@/lib/homepage-image-storage";
 import { prisma } from "@/lib/prisma";
+import { deleteObjectByKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -36,18 +37,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         return NextResponse.json({ error: "File must be 5MB or smaller" }, { status: 400 });
       }
 
-      const preparedUpload = await prepareHomepageImageUpload(file);
+      const uploaded = await uploadHomepageImage(file);
       const updated = await prisma.homepageImage.update({
         where: { id: params.id },
         data: {
           url: "",
-          storagePath: preparedUpload.storagePath,
-          contentType: preparedUpload.contentType,
-          data: preparedUpload.data
+          storagePath: uploaded.storagePath,
+          contentType: uploaded.contentType,
+          data: null
         }
       });
 
-      return NextResponse.json({ image: { ...updated, url: buildHomepageImageUrl(updated.id) } });
+      if (existing.storagePath && existing.storagePath !== updated.storagePath) {
+        await deleteObjectByKey(existing.storagePath).catch(() => null);
+      }
+
+      return NextResponse.json({ image: { ...updated, url: await resolveStoredFileUrl(updated.storagePath) } });
     }
 
     const body = (await request.json()) as { order?: number };
@@ -60,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: { order: body.order }
     });
 
-    return NextResponse.json({ image: { ...updated, url: updated.data ? buildHomepageImageUrl(updated.id) : updated.url } });
+    return NextResponse.json({ image: { ...updated, url: updated.storagePath ? await resolveStoredFileUrl(updated.storagePath) : "" } });
   } catch (error) {
     console.error("[admin/homepage-images/:id][PATCH]", error);
     return NextResponse.json({ error: "Unable to update homepage image" }, { status: 500 });
@@ -80,6 +85,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     }
 
     await prisma.homepageImage.delete({ where: { id: params.id } });
+    if (existing.storagePath) {
+      await deleteObjectByKey(existing.storagePath).catch(() => null);
+    }
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

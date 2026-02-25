@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { deleteObjectByKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { deleteObjectByKey, isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type UpdatePayload = {
   verified?: unknown;
@@ -114,6 +114,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   if (imageUrls && imageUrls.length > 2) {
     return NextResponse.json({ error: "A profile can include at most 2 images." }, { status: 400 });
+  }
+
+
+  if (imageUrls && imageUrls.some((imageUrl) => isLegacyUrl(imageUrl))) {
+    return NextResponse.json({ error: "imageUrls must contain storage keys, not direct URLs." }, { status: 400 });
   }
 
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
-import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const DB_NOT_READY_MESSAGE = "Database not ready. Run migrations on production DB.";
 
@@ -72,6 +72,10 @@ export async function POST(request: NextRequest) {
 
     if (!title || !imageUrl) {
       return NextResponse.json({ error: "title and imageUrl are required" }, { status: 400 });
+    }
+
+    if (isLegacyUrl(imageUrl)) {
+      return NextResponse.json({ error: "imageUrl must be a storage key, not a direct URL" }, { status: 400 });
     }
 
     const latest = await prisma.homeSection.findFirst({ orderBy: { order: "desc" }, select: { order: true } });

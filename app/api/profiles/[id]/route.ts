@@ -1,9 +1,21 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isLegacyUrl } from "@/lib/storage/object-storage";
+
+function normalizeImageKeys(value: unknown) {
+  const list = Array.isArray(value) ? value.filter((v): v is string => typeof v === "string").map((v) => v.trim()).filter(Boolean) : [];
+  if (list.some((item) => isLegacyUrl(item))) return null;
+  return list;
+}
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const body = await request.json();
+  const images = normalizeImageKeys(body.images);
+
+  if (!images) {
+    return NextResponse.json({ error: "images must contain storage keys, not direct URLs." }, { status: 400 });
+  }
 
   try {
     const updated = await prisma.profile.update({
@@ -14,7 +26,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         city: body.city,
         price: Number(body.price),
         description: body.description,
-        images: body.images ?? [],
+        imageUrl: images[0] ?? "",
+        images,
         height: body.height ?? "",
         languages: body.languages ?? [],
         availability: body.availability ?? "Unavailable",

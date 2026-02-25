@@ -1,4 +1,4 @@
-export async function presignUpload(key: string, contentType: string) {
+export async function presignUpload(key: string, contentType: string): Promise<{ uploadUrl: string; key: string }> {
   const response = await fetch("/api/storage/presign-upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -8,7 +8,8 @@ export async function presignUpload(key: string, contentType: string) {
   if (!response.ok || !payload.uploadUrl || !payload.key) {
     throw new Error(payload.error ?? "Unable to create upload URL.");
   }
-  return payload;
+
+  return { uploadUrl: payload.uploadUrl, key: payload.key };
 }
 
 export async function uploadFileWithPresignedUrl(uploadUrl: string, file: File) {
@@ -24,7 +25,6 @@ export async function uploadFileWithPresignedUrl(uploadUrl: string, file: File) 
 
 export async function presignRead(key: string) {
   if (!key) return "";
-  if (key.startsWith("http://") || key.startsWith("https://")) return key;
 
   const response = await fetch("/api/storage/presign-read", {
     method: "POST",
@@ -39,7 +39,7 @@ export async function presignRead(key: string) {
 }
 
 export async function deleteStoredObject(key: string) {
-  if (!key || key.startsWith("http://") || key.startsWith("https://")) return;
+  if (!key) return;
   await fetch("/api/storage/delete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
