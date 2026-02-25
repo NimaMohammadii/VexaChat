@@ -114,7 +114,7 @@ export default async function HomePage({ searchParams }: { searchParams: Record<
 
   return (
     <>
-      <PublicHeader rightSlot={<GoogleAuthControl />} showSearch={false} />
+      <PublicHeader rightSlot={<GoogleAuthControl />} />
       <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homepageImages={homepageImages} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
     </>
   );
