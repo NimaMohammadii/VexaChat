@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
 import { prisma } from "@/lib/prisma";
-import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 function parseOptionalString(value: unknown) {
   if (value === null || value === undefined) return undefined;
@@ -36,6 +36,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     if (body.imageUrl !== undefined && !imagePatch) {
       return NextResponse.json({ error: "imageUrl cannot be empty" }, { status: 400 });
+    }
+
+    if (imagePatch && isLegacyUrl(imagePatch)) {
+      return NextResponse.json({ error: "imageUrl must be a storage key, not a direct URL" }, { status: 400 });
     }
 
     const updated = await prisma.homeSection.update({

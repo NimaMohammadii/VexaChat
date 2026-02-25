@@ -92,3 +92,53 @@ Storage diagnostics endpoint (protected by `CRON_SECRET`):
 
 - Endpoint: `GET /api/storage/health`
 - Header: `x-cron-secret: <CRON_SECRET>`
+
+## Storage is R2-only
+
+Supabase is used only for auth/session. All user-uploaded files (avatars, profile images, meet images, verification docs, chat media, homepage section images, homepage hero images) must be stored as **R2 object keys** in the database.
+
+### Required storage environment variables (Render)
+
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_ENDPOINT`
+
+### One-time migration: Supabase Storage URLs -> R2 keys
+
+1. Deploy code and run Prisma migrations:
+
+```bash
+npm run db:deploy
+```
+
+2. Run the storage migration script (idempotent/restartable):
+
+```bash
+npm run storage:migrate-supabase-to-r2
+```
+
+Script requirements:
+
+- `DATABASE_URL`
+- `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`)
+- `SUPABASE_SERVICE_ROLE_KEY`
+- all `R2_*` vars above
+
+What the script migrates:
+
+- `userProfile.avatarUrl`
+- `profile.imageUrl`, `profile.images[]`
+- `meetCard.imageUrl`
+- `verificationRequest.docUrls[]`
+- `homeSection.imageUrl`
+- `homepageImage.url` and `homepageImage.data` -> `homepageImage.storagePath` (R2 key)
+- `chatMedia.storageKey` / `chatMedia.url` if legacy URLs are found
+
+3. Deploy with R2 vars present in production.
+
+4. Confirm cleanup using script report:
+
+- verification counts for `storage/v1/object` and `supabase` references should be `0`.
+- all migrated DB values should now be R2 keys (not URLs).

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { isAdminAccessAllowed } from "@/lib/admin-access";
-import { buildHomepageImageUrl, prepareHomepageImageUpload } from "@/lib/homepage-image-storage";
+import { uploadHomepageImage } from "@/lib/homepage-image-storage";
 import { prisma } from "@/lib/prisma";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -31,10 +32,10 @@ export async function GET() {
       orderBy: [{ order: "asc" }, { createdAt: "desc" }]
     });
 
-    const normalizedImages = images.map((image) => ({
+    const normalizedImages = await Promise.all(images.map(async (image) => ({
       ...image,
-      url: image.data ? buildHomepageImageUrl(image.id) : image.url
-    }));
+      url: image.storagePath ? await resolveStoredFileUrl(image.storagePath) : ""
+    })));
 
     return NextResponse.json({ images: normalizedImages });
   } catch (error) {
@@ -71,20 +72,20 @@ export async function POST(request: Request) {
       select: { order: true }
     });
 
-    const preparedUpload = await prepareHomepageImageUpload(file);
+    const uploaded = await uploadHomepageImage(file);
 
     const image = await prisma.homepageImage.create({
       data: {
         slot: "homepage",
         order: (latest?.order ?? -1) + 1,
         url: "",
-        storagePath: preparedUpload.storagePath,
-        contentType: preparedUpload.contentType,
-        data: preparedUpload.data
+        storagePath: uploaded.storagePath,
+        contentType: uploaded.contentType,
+        data: null
       }
     });
 
-    return NextResponse.json({ image: { ...image, url: buildHomepageImageUrl(image.id) } }, { status: 201 });
+    return NextResponse.json({ image: { ...image, url: await resolveStoredFileUrl(image.storagePath) } }, { status: 201 });
   } catch (error) {
     console.error("[admin/homepage-images][POST]", error);
     return NextResponse.json({ error: "Unable to upload homepage image" }, { status: 500 });

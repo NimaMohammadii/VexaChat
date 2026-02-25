@@ -34,20 +34,21 @@ export async function GET() {
 
   const profileByUserId = new Map(userProfiles.map((profile) => [profile.userId, profile]));
 
-  const verifications = await Promise.all(requests
+  const resolvedRequests = await Promise.all(requests
     .map(async (item) => ({
       ...item,
       docUrls: await Promise.all((Array.isArray(item.docUrls) ? item.docUrls.filter((doc): doc is string => typeof doc === "string") : []).map((doc) => resolveStoredFileUrl(doc))),
       userProfile: profileByUserId.get(item.userId) ?? null
-    })))
-    .sort((a, b) => {
-      const statusDiff = statusRank[a.status] - statusRank[b.status];
-      if (statusDiff !== 0) {
-        return statusDiff;
-      }
+    })));
 
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+  const verifications = resolvedRequests.sort((a, b) => {
+    const statusDiff = statusRank[a.status] - statusRank[b.status];
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return NextResponse.json({ verifications });
 }

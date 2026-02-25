@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
+import { assertStorageKey, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 import { getR2EnvPresence } from "@/lib/r2/client";
 
 export async function POST(request: Request) {
@@ -15,9 +15,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const url = await resolveStoredFileUrl(key);
+    const normalizedKey = assertStorageKey(key, "key");
+    const url = await resolveStoredFileUrl(normalizedKey);
     return NextResponse.json({ url });
   } catch (error) {
+    if (error instanceof Error && error.message.includes("received URL")) {
+      return NextResponse.json({ error: "key must be an R2 storage key." }, { status: 400 });
+    }
+
     console.error("[storage/presign-read] Failed to create read presign", {
       error,
       envPresence: getR2EnvPresence()

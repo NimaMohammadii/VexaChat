@@ -1,4 +1,8 @@
-const DATABASE_STORAGE_PREFIX = "db:";
+import { randomUUID } from "node:crypto";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getR2Client, getR2Config } from "@/lib/r2/client";
+
+const HOMEPAGE_STORAGE_PREFIX = "homepage/images";
 
 function normalizeImageMimeType(type: string) {
   if (type === "image/png") return "image/png";
@@ -8,18 +12,32 @@ function normalizeImageMimeType(type: string) {
   return "image/jpeg";
 }
 
-export async function prepareHomepageImageUpload(file: File) {
+function extensionFromMimeType(type: string) {
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  if (type === "image/gif") return "gif";
+  if (type === "image/avif") return "avif";
+  return "jpg";
+}
+
+export async function uploadHomepageImage(file: File) {
   const contentType = normalizeImageMimeType(file.type);
-  const data = Buffer.from(await file.arrayBuffer());
+  const extension = extensionFromMimeType(contentType);
+  const key = `${HOMEPAGE_STORAGE_PREFIX}/${Date.now()}-${randomUUID()}.${extension}`;
+  const body = Buffer.from(await file.arrayBuffer());
+  const { bucketName } = getR2Config();
+
+  await getR2Client().send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: body,
+      ContentType: contentType
+    })
+  );
 
   return {
     contentType,
-    data,
-    storagePath: `${DATABASE_STORAGE_PREFIX}${Date.now()}`
+    storagePath: key
   };
 }
-
-export function buildHomepageImageUrl(imageId: string) {
-  return `/api/homepage-images/${imageId}`;
-}
-

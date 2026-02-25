@@ -1,20 +1,20 @@
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const r2Endpoint = process.env.R2_ENDPOINT;
 
-let supabaseStoragePattern = null;
+let r2Pattern = null;
 
-if (supabaseUrl) {
+if (r2Endpoint) {
   try {
-    const { hostname } = new URL(supabaseUrl);
+    const { protocol, hostname } = new URL(r2Endpoint);
 
     if (hostname) {
-      supabaseStoragePattern = {
-        protocol: 'https',
+      r2Pattern = {
+        protocol: protocol.replace(":", "") || "https",
         hostname,
-        pathname: '/storage/v1/object/public/**',
+        pathname: '/**',
       };
     }
   } catch {
-    // Ignore invalid NEXT_PUBLIC_SUPABASE_URL values and continue without Supabase pattern.
+    // Ignore invalid R2_ENDPOINT values and continue without an R2 pattern.
   }
 }
 
@@ -27,7 +27,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      ...(supabaseStoragePattern ? [supabaseStoragePattern] : []),
+      ...(r2Pattern ? [r2Pattern] : []),
     ],
   },
 };

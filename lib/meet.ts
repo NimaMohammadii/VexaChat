@@ -20,15 +20,7 @@ export type MeetCardPayload = {
 export function parseMeetImageStorageKey(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    const marker = "/storage/v1/object/public/meet-images/";
-    const authenticatedMarker = "/storage/v1/object/authenticated/meet-images/";
-
-    if (trimmed.includes(marker)) return trimmed.split(marker)[1] ?? null;
-    if (trimmed.includes(authenticatedMarker)) return trimmed.split(authenticatedMarker)[1] ?? null;
-    return null;
-  }
-
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return null;
   return trimmed;
 }
 

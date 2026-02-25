@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
-import { deleteObjectByKey, isLegacyUrl } from "@/lib/storage/object-storage";
+import { assertStorageKey, deleteObjectByKey } from "@/lib/storage/object-storage";
 import { getR2EnvPresence } from "@/lib/r2/client";
 
 export async function POST(request: Request) {
@@ -15,12 +15,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (!isLegacyUrl(key)) {
-      await deleteObjectByKey(key);
-    }
-
+    await deleteObjectByKey(assertStorageKey(key, "key"));
     return NextResponse.json({ ok: true });
   } catch (error) {
+    if (error instanceof Error && error.message.includes("received URL")) {
+      return NextResponse.json({ error: "key must be an R2 storage key." }, { status: 400 });
+    }
+
     console.error("[storage/delete] Failed to delete object", {
       error,
       envPresence: getR2EnvPresence()
