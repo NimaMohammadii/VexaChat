@@ -32,7 +32,7 @@ type HomeConfig = {
 
 const fadeUp = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
 
-type AdminHomepageTab = "hero" | "backgrounds" | "images";
+type AdminHomepageTab = "hero" | "sections" | "images";
 
 const homepageImagePlaceholders = [
   {
@@ -262,7 +262,7 @@ export default function AdminHomepageManagerPage() {
       <div className="inline-flex rounded-full border border-white/[0.08] bg-black/20 p-1 text-sm">
         {([
           { value: "hero", label: "Hero" },
-          { value: "backgrounds", label: "Background Sections/Pages" },
+          { value: "sections", label: "Sections" },
           { value: "images", label: "Images" }
         ] as const).map((tab) => (
           <motion.button
@@ -297,12 +297,8 @@ export default function AdminHomepageManagerPage() {
           </motion.article>
         ) : null}
 
-        {activeTab === "backgrounds" ? (
-          <motion.div key="backgrounds" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
-            <p className="rounded-2xl border border-white/[0.08] bg-black/35 p-4 text-sm leading-relaxed text-white/75">
-              Upload a section image here to automatically use the same image as a full-page blurred liquid-glass background in public pages.
-              If you do not upload anything, the current design remains unchanged.
-            </p>
+        {activeTab === "sections" ? (
+          <motion.div key="sections" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
             <motion.button whileTap={{ scale: 0.98 }} onClick={() => setIsCreateOpen(true)} className="rounded-full border border-white/25 px-4 py-2 text-sm hover:border-[#FF2E63]/70">Create New Section</motion.button>
 
             <AnimatePresence>
@@ -365,7 +361,7 @@ export default function AdminHomepageManagerPage() {
                       </div>
 
                       <label className="space-y-1 text-xs text-white/75">
-                        <span>Replace section/page background image</span>
+                        <span>Replace section image</span>
                         <input type="file" accept="image/*" className="block w-full text-xs text-white/80" onChange={async (event) => {
                           const file = event.target.files?.[0];
                           if (!file) return;
