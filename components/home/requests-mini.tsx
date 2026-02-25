@@ -41,23 +41,23 @@ export function RequestsMini({ requests }: RequestsMiniProps) {
   }
 
   return (
-    <section className="rounded-[24px] border border-white/10 bg-[rgba(255,255,255,0.04)] p-3.5 shadow-[0_10px_28px_rgba(122,30,44,0.16)] backdrop-blur-[16px]">
-      <p className="px-1 text-xs uppercase tracking-[0.14em] text-white/60">Pending requests</p>
+    <section className="liquid-glass rounded-[24px] p-3.5">
+      <p className="px-1 text-xs uppercase tracking-[0.14em] text-white/65">Pending requests</p>
       <div className="mt-3 space-y-2.5">
         {visibleItems.map((request) => {
           const isBusy = busyId === request.id;
           return (
-            <div key={request.id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/25 p-2.5">
-              <img src={request.sender.avatarUrl} alt={request.sender.name} className="h-10 w-10 rounded-full border border-white/15 object-cover" />
+            <div key={request.id} className="liquid-glass-soft flex items-center gap-2 rounded-2xl p-2.5">
+              <img src={request.sender.avatarUrl} alt={request.sender.name} className="h-10 w-10 rounded-full border border-white/30 object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-white">{request.sender.name}</p>
-                <p className="truncate text-xs text-white/55">@{request.sender.username}</p>
+                <p className="truncate text-xs text-white/65">@{request.sender.username}</p>
               </div>
               <button
                 type="button"
                 onClick={() => void updateRequest(request.id, "accept")}
                 disabled={isBusy}
-                className="rounded-xl border border-white/20 bg-white/[0.05] px-2.5 py-1.5 text-[11px] text-white transition hover:border-[#7A1E2C]/50 hover:bg-[#7A1E2C]/20 disabled:opacity-50"
+                className="liquid-glass-soft rounded-xl px-2.5 py-1.5 text-[11px] text-white transition hover:border-white/50 disabled:opacity-50"
               >
                 Accept
               </button>
@@ -65,7 +65,7 @@ export function RequestsMini({ requests }: RequestsMiniProps) {
                 type="button"
                 onClick={() => void updateRequest(request.id, "reject")}
                 disabled={isBusy}
-                className="rounded-xl border border-white/15 bg-black/35 px-2.5 py-1.5 text-[11px] text-white/80 transition hover:border-white/30 hover:text-white disabled:opacity-50"
+                className="rounded-xl border border-white/25 bg-black/20 px-2.5 py-1.5 text-[11px] text-white/85 transition hover:border-white/40 hover:text-white disabled:opacity-50"
               >
                 Decline
               </button>
