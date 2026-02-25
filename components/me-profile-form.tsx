@@ -64,17 +64,27 @@ export function MeProfileForm({ data }: { data: MeData }) {
     setIsSaving(true);
     setStatus(null);
 
+    const payload: {
+      name: string;
+      username: string;
+      bio: string;
+      avatarUrl?: string;
+    } = {
+      name,
+      username,
+      bio
+    };
+
+    if (avatarUrl && avatarUrl.trim() !== "") {
+      payload.avatarUrl = avatarUrl;
+    }
+
     const response = await fetch("/api/me", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        name,
-        username,
-        bio,
-        avatarUrl
-      })
+      body: JSON.stringify(payload)
     });
 
     const result = (await response.json()) as { error?: string };
