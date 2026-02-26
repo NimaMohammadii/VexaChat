@@ -1,385 +1,773 @@
-"use client";
+“use client”;
 
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+// components/friends/friends-page.tsx
+// Drop-in replacement — matches VexaChat project patterns exactly.
+// APIs used (all already exist in the project):
+//   GET  /api/friends/list
+//   GET  /api/friends/requests
+//   GET  /api/friends/blocked
+//   GET  /api/friends/search?username=…
+//   POST /api/friends/request          { receiverId }
+//   POST /api/friends/requests/[id]/accept
+//   POST /api/friends/requests/[id]/reject
+//   POST /api/friends/remove           { userId }
+//   POST /api/friends/block            { userId }
+//   POST /api/friends/unblock          { userId }
+//   POST /api/chats/open               { otherUserId }
+
+import { AnimatePresence, motion } from “framer-motion”;
+import { useEffect, useMemo, useRef, useState } from “react”;
+import { useRouter } from “next/navigation”;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type UserCard = {
-  id: string;
-  username: string;
-  avatarUrl: string;
-  bio: string;
-  verified?: boolean;
-  relationship?: "none" | "pending" | "friends" | "blocked";
+id: string;
+username: string;
+avatarUrl: string;
+bio: string;
+verified?: boolean;
+relationship?: “none” | “pending” | “friends” | “blocked”;
 };
 
 type FriendRequestItem = {
-  id: string;
-  createdAt: string;
-  sender: UserCard;
+id: string;
+createdAt: string;
+sender: UserCard;
 };
 
-type Tab = "friends" | "requests" | "blocked";
+type Tab = “friends” | “requests” | “blocked”;
 
-const transition = { duration: 0.7, ease: "easeOut" as const };
+// ─── Motion presets ───────────────────────────────────────────────────────────
+
+const spring = { duration: 0.4, ease: [0.34, 1.15, 0.64, 1] as const };
+const fade   = { duration: 0.3, ease: “easeOut” as const };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function initials(value: string) {
-  return (value?.[0] ?? "U").toUpperCase();
+return (value?.[0] ?? “U”).toUpperCase();
 }
 
-function Avatar({ user, size = "h-11 w-11" }: { user: Pick<UserCard, "avatarUrl" | "username">; size?: string }) {
-  if (user.avatarUrl) {
-    return <img src={user.avatarUrl} alt={user.username} className={`${size} rounded-full border border-white/10 object-cover`} />;
-  }
+const GRADIENTS = [
+“linear-gradient(135deg,#0d0103,#3a0a14)”,
+“linear-gradient(135deg,#04080f,#0e1726)”,
+“linear-gradient(135deg,#030d05,#0c1c0e)”,
+“linear-gradient(135deg,#0d0802,#241804)”,
+“linear-gradient(135deg,#07041a,#150e30)”,
+];
 
-  return <div className={`${size} flex items-center justify-center rounded-full border border-white/10 bg-[#171717] text-sm text-white/80`}>{initials(user.username)}</div>;
+function getBg(id: string) {
+let h = 0;
+for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+return GRADIENTS[Math.abs(h) % GRADIENTS.length];
 }
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+function Avatar({
+user,
+size = “h-11 w-11”,
+ring = false,
+}: {
+user: Pick<UserCard, “id” | “avatarUrl” | “username”>;
+size?: string;
+ring?: boolean;
+}) {
+const [err, setErr] = useState(false);
+const ringStyle: React.CSSProperties = ring
+? { boxShadow: “0 0 0 2px rgba(74,222,128,0.35), 0 0 8px rgba(74,222,128,0.12)”, borderColor: “rgba(74,222,128,0.3)” }
+: {};
+
+if (user.avatarUrl && !err) {
+return (
+<img
+src={user.avatarUrl}
+alt={user.username}
+onError={() => setErr(true)}
+className={`${size} shrink-0 rounded-full border border-white/10 object-cover`}
+style={ringStyle}
+/>
+);
+}
+
+return (
+<div
+className={`${size} flex shrink-0 items-center justify-center rounded-full border border-white/10 text-sm font-bold text-white/80`}
+style={{ background: getBg(user.id), …ringStyle }}
+>
+{initials(user.username)}
+</div>
+);
+}
+
+// ─── Glass card ───────────────────────────────────────────────────────────────
+
+function GlassCard({ children, className = “” }: { children: React.ReactNode; className?: string }) {
+return (
+<div
+className={`rounded-[18px] backdrop-blur-[50px] ${className}`}
+style={{
+background: “linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)”,
+border: “1px solid rgba(255,255,255,0.13)”,
+borderBottom: “1px solid rgba(255,255,255,0.04)”,
+borderRight: “1px solid rgba(255,255,255,0.04)”,
+boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.15),0 4px 20px rgba(0,0,0,0.4)”,
+}}
+>
+{children}
+</div>
+);
+}
+
+// ─── Glass button ─────────────────────────────────────────────────────────────
+
+type BtnVariant = “default” | “wine” | “ghost”;
+
+function GlassBtn({
+children, onClick, disabled, variant = “default”, className = “”,
+}: {
+children: React.ReactNode;
+onClick?: () => void;
+disabled?: boolean;
+variant?: BtnVariant;
+className?: string;
+}) {
+const styles: Record<BtnVariant, React.CSSProperties> = {
+default: {
+background: “linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)”,
+border: “1px solid rgba(255,255,255,0.14)”,
+borderBottom: “1px solid rgba(255,255,255,0.04)”,
+boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
+color: “rgba(255,255,255,0.8)”,
+},
+wine: {
+background: “linear-gradient(160deg,rgba(90,16,32,0.65) 0%,rgba(50,8,18,0.55) 100%)”,
+border: “1px solid rgba(138,31,56,0.28)”,
+borderBottom: “1px solid rgba(138,31,56,0.06)”,
+boxShadow: “inset 0 1.5px 0 rgba(138,31,56,0.18)”,
+color: “rgba(255,255,255,0.85)”,
+},
+ghost: {
+background: “transparent”,
+border: “1px solid rgba(255,255,255,0.07)”,
+color: “rgba(232,232,232,0.35)”,
+},
+};
+
+return (
+<button
+onClick={onClick}
+disabled={disabled}
+className={`inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-semibold transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+style={{ fontFamily: “inherit”, …styles[variant] }}
+>
+{children}
+</button>
+);
+}
+
+// ─── Tab bar with sliding indicator ──────────────────────────────────────────
+
+function TabBar({ active, onChange, requestCount }: { active: Tab; onChange: (t: Tab) => void; requestCount: number }) {
+const TABS: { key: Tab; label: string }[] = [
+{ key: “friends”,  label: “Friends”  },
+{ key: “requests”, label: “Requests” },
+{ key: “blocked”,  label: “Blocked”  },
+];
+const refs = useRef<(HTMLButtonElement | null)[]>([]);
+const [line, setLine] = useState({ left: 0, width: 0 });
+
+useEffect(() => {
+const idx = TABS.findIndex((t) => t.key === active);
+const el = refs.current[idx];
+if (el) setLine({ left: el.offsetLeft, width: el.offsetWidth });
+}, [active]);
+
+return (
+<div className="relative flex border-b border-white/[0.06]">
+{TABS.map((t, i) => (
+<button
+key={t.key}
+ref={(el) => { refs.current[i] = el; }}
+onClick={() => onChange(t.key)}
+className=“relative flex items-center gap-1.5 pb-2.5 pr-5 text-[13px] font-semibold tracking-[0.01em] transition-colors duration-200”
+style={{
+color: active === t.key ? “#fff” : “rgba(232,232,232,0.35)”,
+fontFamily: “‘Space Grotesk’, sans-serif”,
+}}
+>
+{t.label}
+{t.key === “requests” && requestCount > 0 && (
+<span
+className=“flex h-[15px] w-[15px] items-center justify-center rounded-full text-[9px] font-bold text-white”
+style={{ background: “#8a1f38”, boxShadow: “0 0 6px rgba(90,16,32,0.4)” }}
+>
+{requestCount}
+</span>
+)}
+</button>
+))}
+<motion.div
+className=“absolute bottom-[-1px] h-[1.5px] rounded-full”
+animate={{ left: line.left, width: line.width }}
+transition={{ type: “spring”, stiffness: 400, damping: 32 }}
+style={{ background: “#8a1f38”, boxShadow: “0 0 8px rgba(90,16,32,0.35)” }}
+/>
+</div>
+);
+}
+
+// ─── Profile modal ────────────────────────────────────────────────────────────
+
+function ProfileModal({
+user, requestMap, onClose, onSendRequest, onAccept, onReject, onRemove, onBlock, onUnblock, onMessage,
+}: {
+user: UserCard;
+requestMap: Map<string, string>;
+onClose: () => void;
+onSendRequest: (id: string) => void;
+onAccept: (reqId: string) => void;
+onReject: (reqId: string) => void;
+onRemove: (id: string) => void;
+onBlock: (id: string) => void;
+onUnblock: (id: string) => void;
+onMessage: (id: string) => void;
+}) {
+const reqId = requestMap.get(user.id);
+return (
+<>
+<motion.button
+className=“fixed inset-0 z-40 bg-black/70 backdrop-blur-sm”
+initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+onClick={onClose} aria-label=“Close”
+/>
+<motion.div
+initial={{ opacity: 0, y: 10, scale: 0.95 }}
+animate={{ opacity: 1, y: 0, scale: 1 }}
+exit={{ opacity: 0, y: 10, scale: 0.95 }}
+transition={{ duration: 0.25, ease: “easeOut” }}
+className=“fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[24px] p-6”
+style={{
+background: “linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 45%,rgba(0,0,0,0.1) 100%)”,
+border: “1px solid rgba(255,255,255,0.14)”,
+borderBottom: “1px solid rgba(255,255,255,0.04)”,
+backdropFilter: “blur(60px) saturate(1.6)”,
+boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),0 30px 80px rgba(0,0,0,0.7)”,
+}}
+>
+<button
+onClick={onClose}
+className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-xs text-white/50 transition hover:text-white/80"
+>✕</button>
+
+```
+    <div className="flex flex-col items-center text-center">
+      <Avatar user={user} size="h-20 w-20" />
+      <p className="mt-3 text-[15px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        @{user.username}
+      </p>
+      <p className="mt-1 max-w-[260px] text-[12px] leading-relaxed text-white/50">
+        {user.bio?.slice(0, 120) || "No bio yet."}
+      </p>
+      {user.verified && (
+        <span className="mt-2 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/60">
+          ✓ Verified
+        </span>
+      )}
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        {user.relationship === "pending"  && <GlassBtn disabled>Pending</GlassBtn>}
+        {user.relationship === "friends"  && (
+          <>
+            <GlassBtn onClick={() => onMessage(user.id)}>Message</GlassBtn>
+            <GlassBtn onClick={() => onRemove(user.id)}>Remove</GlassBtn>
+            <GlassBtn variant="ghost" onClick={() => onBlock(user.id)}>Block</GlassBtn>
+          </>
+        )}
+        {user.relationship === "blocked"  && <GlassBtn onClick={() => onUnblock(user.id)}>Unblock</GlassBtn>}
+        {(!user.relationship || user.relationship === "none") && (
+          <GlassBtn variant="wine" onClick={() => onSendRequest(user.id)}>Add Friend</GlassBtn>
+        )}
+        {reqId && (
+          <>
+            <GlassBtn variant="wine" onClick={() => onAccept(reqId)}>Accept</GlassBtn>
+            <GlassBtn variant="ghost" onClick={() => onReject(reqId)}>Reject</GlassBtn>
+          </>
+        )}
+      </div>
+    </div>
+  </motion.div>
+</>
+```
+
+);
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
 
 export function FriendsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("friends");
-  const [friends, setFriends] = useState<UserCard[]>([]);
-  const [requests, setRequests] = useState<FriendRequestItem[]>([]);
-  const [blockedUsers, setBlockedUsers] = useState<UserCard[]>([]);
-  const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<UserCard[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserCard | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+const router = useRouter();
 
-  const incomingCount = requests.length;
+const [activeTab,     setActiveTab]     = useState<Tab>(“friends”);
+const [friends,       setFriends]       = useState<UserCard[]>([]);
+const [requests,      setRequests]      = useState<FriendRequestItem[]>([]);
+const [blockedUsers,  setBlockedUsers]  = useState<UserCard[]>([]);
+const [search,        setSearch]        = useState(””);
+const [searchResults, setSearchResults] = useState<UserCard[]>([]);
+const [selectedUser,  setSelectedUser]  = useState<UserCard | null>(null);
+const [toast,         setToast]         = useState<string | null>(null);
 
-  const loadFriends = async () => {
-    const response = await fetch("/api/friends/list", { cache: "no-store" });
-    if (!response.ok) {
-      return;
-    }
-    const payload = (await response.json()) as { friends: UserCard[] };
-    setFriends(payload.friends);
-  };
+// ── data loaders ──────────────────────────────────────────────────────────
+const loadFriends  = async () => { const r = await fetch(”/api/friends/list”,    { cache: “no-store” }); if (r.ok) setFriends((await r.json() as { friends: UserCard[] }).friends); };
+const loadRequests = async () => { const r = await fetch(”/api/friends/requests”,{ cache: “no-store” }); if (r.ok) setRequests((await r.json() as { requests: FriendRequestItem[] }).requests); };
+const loadBlocked  = async () => { const r = await fetch(”/api/friends/blocked”, { cache: “no-store” }); if (r.ok) setBlockedUsers((await r.json() as { blocked: UserCard[] }).blocked); };
+const refreshAll   = async () => Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
 
-  const loadRequests = async () => {
-    const response = await fetch("/api/friends/requests", { cache: "no-store" });
-    if (!response.ok) {
-      return;
-    }
+useEffect(() => { void refreshAll(); }, []);
 
-    const payload = (await response.json()) as { requests: FriendRequestItem[] };
-    setRequests(payload.requests);
-  };
+// Escape key closes modal
+useEffect(() => {
+const fn = (e: KeyboardEvent) => { if (e.key === “Escape”) setSelectedUser(null); };
+window.addEventListener(“keydown”, fn);
+return () => window.removeEventListener(“keydown”, fn);
+}, []);
 
-  const loadBlocked = async () => {
-    const response = await fetch("/api/friends/blocked", { cache: "no-store" });
-    if (!response.ok) {
-      return;
-    }
+// Auto-dismiss toast
+useEffect(() => {
+if (!toast) return;
+const t = setTimeout(() => setToast(null), 2800);
+return () => clearTimeout(t);
+}, [toast]);
 
-    const payload = (await response.json()) as { blocked: UserCard[] };
-    setBlockedUsers(payload.blocked);
-  };
+// Debounced search (identical pattern to chats page)
+useEffect(() => {
+if (search.trim().length < 3) { setSearchResults([]); return; }
+const t = setTimeout(async () => {
+const r = await fetch(`/api/friends/search?username=${encodeURIComponent(search.trim())}`, { cache: “no-store” });
+setSearchResults(r.ok ? (await r.json() as { users: UserCard[] }).users : []);
+}, 220);
+return () => clearTimeout(t);
+}, [search]);
 
-  useEffect(() => {
-    void loadFriends();
-    void loadRequests();
-    void loadBlocked();
-  }, []);
+const requestMap = useMemo(() => {
+const m = new Map<string, string>();
+for (const item of requests) m.set(item.sender.id, item.id);
+return m;
+}, [requests]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setSelectedUser(null);
-      }
-    };
+// ── actions ───────────────────────────────────────────────────────────────
+const showToast = (msg: string) => setToast(msg);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+const sendRequest = async (receiverId: string) => {
+const r = await fetch(”/api/friends/request”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ receiverId }) });
+if (!r.ok) { const p = await r.json().catch(() => ({ error: “Unable to send request.” })) as { error?: string }; showToast(p.error ?? “Unable to send request.”); return; }
+setSearchResults((prev) => prev.map((u) => u.id === receiverId ? { …u, relationship: “pending” } : u));
+setSelectedUser((prev)  => prev?.id === receiverId ? { …prev, relationship: “pending” } : prev);
+showToast(“Request sent ✓”);
+await refreshAll();
+};
 
-  useEffect(() => {
-    if (search.trim().length < 3) {
-      setSearchResults([]);
-      return;
-    }
+const actOnRequest = async (requestId: string, action: “accept” | “reject”) => {
+const r = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: “POST” });
+if (!r.ok) return;
+setRequests((prev) => prev.filter((item) => item.id !== requestId));
+showToast(action === “accept” ? “Friend added ✓” : “Request rejected”);
+await refreshAll();
+};
 
-    const timeout = setTimeout(async () => {
-      const response = await fetch(`/api/friends/search?username=${encodeURIComponent(search.trim())}`, { cache: "no-store" });
-      if (!response.ok) {
-        setSearchResults([]);
-        return;
-      }
+const removeFriend = async (userId: string) => {
+await fetch(”/api/friends/remove”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
+setSelectedUser(null);
+showToast(“Friend removed”);
+await refreshAll();
+};
 
-      const payload = (await response.json()) as { users: UserCard[] };
-      setSearchResults(payload.users);
-    }, 220);
+const blockUser = async (userId: string) => {
+await fetch(”/api/friends/block”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
+setSearchResults((prev) => prev.map((u) => u.id === userId ? { …u, relationship: “blocked” } : u));
+setSelectedUser((prev)  => prev?.id === userId ? { …prev, relationship: “blocked” } : prev);
+showToast(“User blocked”);
+await refreshAll();
+};
 
-    return () => clearTimeout(timeout);
-  }, [search]);
+const unblockUser = async (userId: string) => {
+await fetch(”/api/friends/unblock”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
+setSearchResults((prev) => prev.map((u) => u.id === userId ? { …u, relationship: “none” } : u));
+setSelectedUser((prev)  => prev?.id === userId ? { …prev, relationship: “none” } : prev);
+showToast(“User unblocked”);
+await refreshAll();
+};
 
-  const requestMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of requests) {
-      map.set(item.sender.id, item.id);
-    }
-    return map;
-  }, [requests]);
+const openChat = async (userId: string) => {
+const r = await fetch(”/api/chats/open”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ otherUserId: userId }) });
+if (!r.ok) return;
+const d = await r.json() as { conversation: { id: string } };
+router.push(`/chats/${d.conversation.id}`);
+};
 
-  const refreshAll = async () => {
-    await Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
-  };
+// ─── render ───────────────────────────────────────────────────────────────
+return (
+<main
+className=“relative min-h-screen overflow-hidden pb-20 pt-4 text-white”
+style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
+>
+{/* ambient blobs — same pattern as chats page */}
+<div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+<div className=“absolute left-[-15%] top-16 h-56 w-56 rounded-full blur-[110px]” style={{ background: “rgba(90,16,32,0.1)” }} />
+<div className=“absolute right-[-20%] top-1/3 h-72 w-72 rounded-full blur-[140px]” style={{ background: “rgba(255,255,255,0.04)” }} />
+</div>
 
-  const sendRequest = async (receiverId: string) => {
-    const response = await fetch("/api/friends/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ receiverId })
-    });
+```
+  <div className="relative mx-auto w-full max-w-xl px-4">
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({ error: "Unable to send request." }))) as { error?: string };
-      setMessage(payload.error ?? "Unable to send request.");
-      return;
-    }
-
-    setSearchResults((prev) => prev.map((item) => (item.id === receiverId ? { ...item, relationship: "pending" } : item)));
-    setSelectedUser((prev) => (prev?.id === receiverId ? { ...prev, relationship: "pending" } : prev));
-    setMessage("Request sent.");
-    await refreshAll();
-  };
-
-  const actOnRequest = async (requestId: string, action: "accept" | "reject") => {
-    const response = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: "POST" });
-    if (!response.ok) {
-      return;
-    }
-
-    setRequests((prev) => prev.filter((item) => item.id !== requestId));
-    await refreshAll();
-  };
-
-  const removeFriend = async (userId: string) => {
-    await fetch("/api/friends/remove", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId })
-    });
-    await refreshAll();
-  };
-
-  const blockUser = async (userId: string) => {
-    await fetch("/api/friends/block", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId })
-    });
-
-    setSearchResults((prev) => prev.map((item) => (item.id === userId ? { ...item, relationship: "blocked" } : item)));
-    setSelectedUser((prev) => (prev?.id === userId ? { ...prev, relationship: "blocked" } : prev));
-    await refreshAll();
-  };
-
-  const unblockUser = async (userId: string) => {
-    await fetch("/api/friends/unblock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId })
-    });
-
-    setSearchResults((prev) => prev.map((item) => (item.id === userId ? { ...item, relationship: "none" } : item)));
-    setSelectedUser((prev) => (prev?.id === userId ? { ...prev, relationship: "none" } : prev));
-    await refreshAll();
-  };
-
-  const statusButton = (user: UserCard) => {
-    if (user.relationship === "friends") {
-      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Friends</button>;
-    }
-
-    if (user.relationship === "pending") {
-      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Pending</button>;
-    }
-
-    if (user.relationship === "blocked") {
-      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Blocked</button>;
-    }
-
-    return <button onClick={() => void sendRequest(user.id)} className="rounded-xl border border-white/20 px-3 py-1.5 text-xs text-white transition hover:border-white/45">Add</button>;
-  };
-
-  return (
-    <main className="min-h-screen bg-black px-4 pb-20 pt-10 text-white md:px-8">
-      <div className="mx-auto w-full max-w-6xl">
-        <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-7 flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight">Friends</h1>
-          <div className="rounded-full border border-white/10 bg-[#111] px-3 py-1 text-xs text-white/80">{incomingCount} requests</div>
-        </motion.header>
-
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-6 flex gap-6 border-b border-white/10">
-          {(["friends", "requests", "blocked"] as const).map((tab) => (
-            <button key={tab} type="button" onClick={() => setActiveTab(tab)} className="relative pb-3 text-sm capitalize text-white/80 transition hover:text-white">
-              {tab}
-              {activeTab === tab ? <motion.span layoutId="friends-active-tab" className="absolute inset-x-0 -bottom-px h-[2px] bg-[#FF2E63]" /> : null}
-            </button>
-          ))}
-        </motion.div>
-
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-8 rounded-2xl border border-white/[0.06] bg-[#111] p-4">
-          <div className="relative transition-all duration-200 focus-within:scale-[1.01]">
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.7" fill="none" />
-              <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-            <motion.input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search username..."
-              className="w-full rounded-xl border border-white/10 bg-black py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-white/35"
-              whileFocus={{ scale: 1.01 }}
-              transition={{ duration: 0.25 }}
-            />
-          </div>
-
-          <AnimatePresence>
-            {searchResults.length > 0 ? (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={transition} className="mt-3 space-y-2">
-                {searchResults.map((item) => (
-                  <motion.button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedUser(item)}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={transition}
-                    whileHover={{ scale: 1.01 }}
-                    className="flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-black/60 px-3 py-3 text-left transition hover:border-white/15 hover:bg-white/[0.03]"
-                  >
-                    <Avatar user={item} size="h-10 w-10" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-white">{item.username}</p>
-                      <p className="truncate text-xs text-white/55">@{item.username}</p>
-                    </div>
-                    <div onClick={(event) => event.stopPropagation()}>{statusButton(item)}</div>
-                  </motion.button>
-                ))}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </motion.section>
-
-        <AnimatePresence mode="wait">
-          {activeTab === "friends" ? (
-            <motion.section key="friends-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
-              {friends.length ? (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
-                  {friends.map((friend) => (
-                    <motion.article
-                      key={friend.id}
-                      whileHover={{ scale: 1.01 }}
-                      transition={{ duration: 0.25 }}
-                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
-                    >
-                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })}>
-                        <Avatar user={friend} size="h-10 w-10" />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-white">{friend.username}</p>
-                          <p className="truncate text-xs text-white/55">@{friend.username}</p>
-                        </div>
-                      </button>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <button onClick={() => setMessage("Messaging is coming soon.")} className="h-8 rounded-lg border border-white/25 px-3 text-xs text-white/85">Message</button>
-                        <button onClick={() => void removeFriend(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Remove</button>
-                        <button onClick={() => void blockUser(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Block</button>
-                      </div>
-                    </motion.article>
-                  ))}
-                </motion.div>
-              ) : (
-                <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-12 text-center text-white/65">No connections yet. Start searching.</div>
-              )}
-            </motion.section>
-          ) : activeTab === "blocked" ? (
-            <motion.section key="blocked-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
-              {blockedUsers.length ? (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
-                  {blockedUsers.map((blockedUser) => (
-                    <motion.article
-                      key={blockedUser.id}
-                      whileHover={{ scale: 1.01 }}
-                      transition={{ duration: 0.25 }}
-                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
-                    >
-                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...blockedUser, relationship: "blocked" })}>
-                        <Avatar user={blockedUser} size="h-10 w-10" />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-white">{blockedUser.username}</p>
-                          <p className="truncate text-xs text-white/55">@{blockedUser.username}</p>
-                        </div>
-                      </button>
-                      <button onClick={() => void unblockUser(blockedUser.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Unblock</button>
-                    </motion.article>
-                  ))}
-                </motion.div>
-              ) : (
-                <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-10 text-center text-white/65">No blocked users.</div>
-              )}
-            </motion.section>
-          ) : (
-            <motion.section key="requests-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition} className="space-y-3">
-              {requests.length ? requests.map((request) => (
-                <motion.article key={request.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={transition} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] p-3">
-                  <button type="button" onClick={() => setSelectedUser({ ...request.sender, relationship: "none" })}><Avatar user={request.sender} /></button>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-white">@{request.sender.username}</p>
-                    <p className="truncate text-xs text-white/55">{request.sender.bio || "Wants to connect."}</p>
-                  </div>
-                  <button onClick={() => void actOnRequest(request.id, "accept")} className="rounded-xl border border-[#FF2E63] px-3 py-1.5 text-xs text-white">Accept</button>
-                  <button onClick={() => void actOnRequest(request.id, "reject")} className="rounded-xl border border-white/20 px-3 py-1.5 text-xs text-white/80">Reject</button>
-                </motion.article>
-              )) : <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-10 text-center text-white/65">No requests.</div>}
-            </motion.section>
-          )}
-        </AnimatePresence>
+    {/* ── title row ─────────────────────────────────── */}
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={fade}
+      className="mb-7 flex items-end justify-between"
+    >
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-white/40">connections</p>
+        <h1
+          className="mt-2 text-4xl font-bold tracking-[-1.2px]"
+          style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+        >
+          Friends
+        </h1>
+        <div className="mt-1.5 flex items-center gap-2 text-[12px] text-white/35">
+          <span
+            className="inline-block h-[6px] w-[6px] rounded-full"
+            style={{ background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }}
+          />
+          {friends.filter(() => true).length} online · {friends.length} total
+        </div>
       </div>
 
-      <AnimatePresence>
-        {selectedUser ? (
-          <>
-            <motion.button key="backdrop" className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedUser(null)} aria-label="Close profile modal" />
-            <motion.div key="modal" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.25, ease: "easeOut" }} className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/[0.06] bg-[#111] p-6">
-              <button className="absolute right-3 top-3 rounded-full border border-white/10 px-2 py-1 text-xs text-white/60" onClick={() => setSelectedUser(null)}>✕</button>
-              <div className="flex flex-col items-center text-center">
-                <Avatar user={selectedUser} size="h-20 w-20" />
-                <p className="mt-3 text-lg text-white">@{selectedUser.username}</p>
-                <p className="mt-1 max-w-[280px] text-sm text-white/65">{selectedUser.bio?.slice(0, 120) || "No bio yet."}</p>
-                {selectedUser.verified ? <span className="mt-2 rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/75">Verified</span> : null}
-                <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  {selectedUser.relationship === "pending" ? <button disabled className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Pending</button> : null}
-                  {selectedUser.relationship === "friends" ? (
-                    <>
-                      <button onClick={() => setMessage("Messaging is coming soon.")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Message</button>
-                      <button onClick={() => void removeFriend(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Remove</button>
-                      <button onClick={() => void blockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Block</button>
-                    </>
-                  ) : null}
-                  {selectedUser.relationship === "blocked" ? <button onClick={() => void unblockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Unblock</button> : null}
-                  {selectedUser.relationship === "none" || !selectedUser.relationship ? <button onClick={() => void sendRequest(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Add</button> : null}
-                  {requestMap.get(selectedUser.id) ? (
-                    <>
-                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "accept")} className="rounded-xl border border-[#FF2E63] px-3 py-2 text-xs text-white">Accept</button>
-                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "reject")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Reject</button>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        ) : null}
-      </AnimatePresence>
+      <button
+        onClick={() => setActiveTab("requests")}
+        className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-200 hover:scale-[1.03] active:scale-95"
+        style={{
+          background: "linear-gradient(160deg,rgba(90,16,32,0.22) 0%,rgba(50,8,18,0.15) 100%)",
+          border: "1px solid rgba(138,31,56,0.22)",
+          backdropFilter: "blur(40px)",
+          boxShadow: "inset 0 1px 0 rgba(138,31,56,0.12)",
+          color: "rgba(255,255,255,0.6)",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+      >
+        <span
+          className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
+          style={{ background: "linear-gradient(135deg,#6e1428,#8a1f38)", boxShadow: "0 0 8px rgba(90,16,32,0.4)" }}
+        >
+          {requests.length}
+        </span>
+        requests
+      </button>
+    </motion.div>
+
+    {/* ── tabs ──────────────────────────────────────── */}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...fade, delay: 0.07 }}
+      className="mb-5"
+    >
+      <TabBar active={activeTab} onChange={setActiveTab} requestCount={requests.length} />
+    </motion.div>
+
+    {/* ── search ────────────────────────────────────── */}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...fade, delay: 0.11 }}
+      className="mb-6"
+    >
+      <label
+        className="flex items-center gap-2.5 rounded-2xl px-3.5 py-3 transition-all duration-300 focus-within:shadow-[0_0_0_1px_rgba(90,16,32,0.25)]"
+        style={{
+          background: "linear-gradient(160deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.018) 45%,rgba(0,0,0,0.08) 100%)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderBottom: "1px solid rgba(255,255,255,0.04)",
+          backdropFilter: "blur(50px) saturate(1.6)",
+          boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.08),inset 0 -1px 0 rgba(0,0,0,0.18)",
+        }}
+      >
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-white/30" fill="none" aria-hidden>
+          <circle cx="9" cy="9" r="5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M13 13l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search username..."
+          className="w-full bg-transparent text-[13.5px] text-white outline-none placeholder:text-white/25"
+          style={{ caretColor: "#8a1f38" }}
+        />
+      </label>
 
       <AnimatePresence>
-        {message ? (
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 14 }} className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/15 bg-[#111] px-4 py-2 text-xs text-white/80" onClick={() => setMessage(null)}>
-            {message}
+        {searchResults.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+            transition={fade}
+            className="mt-2 space-y-2"
+          >
+            {searchResults.map((item, i) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                transition={{ ...spring, delay: i * 0.04 }}
+              >
+                <GlassCard className="flex min-h-[66px] items-center gap-3 px-3.5 py-3">
+                  <button type="button" onClick={() => setSelectedUser(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <Avatar user={item} size="h-10 w-10" />
+                    <div className="min-w-0">
+                      <p className="truncate text-[13.5px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{item.username}</p>
+                      <p className="truncate text-[11.5px] text-white/40">@{item.username}</p>
+                    </div>
+                  </button>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    {item.relationship === "friends" && <GlassBtn disabled>Friends</GlassBtn>}
+                    {item.relationship === "pending" && <GlassBtn disabled>Pending</GlassBtn>}
+                    {item.relationship === "blocked" && <GlassBtn disabled>Blocked</GlassBtn>}
+                    {(!item.relationship || item.relationship === "none") && (
+                      <GlassBtn variant="wine" onClick={() => void sendRequest(item.id)}>Add</GlassBtn>
+                    )}
+                  </div>
+                </GlassCard>
+              </motion.div>
+            ))}
           </motion.div>
-        ) : null}
+        )}
       </AnimatePresence>
-    </main>
-  );
+    </motion.div>
+
+    {/* ── tab panels ────────────────────────────────── */}
+    <AnimatePresence mode="wait">
+
+      {/* FRIENDS */}
+      {activeTab === "friends" && (
+        <motion.section
+          key="friends"
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
+          transition={fade}
+        >
+          {/* online strip */}
+          {friends.length > 0 && (
+            <div className="mb-5">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Online now
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                {friends.slice(0, 8).map((f, i) => (
+                  <motion.button
+                    key={f.id}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ ...spring, delay: i * 0.05 }}
+                    whileHover={{ scale: 1.08, y: -2 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => void openChat(f.id)}
+                    className="flex shrink-0 flex-col items-center gap-1.5"
+                  >
+                    <div className="relative">
+                      <Avatar user={f} size="h-12 w-12" ring />
+                      <span
+                        className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-black"
+                        style={{ background: "#4ade80", boxShadow: "0 0 5px rgba(74,222,128,0.7)" }}
+                      />
+                    </div>
+                    <span className="max-w-[52px] truncate text-[10px] text-white/40">{f.username}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {friends.length > 0 && (
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              All friends
+            </p>
+          )}
+
+          {friends.length > 0 ? (
+            <div className="space-y-2">
+              {friends.map((friend, i) => (
+                <motion.div
+                  key={friend.id}
+                  layout
+                  initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ ...spring, delay: i * 0.06 }}
+                  whileHover={{ y: -1, transition: { duration: 0.2 } }}
+                >
+                  <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
+                    <button type="button" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                      <div className="relative">
+                        <Avatar user={friend} size="h-11 w-11" />
+                        <span className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-black" style={{ background: "#4ade80", boxShadow: "0 0 4px rgba(74,222,128,0.7)" }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{friend.username}</p>
+                        <p className="truncate text-[11.5px] text-white/40">@{friend.username}</p>
+                      </div>
+                    </button>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <GlassBtn onClick={() => void openChat(friend.id)}>
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        Msg
+                      </GlassBtn>
+                      <GlassBtn variant="ghost" onClick={() => void removeFriend(friend.id)}>
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </GlassBtn>
+                    </div>
+                  </GlassCard>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <GlassCard className="p-12 text-center text-[13px] text-white/40">
+              No connections yet. Start searching above.
+            </GlassCard>
+          )}
+        </motion.section>
+      )}
+
+      {/* REQUESTS */}
+      {activeTab === "requests" && (
+        <motion.section
+          key="requests"
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
+          transition={fade}
+          className="space-y-2"
+        >
+          {requests.length > 0 && (
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/35" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Incoming
+            </p>
+          )}
+          {requests.length > 0 ? (
+            requests.map((req, i) => (
+              <motion.div
+                key={req.id}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ ...spring, delay: i * 0.07 }}
+              >
+                <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
+                  <button type="button" onClick={() => setSelectedUser({ ...req.sender, relationship: "none" })}>
+                    <Avatar user={req.sender} size="h-11 w-11" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                      @{req.sender.username}
+                    </p>
+                    <p className="truncate text-[11.5px] text-white/40">{req.sender.bio || "Wants to connect"}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <GlassBtn variant="wine" onClick={() => void actOnRequest(req.id, "accept")}>Accept</GlassBtn>
+                    <GlassBtn variant="ghost" onClick={() => void actOnRequest(req.id, "reject")}>
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </GlassBtn>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            ))
+          ) : (
+            <GlassCard className="p-12 text-center text-[13px] text-white/40">No pending requests.</GlassCard>
+          )}
+        </motion.section>
+      )}
+
+      {/* BLOCKED */}
+      {activeTab === "blocked" && (
+        <motion.section
+          key="blocked"
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
+          transition={fade}
+          className="space-y-2"
+        >
+          {blockedUsers.length > 0 ? (
+            blockedUsers.map((user, i) => (
+              <motion.div
+                key={user.id}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ ...spring, delay: i * 0.07 }}
+              >
+                <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
+                  <button type="button" onClick={() => setSelectedUser({ ...user, relationship: "blocked" })}>
+                    <Avatar user={user} size="h-11 w-11" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{user.username}</p>
+                    <p className="truncate text-[11.5px] text-white/40">@{user.username}</p>
+                  </div>
+                  <GlassBtn onClick={() => void unblockUser(user.id)}>Unblock</GlassBtn>
+                </GlassCard>
+              </motion.div>
+            ))
+          ) : (
+            <GlassCard className="p-12 text-center text-[13px] text-white/40">No blocked users.</GlassCard>
+          )}
+        </motion.section>
+      )}
+
+    </AnimatePresence>
+  </div>
+
+  {/* ── profile modal ── */}
+  <AnimatePresence>
+    {selectedUser && (
+      <ProfileModal
+        user={selectedUser}
+        requestMap={requestMap}
+        onClose={() => setSelectedUser(null)}
+        onSendRequest={(id) => void sendRequest(id)}
+        onAccept={(reqId) => void actOnRequest(reqId, "accept")}
+        onReject={(reqId) => void actOnRequest(reqId, "reject")}
+        onRemove={(id) => void removeFriend(id)}
+        onBlock={(id) => void blockUser(id)}
+        onUnblock={(id) => void unblockUser(id)}
+        onMessage={(id) => void openChat(id)}
+      />
+    )}
+  </AnimatePresence>
+
+  {/* ── toast — identical to existing pattern ── */}
+  <AnimatePresence>
+    {toast && (
+      <motion.div
+        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 14 }}
+        transition={fade}
+        onClick={() => setToast(null)}
+        className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 cursor-pointer rounded-full px-4 py-2 text-[12px] text-white/85"
+        style={{
+          background: "linear-gradient(160deg,rgba(255,255,255,0.09) 0%,rgba(0,0,0,0.15) 100%)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(40px)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {toast}
+      </motion.div>
+    )}
+  </AnimatePresence>
+</main>
+```
+
+);
 }
