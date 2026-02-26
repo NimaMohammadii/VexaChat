@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Profile } from "@/lib/types";
@@ -30,10 +30,41 @@ type HomePageRedesignProps = {
   homeHeroConfig: HomeHeroConfig;
 };
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0 }
-};
+function Reveal({ children, className = "", delay = 0, threshold = 0.2 }: { children: ReactNode; className?: string; delay?: number; threshold?: number }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return (
+    <div
+      ref={ref}
+      className={`${className} transition-all duration-700 ease-out will-change-transform ${visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
 
 const placeholderSections: HomeSectionItem[] = [
   {
@@ -82,30 +113,23 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
           <path d="M70 170L170 70" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <circle cx="120" cy="120" r="16" fill="currentColor" fillOpacity="0.22" />
         </svg>
-        <motion.div
-          className="relative z-10 mx-auto max-w-4xl text-center"
-          initial="hidden"
-          animate="visible"
-          variants={{ visible: { transition: { staggerChildren: 0.16 } } }}
-        >
-          <motion.p variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
-            Minimal • Modern • Private
-          </motion.p>
-          <motion.h1
-            variants={fadeInUp}
-            transition={{ duration: 0.75, ease: "easeOut" }}
-            className="text-4xl font-semibold leading-[1.08] tracking-[0.01em] md:text-6xl lg:text-7xl"
-          >
-            Bold connections, zero clutter. {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
-          </motion.h1>
-          <motion.p
-            variants={fadeInUp}
-            transition={{ duration: 0.75, ease: "easeOut" }}
-            className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base"
-          >
-            Modern design, faster rhythm, and cleaner space to spotlight real people. {homeHeroConfig.heroSubtitle}
-          </motion.p>
-          <motion.div variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }} className="mt-8 flex justify-center gap-2.5">
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <Reveal delay={80} threshold={0}>
+            <p className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
+              Minimal • Modern • Private
+            </p>
+          </Reveal>
+          <Reveal delay={160} threshold={0}>
+            <h1 className="text-4xl font-semibold leading-[1.08] tracking-[0.01em] md:text-6xl lg:text-7xl">
+              {homeHeroConfig.heroTitle} {homeHeroConfig.heroAccentWord ? <span className="text-[#FF2E63]">{homeHeroConfig.heroAccentWord}</span> : null}
+            </h1>
+          </Reveal>
+          <Reveal delay={240} threshold={0}>
+            <p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base">
+              Modern design, faster rhythm, and cleaner space to spotlight real people. {homeHeroConfig.heroSubtitle}
+            </p>
+          </Reveal>
+          <Reveal delay={320} threshold={0} className="mt-8 flex justify-center gap-2.5">
             <Link href="#home-sections" className="inline-flex rounded-full border border-transparent bg-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-black transition-all duration-300 hover:opacity-90 hover:border-[#FF2E63]/70 md:text-base">
               {homeHeroConfig.primaryCtaText}
             </Link>
@@ -114,8 +138,8 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
                 {homeHeroConfig.secondaryCtaText}
               </Link>
             ) : null}
-          </motion.div>
-        </motion.div>
+          </Reveal>
+        </div>
       </section>
 
       <section id="home-sections" className="mx-auto w-full max-w-7xl px-6 pb-12 md:pb-14">
@@ -123,64 +147,57 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
           const flip = index % 2 === 1;
 
           return (
-            <motion.article
-              key={section.id}
-              className="grid items-center gap-7 py-14 md:py-16 lg:grid-cols-2 lg:gap-10"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, amount: 0.2 }}
-              variants={{ visible: { transition: { staggerChildren: 0.14 } } }}
-            >
-              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-2" : ""}>
+            <article key={section.id} className="grid items-center gap-7 py-14 md:py-16 lg:grid-cols-2 lg:gap-10">
+              <Reveal className={flip ? "lg:order-2" : ""}>
                 <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0a0a0a]">
                   <Image src={section.imageUrl} alt={section.title} width={1400} height={1000} className="h-[420px] w-full object-cover md:h-[520px]" />
                 </div>
-              </motion.div>
-              <motion.div variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className={flip ? "lg:order-1" : ""}>
+              </Reveal>
+              <Reveal className={flip ? "lg:order-1" : ""} delay={120}>
                 <h2 className="text-3xl font-medium leading-tight tracking-[0.01em] md:text-4xl">{section.title}</h2>
                 {section.subtitle ? <p className="mt-4 max-w-xl text-base leading-relaxed text-[#A1A1A1] md:text-lg">{section.subtitle}</p> : null}
-              </motion.div>
-            </motion.article>
+              </Reveal>
+            </article>
           );
         })}
       </section>
 
       <section id="featured-profiles" className="mx-auto w-full max-w-7xl px-6 py-16 md:py-18">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }}>
+        <Reveal threshold={0.3}>
           <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">Magnetic Preview</h2>
           <div className="mt-4 h-px w-full bg-white/10" />
-        </motion.div>
+        </Reveal>
 
-        <motion.div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }} variants={{ visible: { transition: { staggerChildren: 0.08 } } }}>
-          {displaySectionsWithImages.slice(0, 6).map((section) => (
-            <motion.article key={`preview-${section.id}`} variants={fadeInUp} transition={{ duration: 0.7, ease: "easeOut" }} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+          {displaySectionsWithImages.slice(0, 6).map((section, index) => (
+            <Reveal key={`preview-${section.id}`} className="overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#111111]" delay={Math.min(index * 80, 320)} threshold={0.1}>
               <div className="aspect-[4/5] overflow-hidden bg-black">
                 <Image src={section.imageUrl} alt={section.title} width={800} height={1000} className="h-full w-full object-cover" />
               </div>
               <div className="px-4 py-4">
                 <h3 className="text-sm font-medium tracking-[0.02em] text-white md:text-base">{section.title}</h3>
               </div>
-            </motion.article>
+            </Reveal>
           ))}
-        </motion.div>
+        </div>
       </section>
 
       <section className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.8, ease: "easeOut" }}>
+        <Reveal threshold={0.35}>
           <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">Less noise, more impact.</h2>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
             Every card, every line, and every motion is intentional—clean, focused, and unmistakably premium.
           </p>
-        </motion.div>
+        </Reveal>
       </section>
 
       <section className="px-6 pb-20 pt-4">
-        <motion.div className="mx-auto max-w-3xl text-center" initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.35 }} variants={fadeInUp} transition={{ duration: 0.75, ease: "easeOut" }}>
+        <Reveal className="mx-auto max-w-3xl text-center" threshold={0.35}>
           <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Ready to stand out?</p>
           <Link href="/me/create-profile" className="mt-7 inline-flex rounded-full border border-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
             Create Your Profile
           </Link>
-        </motion.div>
+        </Reveal>
       </section>
     </main>
   );
