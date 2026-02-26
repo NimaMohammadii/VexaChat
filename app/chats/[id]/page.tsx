@@ -1,18 +1,18 @@
-“use client”;
+"use client";
 
 // app/chats/[id]/page.tsx
-// Redesigned UI — liquid glass dark theme, all original logic preserved exactly.
+// Redesigned UI - liquid glass dark theme, all original logic preserved exactly.
 // APIs: GET /api/chats/[id]/messages · POST /api/chats/[id]/send
 //       POST /api/chats/[id]/media/upload · GET /api/chats/list · GET /api/me
 
-import { AnimatePresence, motion } from “framer-motion”;
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from “react”;
-import { useParams, useRouter } from “next/navigation”;
-import { compressChatImage, validateVideo } from “@/lib/chat-media-client”;
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { compressChatImage, validateVideo } from "@/lib/chat-media-client";
 
 // ─── Types (identical to original) ───────────────────────────────────────────
 
-type ChatMedia    = { id: string; type: “image” | “video”; url: string; expiresAt: string };
+type ChatMedia    = { id: string; type: "image" | "video"; url: string; expiresAt: string };
 type ChatMessage  = { id: string; senderId: string; type: string; text: string | null; createdAt: string; media?: ChatMedia | null };
 type ConversationPayload = {
 conversation: { id: string; userAId: string; userBId: string; expiresAt: string };
@@ -29,7 +29,7 @@ return Math.max(0, Math.ceil(diff / 86400000));
 
 function expiresInLabel(expiresAt: string) {
 const diffMs = new Date(expiresAt).getTime() - Date.now();
-if (diffMs <= 0) return “expired”;
+if (diffMs <= 0) return "expired";
 const hours = Math.floor(diffMs / 3600000);
 const minutes = Math.floor((diffMs % 3600000) / 60000);
 if (hours > 0) return `expires in ${hours}h`;
@@ -37,13 +37,13 @@ return `expires in ${Math.max(1, minutes)}m`;
 }
 
 function formatTime(iso: string) {
-return new Date(iso).toLocaleTimeString([], { hour: “2-digit”, minute: “2-digit” });
+return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 const GRADIENTS = [
-“linear-gradient(135deg,#0d0103,#3a0a14)”,
-“linear-gradient(135deg,#04080f,#0e1726)”,
-“linear-gradient(135deg,#030d05,#0c1c0e)”,
+"linear-gradient(135deg,#0d0103,#3a0a14)",
+"linear-gradient(135deg,#04080f,#0e1726)",
+"linear-gradient(135deg,#030d05,#0c1c0e)",
 ];
 function getBg(id: string) {
 let h = 0;
@@ -68,19 +68,19 @@ const textareaRef          = useRef<HTMLTextAreaElement | null>(null);
 // ── state ─────────────────────────────────────────────────────────────────
 const [pollDelayMs,          setPollDelayMs]          = useState(2500);
 const [messages,             setMessages]             = useState<ChatMessage[]>([]);
-const [expiresAt,            setExpiresAt]            = useState(””);
+const [expiresAt,            setExpiresAt]            = useState("");
 const [nextCursor,           setNextCursor]           = useState<string | null>(null);
 const [friend,               setFriend]               = useState<{ username: string; avatarUrl: string; id: string } | null>(null);
-const [input,                setInput]                = useState(””);
+const [input,                setInput]                = useState("");
 const [expired,              setExpired]              = useState(false);
-const [currentUserId,        setCurrentUserId]        = useState<string>(””);
+const [currentUserId,        setCurrentUserId]        = useState<string>("");
 const [showNewMessagesPill,  setShowNewMessagesPill]  = useState(false);
 const [isPageVisible,        setIsPageVisible]        = useState(true);
 const [isAuthenticated,      setIsAuthenticated]      = useState(true);
 const [isExiting,            setIsExiting]            = useState(false);
 const [showExpiryInfo,       setShowExpiryInfo]       = useState(false);
 const [uploading,            setUploading]            = useState(false);
-const [uploadStatus,         setUploadStatus]         = useState<string>(””);
+const [uploadStatus,         setUploadStatus]         = useState<string>("");
 
 // ── scroll helpers (identical to original) ────────────────────────────────
 const isNearBottom = useCallback(() => {
@@ -89,7 +89,7 @@ if (!node) return true;
 return node.scrollHeight - node.scrollTop - node.clientHeight < 80;
 }, []);
 
-const scrollToBottom = useCallback((behavior: ScrollBehavior = “smooth”) => {
+const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
 const node = messagesContainerRef.current;
 if (!node) return;
 node.scrollTo({ top: node.scrollHeight, behavior });
@@ -97,7 +97,7 @@ node.scrollTo({ top: node.scrollHeight, behavior });
 
 const mergeMessages = useCallback((prev: ChatMessage[], incoming: ChatMessage[]) => {
 if (!incoming.length) return prev;
-const merged = […prev];
+const merged = [...prev];
 const ids = new Set(prev.map((m) => m.id));
 for (const m of incoming) { if (!ids.has(m.id)) { ids.add(m.id); merged.push(m); } }
 return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -105,12 +105,11 @@ return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.create
 
 // ── loadMessages (identical to original) ──────────────────────────────────
 const loadMessages = useCallback(async (cursor?: string) => {
-const r = await fetch(`/api/chats/${params.id}/messages${cursor ? `?cursor=${cursor}` : ""}`, { cache: “no-store” });
+const r = await fetch(`/api/chats/${params.id}/messages${cursor ? `?cursor=${cursor}` : ""}`, { cache: "no-store" });
 if (r.status === 410) return setExpired(true);
 if (r.status === 401) return setIsAuthenticated(false);
 if (!r.ok) return;
 
-```
 const data = (await r.json()) as ConversationPayload;
 setExpiresAt(data.conversation.expiresAt);
 setNextCursor(data.nextCursor);
@@ -126,7 +125,6 @@ if (meRes.ok) {
   const meData = (await meRes.json()) as { user: { id: string } };
   setCurrentUserId(meData.user?.id ?? "");
 } else if (meRes.status === 401) setIsAuthenticated(false);
-```
 
 }, [params.id]);
 
@@ -137,16 +135,16 @@ pollInFlightRef.current = true;
 const wasNearBottom = isNearBottom();
 try {
 const newestCreatedAt = messages[messages.length - 1]?.createdAt;
-const query = newestCreatedAt ? `?after=${encodeURIComponent(newestCreatedAt)}` : “”;
-const r = await fetch(`/api/chats/${params.id}/messages${query}`, { cache: “no-store” });
+const query = newestCreatedAt ? `?after=${encodeURIComponent(newestCreatedAt)}` : "";
+const r = await fetch(`/api/chats/${params.id}/messages${query}`, { cache: "no-store" });
 if (r.status === 410) return setExpired(true);
 if (r.status === 401) return setIsAuthenticated(false);
-if (!r.ok) throw new Error(“poll failed”);
+if (!r.ok) throw new Error("poll failed");
 const data = (await r.json()) as ConversationPayload;
 setExpiresAt(data.conversation.expiresAt);
 if (data.messages.length) {
 setMessages((prev) => mergeMessages(prev, data.messages));
-if (wasNearBottom) { setShowNewMessagesPill(false); setTimeout(() => scrollToBottom(“smooth”), 30); }
+if (wasNearBottom) { setShowNewMessagesPill(false); setTimeout(() => scrollToBottom("smooth"), 30); }
 else setShowNewMessagesPill(true);
 }
 setPollDelayMs(2500);
@@ -162,8 +160,8 @@ const visible = !document.hidden;
 setIsPageVisible(visible);
 if (!visible && pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null; }
 };
-document.addEventListener(“visibilitychange”, fn);
-return () => document.removeEventListener(“visibilitychange”, fn);
+document.addEventListener("visibilitychange", fn);
+return () => document.removeEventListener("visibilitychange", fn);
 }, []);
 
 useEffect(() => {
@@ -176,60 +174,60 @@ return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.curren
 
 useEffect(() => {
 if (!messages.length) return;
-if (!didInitialScrollRef.current) { didInitialScrollRef.current = true; scrollToBottom(“auto”); return; }
-if (isNearBottom()) scrollToBottom(“smooth”);
+if (!didInitialScrollRef.current) { didInitialScrollRef.current = true; scrollToBottom("auto"); return; }
+if (isNearBottom()) scrollToBottom("smooth");
 }, [isNearBottom, messages.length, scrollToBottom]);
 
 // ── send (identical to original) ──────────────────────────────────────────
 const send = async () => {
 if (!input.trim() || expired) return;
-const r = await fetch(`/api/chats/${params.id}/send`, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ text: input.trim() }) });
+const r = await fetch(`/api/chats/${params.id}/send`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input.trim() }) });
 if (r.status === 410) return setExpired(true);
 if (!r.ok) return;
-setInput(””);
-if (textareaRef.current) textareaRef.current.style.height = “auto”;
+setInput("");
+if (textareaRef.current) textareaRef.current.style.height = "auto";
 await pollForNewMessages();
-scrollToBottom(“smooth”);
+scrollToBottom("smooth");
 };
 
 // ── attach (identical to original) ────────────────────────────────────────
 const handleAttach = async (event: ChangeEvent<HTMLInputElement>) => {
 const file = event.target.files?.[0];
-event.target.value = “”;
+event.target.value = "";
 if (!file || expired) return;
-if (typeof params.id !== “string” || !params.id.trim()) { setUploadStatus(“Invalid conversation.”); return; }
+if (typeof params.id !== "string" || !params.id.trim()) { setUploadStatus("Invalid conversation."); return; }
 try {
-setUploading(true); setUploadStatus(“Preparing media…”);
-let mediaType: “image” | “video”;
+setUploading(true); setUploadStatus("Preparing media...");
+let mediaType: "image" | "video";
 let uploadPayload: Blob = file;
-let uploadFileName = file.name || “upload”;
-const fileType = file.type || “”;
+let uploadFileName = file.name || "upload";
+const fileType = file.type || "";
 const normalizedFileType = fileType.toLowerCase();
 const fileName = file.name.toLowerCase();
-const looksLikeImage = normalizedFileType.startsWith(“image/”) || (!fileType && /.(jpe?g|png|gif|webp|heic|heif)$/i.test(fileName));
-const looksLikeVideo = normalizedFileType.startsWith(“video/”) || (!fileType && /.(mp4|mov|webm|m4v)$/i.test(fileName));
+const looksLikeImage = normalizedFileType.startsWith("image/") || (!fileType && /.(jpe?g|png|gif|webp|heic|heif)$/i.test(fileName));
+const looksLikeVideo = normalizedFileType.startsWith("video/") || (!fileType && /.(mp4|mov|webm|m4v)$/i.test(fileName));
 if (looksLikeImage) {
-mediaType = “image”;
-const imageFile = fileType ? file : new File([file], uploadFileName, { type: normalizedFileType || “image/jpeg”, lastModified: file.lastModified });
+mediaType = "image";
+const imageFile = fileType ? file : new File([file], uploadFileName, { type: normalizedFileType || "image/jpeg", lastModified: file.lastModified });
 const compressed = await compressChatImage(imageFile); uploadPayload = compressed.blob; uploadFileName = compressed.fileName;
 } else if (looksLikeVideo) {
-mediaType = “video”;
-const videoFile = fileType ? file : new File([file], uploadFileName, { type: normalizedFileType || “video/mp4”, lastModified: file.lastModified });
+mediaType = "video";
+const videoFile = fileType ? file : new File([file], uploadFileName, { type: normalizedFileType || "video/mp4", lastModified: file.lastModified });
 await validateVideo(videoFile); uploadPayload = videoFile;
-} else { throw new Error(“Please select an image or video file.”); }
-setUploadStatus(“Uploading…”);
+} else { throw new Error("Please select an image or video file."); }
+setUploadStatus("Uploading...");
 const formData = new FormData();
-formData.append(“type”, mediaType); formData.append(“file”, uploadPayload, uploadFileName);
-const r = await fetch(`/api/chats/${params.id}/media/upload`, { method: “POST”, body: formData });
+formData.append("type", mediaType); formData.append("file", uploadPayload, uploadFileName);
+const r = await fetch(`/api/chats/${params.id}/media/upload`, { method: "POST", body: formData });
 if (r.status === 410) return setExpired(true);
 let payload: { error?: string } | null = null;
 let failedJson = false;
 try { payload = (await r.json()) as { error?: string }; } catch { payload = null; failedJson = true; }
-if (!r.ok) throw new Error(payload?.error ?? (failedJson ? “Upload failed (server error).” : “Upload failed.”));
-setUploadStatus(“Uploaded ✓”);
-await pollForNewMessages(); scrollToBottom(“smooth”);
-setTimeout(() => setUploadStatus(””), 900);
-} catch (e) { setUploadStatus(e instanceof Error ? e.message : “Upload failed”); }
+if (!r.ok) throw new Error(payload?.error ?? (failedJson ? "Upload failed (server error)." : "Upload failed."));
+setUploadStatus("Uploaded ✓");
+await pollForNewMessages(); scrollToBottom("smooth");
+setTimeout(() => setUploadStatus(""), 900);
+} catch (e) { setUploadStatus(e instanceof Error ? e.message : "Upload failed"); }
 finally { setUploading(false); }
 };
 
@@ -240,12 +238,12 @@ const urgent = left <= 2;
 // auto-resize textarea
 const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 setInput(e.target.value);
-e.target.style.height = “auto”;
+e.target.style.height = "auto";
 e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
 };
 
 const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-if (e.key === “Enter” && !e.shiftKey) { e.preventDefault(); void send(); }
+if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); }
 };
 
 // avatar fallback
@@ -253,41 +251,40 @@ const [avatarErr, setAvatarErr] = useState(false);
 
 return (
 <motion.main
-className=“fixed inset-0 flex h-dvh flex-col overflow-hidden text-white”
-style={{ background: “#000” }}
+className="fixed inset-0 flex h-dvh flex-col overflow-hidden text-white"
+style={{ background: "#000" }}
 initial={{ x: 40, opacity: 0 }}
 animate={isExiting ? { x: 40, opacity: 0 } : { x: 0, opacity: 1 }}
 exit={{ x: -40, opacity: 0 }}
-transition={{ duration: 0.25, ease: “easeOut” }}
+transition={{ duration: 0.25, ease: "easeOut" }}
 >
 {/* ── HEADER ──────────────────────────────────────── */}
 <motion.header
-className=“z-20 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)]”
+className="z-20 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)]"
 style={{
-background: “linear-gradient(180deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.7) 100%)”,
-borderBottom: “1px solid rgba(255,255,255,0.07)”,
-backdropFilter: “blur(40px) saturate(1.6)”,
+background: "linear-gradient(180deg,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.7) 100%)",
+borderBottom: "1px solid rgba(255,255,255,0.07)",
+backdropFilter: "blur(40px) saturate(1.6)",
 }}
 >
 <div className="flex items-center justify-between gap-2">
 {/* back */}
 <button
-onClick={() => { setIsExiting(true); setTimeout(() => router.push(”/chats”), 250); }}
-className=“flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-90”
+onClick={() => { setIsExiting(true); setTimeout(() => router.push("/chats"), 250); }}
+className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200 active:scale-90"
 style={{
-background: “linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)”,
-border: “1px solid rgba(255,255,255,0.13)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)",
+border: "1px solid rgba(255,255,255,0.13)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)",
 }}
-aria-label=“Back”
+aria-label="Back"
 >
 <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 <path d="M19 12H5M12 5l-7 7 7 7" />
 </svg>
 </button>
 
-```
       {/* friend info */}
       <div className="flex min-w-0 flex-1 items-center justify-center gap-2.5 px-2">
         {friend?.avatarUrl && !avatarErr ? (
@@ -561,7 +558,6 @@ aria-label=“Back”
     </div>
   </footer>
 </motion.main>
-```
 
 );
 }
