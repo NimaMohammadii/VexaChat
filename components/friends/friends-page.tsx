@@ -20,7 +20,7 @@ type FriendRequestItem = {
 
 type Tab = "friends" | "requests" | "blocked";
 
-const transition = { duration: 0.65, ease: "easeOut" as const };
+const transition = { duration: 0.7, ease: "easeOut" as const };
 
 function initials(value: string) {
   return (value?.[0] ?? "U").toUpperCase();
@@ -28,14 +28,11 @@ function initials(value: string) {
 
 function Avatar({ user, size = "h-11 w-11" }: { user: Pick<UserCard, "avatarUrl" | "username">; size?: string }) {
   if (user.avatarUrl) {
-    return <img src={user.avatarUrl} alt={user.username} className={`${size} rounded-full border border-white/20 object-cover shadow-[0_8px_22px_rgba(0,0,0,0.35)]`} />;
+    return <img src={user.avatarUrl} alt={user.username} className={`${size} rounded-full border border-white/10 object-cover`} />;
   }
 
-  return <div className={`${size} flex items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm text-white/90`}>{initials(user.username)}</div>;
+  return <div className={`${size} flex items-center justify-center rounded-full border border-white/10 bg-[#171717] text-sm text-white/80`}>{initials(user.username)}</div>;
 }
-
-const glassPanel = "border border-white/15 bg-[linear-gradient(140deg,rgba(255,255,255,0.18),rgba(255,255,255,0.06)_45%,rgba(255,255,255,0.02))] shadow-[0_16px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl";
-const softButton = "rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-xs text-white/85 transition hover:border-white/40 hover:bg-white/10";
 
 export function FriendsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("friends");
@@ -51,21 +48,29 @@ export function FriendsPage() {
 
   const loadFriends = async () => {
     const response = await fetch("/api/friends/list", { cache: "no-store" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      return;
+    }
     const payload = (await response.json()) as { friends: UserCard[] };
     setFriends(payload.friends);
   };
 
   const loadRequests = async () => {
     const response = await fetch("/api/friends/requests", { cache: "no-store" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      return;
+    }
+
     const payload = (await response.json()) as { requests: FriendRequestItem[] };
     setRequests(payload.requests);
   };
 
   const loadBlocked = async () => {
     const response = await fetch("/api/friends/blocked", { cache: "no-store" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      return;
+    }
+
     const payload = (await response.json()) as { blocked: UserCard[] };
     setBlockedUsers(payload.blocked);
   };
@@ -78,7 +83,9 @@ export function FriendsPage() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedUser(null);
+      if (event.key === "Escape") {
+        setSelectedUser(null);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -107,15 +114,11 @@ export function FriendsPage() {
 
   const requestMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const item of requests) map.set(item.sender.id, item.id);
+    for (const item of requests) {
+      map.set(item.sender.id, item.id);
+    }
     return map;
   }, [requests]);
-
-  const tabItems = useMemo(() => ([
-    { key: "friends" as const, label: "friends", count: friends.length },
-    { key: "requests" as const, label: "requests", count: requests.length },
-    { key: "blocked" as const, label: "blocked", count: blockedUsers.length }
-  ]), [blockedUsers.length, friends.length, requests.length]);
 
   const refreshAll = async () => {
     await Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
@@ -142,7 +145,9 @@ export function FriendsPage() {
 
   const actOnRequest = async (requestId: string, action: "accept" | "reject") => {
     const response = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: "POST" });
-    if (!response.ok) return;
+    if (!response.ok) {
+      return;
+    }
 
     setRequests((prev) => prev.filter((item) => item.id !== requestId));
     await refreshAll();
@@ -182,52 +187,41 @@ export function FriendsPage() {
   };
 
   const statusButton = (user: UserCard) => {
-    if (user.relationship === "friends") return <button className={`${softButton} opacity-65`} disabled>Friends</button>;
-    if (user.relationship === "pending") return <button className={`${softButton} opacity-65`} disabled>Pending</button>;
-    if (user.relationship === "blocked") return <button className={`${softButton} opacity-65`} disabled>Blocked</button>;
+    if (user.relationship === "friends") {
+      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Friends</button>;
+    }
 
-    return <button onClick={() => void sendRequest(user.id)} className={softButton}>Add</button>;
+    if (user.relationship === "pending") {
+      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Pending</button>;
+    }
+
+    if (user.relationship === "blocked") {
+      return <button className="rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/60" disabled>Blocked</button>;
+    }
+
+    return <button onClick={() => void sendRequest(user.id)} className="rounded-xl border border-white/20 px-3 py-1.5 text-xs text-white transition hover:border-white/45">Add</button>;
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black px-4 pb-20 pt-10 text-white md:px-8">
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute left-1/2 top-[-14rem] h-[30rem] w-[30rem] -translate-x-1/2 rounded-full bg-fuchsia-500/15 blur-[110px]" />
-        <div className="absolute bottom-[-8rem] right-[-5rem] h-[22rem] w-[22rem] rounded-full bg-cyan-500/10 blur-[95px]" />
-      </div>
-
-      <div className="relative mx-auto w-full max-w-6xl">
-        <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className={`mb-7 rounded-3xl p-5 md:p-6 ${glassPanel}`}>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Friends</h1>
-              <p className="mt-1 text-sm text-white/65">Modern connection hub with clean liquid-glass layering.</p>
-            </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-xs text-white/80">
-              <span className="h-2 w-2 rounded-full bg-[#FF2E63]" />
-              {incomingCount} pending request{incomingCount === 1 ? "" : "s"}
-            </div>
-          </div>
+    <main className="min-h-screen bg-black px-4 pb-20 pt-10 text-white md:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-7 flex items-center justify-between">
+          <h1 className="text-3xl font-semibold tracking-tight">Friends</h1>
+          <div className="rounded-full border border-white/10 bg-[#111] px-3 py-1 text-xs text-white/80">{incomingCount} requests</div>
         </motion.header>
 
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className={`mb-8 rounded-3xl p-4 md:p-5 ${glassPanel}`}>
-          <div className="mb-4 grid gap-2 sm:grid-cols-3">
-            {tabItems.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition ${activeTab === tab.key ? "border-white/45 bg-white/20" : "border-white/15 bg-white/[0.03] hover:border-white/30"}`}
-              >
-                <span className="block text-[11px] uppercase tracking-[0.14em] text-white/60">{tab.label}</span>
-                <span className="mt-1 block text-lg font-medium text-white">{tab.count}</span>
-                {activeTab === tab.key ? <motion.span layoutId="friends-active-tab" className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-fuchsia-300/90 to-cyan-300/90" /> : null}
-              </button>
-            ))}
-          </div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-6 flex gap-6 border-b border-white/10">
+          {(["friends", "requests", "blocked"] as const).map((tab) => (
+            <button key={tab} type="button" onClick={() => setActiveTab(tab)} className="relative pb-3 text-sm capitalize text-white/80 transition hover:text-white">
+              {tab}
+              {activeTab === tab ? <motion.span layoutId="friends-active-tab" className="absolute inset-x-0 -bottom-px h-[2px] bg-[#FF2E63]" /> : null}
+            </button>
+          ))}
+        </motion.div>
 
-          <div className="relative">
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/65">
+        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="mb-8 rounded-2xl border border-white/[0.06] bg-[#111] p-4">
+          <div className="relative transition-all duration-200 focus-within:scale-[1.01]">
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.7" fill="none" />
               <line x1="16.2" y1="16.2" x2="21" y2="21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
@@ -235,7 +229,7 @@ export function FriendsPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search username..."
-              className="w-full rounded-2xl border border-white/20 bg-white/[0.07] py-3 pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/45 focus:border-white/45"
+              className="w-full rounded-xl border border-white/10 bg-black py-3 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-white/35"
               whileFocus={{ scale: 1.01 }}
               transition={{ duration: 0.25 }}
             />
@@ -254,12 +248,12 @@ export function FriendsPage() {
                     exit={{ opacity: 0 }}
                     transition={transition}
                     whileHover={{ scale: 1.01 }}
-                    className="flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] px-3 py-3 text-left transition hover:border-white/30 hover:bg-white/[0.11]"
+                    className="flex min-h-[72px] w-full items-center gap-3 rounded-2xl border border-white/[0.06] bg-black/60 px-3 py-3 text-left transition hover:border-white/15 hover:bg-white/[0.03]"
                   >
                     <Avatar user={item} size="h-10 w-10" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-white">{item.username}</p>
-                      <p className="truncate text-xs text-white/60">@{item.username}</p>
+                      <p className="truncate text-xs text-white/55">@{item.username}</p>
                     </div>
                     <div onClick={(event) => event.stopPropagation()}>{statusButton(item)}</div>
                   </motion.button>
@@ -271,62 +265,74 @@ export function FriendsPage() {
 
         <AnimatePresence mode="wait">
           {activeTab === "friends" ? (
-            <motion.section key="friends-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition} className="space-y-3">
-              {friends.length ? friends.map((friend) => (
-                <motion.article
-                  key={friend.id}
-                  whileHover={{ scale: 1.008 }}
-                  transition={{ duration: 0.22 }}
-                  className={`flex min-h-[76px] items-center gap-3 rounded-2xl px-4 py-3 ${glassPanel}`}
-                >
-                  <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })}>
-                    <Avatar user={friend} size="h-10 w-10" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm text-white">{friend.username}</p>
-                      <p className="truncate text-xs text-white/60">@{friend.username}</p>
-                    </div>
-                  </button>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button onClick={() => setMessage("Messaging is coming soon.")} className={softButton}>Message</button>
-                    <button onClick={() => void removeFriend(friend.id)} className={softButton}>Remove</button>
-                    <button onClick={() => void blockUser(friend.id)} className={softButton}>Block</button>
-                  </div>
-                </motion.article>
-              )) : <div className={`rounded-2xl p-12 text-center text-white/70 ${glassPanel}`}>No connections yet. Start searching.</div>}
+            <motion.section key="friends-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
+              {friends.length ? (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
+                  {friends.map((friend) => (
+                    <motion.article
+                      key={friend.id}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
+                    >
+                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...friend, relationship: "friends" })}>
+                        <Avatar user={friend} size="h-10 w-10" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-white">{friend.username}</p>
+                          <p className="truncate text-xs text-white/55">@{friend.username}</p>
+                        </div>
+                      </button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button onClick={() => setMessage("Messaging is coming soon.")} className="h-8 rounded-lg border border-white/25 px-3 text-xs text-white/85">Message</button>
+                        <button onClick={() => void removeFriend(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Remove</button>
+                        <button onClick={() => void blockUser(friend.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Block</button>
+                      </div>
+                    </motion.article>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-12 text-center text-white/65">No connections yet. Start searching.</div>
+              )}
             </motion.section>
           ) : activeTab === "blocked" ? (
-            <motion.section key="blocked-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition} className="space-y-3">
-              {blockedUsers.length ? blockedUsers.map((blockedUser) => (
-                <motion.article
-                  key={blockedUser.id}
-                  whileHover={{ scale: 1.008 }}
-                  transition={{ duration: 0.22 }}
-                  className={`flex min-h-[76px] items-center gap-3 rounded-2xl px-4 py-3 ${glassPanel}`}
-                >
-                  <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...blockedUser, relationship: "blocked" })}>
-                    <Avatar user={blockedUser} size="h-10 w-10" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm text-white">{blockedUser.username}</p>
-                      <p className="truncate text-xs text-white/60">@{blockedUser.username}</p>
-                    </div>
-                  </button>
-                  <button onClick={() => void unblockUser(blockedUser.id)} className={softButton}>Unblock</button>
-                </motion.article>
-              )) : <div className={`rounded-2xl p-10 text-center text-white/70 ${glassPanel}`}>No blocked users.</div>}
+            <motion.section key="blocked-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition}>
+              {blockedUsers.length ? (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-3">
+                  {blockedUsers.map((blockedUser) => (
+                    <motion.article
+                      key={blockedUser.id}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex min-h-[76px] items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] px-4 py-3 transition hover:border-white/15 hover:bg-white/[0.02]"
+                    >
+                      <button type="button" className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelectedUser({ ...blockedUser, relationship: "blocked" })}>
+                        <Avatar user={blockedUser} size="h-10 w-10" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm text-white">{blockedUser.username}</p>
+                          <p className="truncate text-xs text-white/55">@{blockedUser.username}</p>
+                        </div>
+                      </button>
+                      <button onClick={() => void unblockUser(blockedUser.id)} className="h-8 rounded-lg border border-white/20 px-3 text-xs text-white/75">Unblock</button>
+                    </motion.article>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-10 text-center text-white/65">No blocked users.</div>
+              )}
             </motion.section>
           ) : (
             <motion.section key="requests-tab" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={transition} className="space-y-3">
               {requests.length ? requests.map((request) => (
-                <motion.article key={request.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={transition} className={`flex items-center gap-3 rounded-2xl p-3 ${glassPanel}`}>
+                <motion.article key={request.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -16 }} transition={transition} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-[#111] p-3">
                   <button type="button" onClick={() => setSelectedUser({ ...request.sender, relationship: "none" })}><Avatar user={request.sender} /></button>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-white">@{request.sender.username}</p>
-                    <p className="truncate text-xs text-white/60">{request.sender.bio || "Wants to connect."}</p>
+                    <p className="truncate text-xs text-white/55">{request.sender.bio || "Wants to connect."}</p>
                   </div>
-                  <button onClick={() => void actOnRequest(request.id, "accept")} className="rounded-xl border border-fuchsia-300/65 bg-fuchsia-300/15 px-3 py-1.5 text-xs text-white">Accept</button>
-                  <button onClick={() => void actOnRequest(request.id, "reject")} className={softButton}>Reject</button>
+                  <button onClick={() => void actOnRequest(request.id, "accept")} className="rounded-xl border border-[#FF2E63] px-3 py-1.5 text-xs text-white">Accept</button>
+                  <button onClick={() => void actOnRequest(request.id, "reject")} className="rounded-xl border border-white/20 px-3 py-1.5 text-xs text-white/80">Reject</button>
                 </motion.article>
-              )) : <div className={`rounded-2xl p-10 text-center text-white/70 ${glassPanel}`}>No requests.</div>}
+              )) : <div className="rounded-2xl border border-white/[0.06] bg-[#111] p-10 text-center text-white/65">No requests.</div>}
             </motion.section>
           )}
         </AnimatePresence>
@@ -335,29 +341,29 @@ export function FriendsPage() {
       <AnimatePresence>
         {selectedUser ? (
           <>
-            <motion.button key="backdrop" className="fixed inset-0 z-40 bg-black/65 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedUser(null)} aria-label="Close profile modal" />
-            <motion.div key="modal" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.25, ease: "easeOut" }} className={`fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 -translate-y-1/2 rounded-3xl p-6 ${glassPanel}`}>
-              <button className="absolute right-3 top-3 rounded-full border border-white/20 bg-white/5 px-2 py-1 text-xs text-white/70" onClick={() => setSelectedUser(null)}>✕</button>
+            <motion.button key="backdrop" className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedUser(null)} aria-label="Close profile modal" />
+            <motion.div key="modal" initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.25, ease: "easeOut" }} className="fixed left-1/2 top-1/2 z-[70] w-[calc(100%-2rem)] max-w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-white/[0.06] bg-[#111] p-6">
+              <button className="absolute right-3 top-3 rounded-full border border-white/10 px-2 py-1 text-xs text-white/60" onClick={() => setSelectedUser(null)}>✕</button>
               <div className="flex flex-col items-center text-center">
                 <Avatar user={selectedUser} size="h-20 w-20" />
                 <p className="mt-3 text-lg text-white">@{selectedUser.username}</p>
-                <p className="mt-1 max-w-[280px] text-sm text-white/70">{selectedUser.bio?.slice(0, 120) || "No bio yet."}</p>
-                {selectedUser.verified ? <span className="mt-2 rounded-full border border-white/20 bg-white/10 px-2 py-1 text-[11px] text-white/80">Verified</span> : null}
+                <p className="mt-1 max-w-[280px] text-sm text-white/65">{selectedUser.bio?.slice(0, 120) || "No bio yet."}</p>
+                {selectedUser.verified ? <span className="mt-2 rounded-full border border-white/10 px-2 py-1 text-[11px] text-white/75">Verified</span> : null}
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
-                  {selectedUser.relationship === "pending" ? <button disabled className={`${softButton} opacity-65`}>Pending</button> : null}
+                  {selectedUser.relationship === "pending" ? <button disabled className="rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60">Pending</button> : null}
                   {selectedUser.relationship === "friends" ? (
                     <>
-                      <button onClick={() => setMessage("Messaging is coming soon.")} className={softButton}>Message</button>
-                      <button onClick={() => void removeFriend(selectedUser.id)} className={softButton}>Remove</button>
-                      <button onClick={() => void blockUser(selectedUser.id)} className={softButton}>Block</button>
+                      <button onClick={() => setMessage("Messaging is coming soon.")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Message</button>
+                      <button onClick={() => void removeFriend(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Remove</button>
+                      <button onClick={() => void blockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Block</button>
                     </>
                   ) : null}
-                  {selectedUser.relationship === "blocked" ? <button onClick={() => void unblockUser(selectedUser.id)} className={softButton}>Unblock</button> : null}
-                  {selectedUser.relationship === "none" || !selectedUser.relationship ? <button onClick={() => void sendRequest(selectedUser.id)} className={softButton}>Add</button> : null}
+                  {selectedUser.relationship === "blocked" ? <button onClick={() => void unblockUser(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Unblock</button> : null}
+                  {selectedUser.relationship === "none" || !selectedUser.relationship ? <button onClick={() => void sendRequest(selectedUser.id)} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Add</button> : null}
                   {requestMap.get(selectedUser.id) ? (
                     <>
-                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "accept")} className="rounded-xl border border-fuchsia-300/65 bg-fuchsia-300/15 px-3 py-2 text-xs text-white">Accept</button>
-                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "reject")} className={softButton}>Reject</button>
+                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "accept")} className="rounded-xl border border-[#FF2E63] px-3 py-2 text-xs text-white">Accept</button>
+                      <button onClick={() => void actOnRequest(requestMap.get(selectedUser.id)!, "reject")} className="rounded-xl border border-white/20 px-3 py-2 text-xs text-white/80">Reject</button>
                     </>
                   ) : null}
                 </div>
@@ -369,7 +375,7 @@ export function FriendsPage() {
 
       <AnimatePresence>
         {message ? (
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 14 }} className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs text-white/90 backdrop-blur-xl" onClick={() => setMessage(null)}>
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 14 }} className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/15 bg-[#111] px-4 py-2 text-xs text-white/80" onClick={() => setMessage(null)}>
             {message}
           </motion.div>
         ) : null}
