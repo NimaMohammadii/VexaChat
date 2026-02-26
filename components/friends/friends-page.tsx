@@ -1,12 +1,12 @@
-“use client”;
+"use client";
 
 // components/friends/friends-page.tsx
-// Drop-in replacement — matches VexaChat project patterns exactly.
+// Drop-in replacement - matches VexaChat project patterns exactly.
 // APIs used (all already exist in the project):
 //   GET  /api/friends/list
 //   GET  /api/friends/requests
 //   GET  /api/friends/blocked
-//   GET  /api/friends/search?username=…
+//   GET  /api/friends/search?username=...
 //   POST /api/friends/request          { receiverId }
 //   POST /api/friends/requests/[id]/accept
 //   POST /api/friends/requests/[id]/reject
@@ -15,11 +15,11 @@
 //   POST /api/friends/unblock          { userId }
 //   POST /api/chats/open               { otherUserId }
 
-import { AnimatePresence, motion } from “framer-motion”;
-import { useEffect, useMemo, useRef, useState } from “react”;
-import { useRouter } from “next/navigation”;
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types --------------------------------------------------------------------
 
 type UserCard = {
 id: string;
@@ -27,7 +27,7 @@ username: string;
 avatarUrl: string;
 bio: string;
 verified?: boolean;
-relationship?: “none” | “pending” | “friends” | “blocked”;
+relationship?: "none" | "pending" | "friends" | "blocked";
 };
 
 type FriendRequestItem = {
@@ -36,25 +36,25 @@ createdAt: string;
 sender: UserCard;
 };
 
-type Tab = “friends” | “requests” | “blocked”;
+type Tab = "friends" | "requests" | "blocked";
 
-// ─── Motion presets ───────────────────────────────────────────────────────────
+// --- Motion presets -----------------------------------------------------------
 
 const spring = { duration: 0.4, ease: [0.34, 1.15, 0.64, 1] as const };
-const fade   = { duration: 0.3, ease: “easeOut” as const };
+const fade   = { duration: 0.3, ease: "easeOut" as const };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 function initials(value: string) {
-return (value?.[0] ?? “U”).toUpperCase();
+return (value?.[0] ?? "U").toUpperCase();
 }
 
 const GRADIENTS = [
-“linear-gradient(135deg,#0d0103,#3a0a14)”,
-“linear-gradient(135deg,#04080f,#0e1726)”,
-“linear-gradient(135deg,#030d05,#0c1c0e)”,
-“linear-gradient(135deg,#0d0802,#241804)”,
-“linear-gradient(135deg,#07041a,#150e30)”,
+"linear-gradient(135deg,#0d0103,#3a0a14)",
+"linear-gradient(135deg,#04080f,#0e1726)",
+"linear-gradient(135deg,#030d05,#0c1c0e)",
+"linear-gradient(135deg,#0d0802,#241804)",
+"linear-gradient(135deg,#07041a,#150e30)",
 ];
 
 function getBg(id: string) {
@@ -63,20 +63,20 @@ for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
 return GRADIENTS[Math.abs(h) % GRADIENTS.length];
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
+// --- Avatar -------------------------------------------------------------------
 
 function Avatar({
 user,
-size = “h-11 w-11”,
+size = "h-11 w-11",
 ring = false,
 }: {
-user: Pick<UserCard, “id” | “avatarUrl” | “username”>;
+user: Pick<UserCard, "id" | "avatarUrl" | "username">;
 size?: string;
 ring?: boolean;
 }) {
 const [err, setErr] = useState(false);
 const ringStyle: React.CSSProperties = ring
-? { boxShadow: “0 0 0 2px rgba(74,222,128,0.35), 0 0 8px rgba(74,222,128,0.12)”, borderColor: “rgba(74,222,128,0.3)” }
+? { boxShadow: "0 0 0 2px rgba(74,222,128,0.35), 0 0 8px rgba(74,222,128,0.12)", borderColor: "rgba(74,222,128,0.3)" }
 : {};
 
 if (user.avatarUrl && !err) {
@@ -94,25 +94,25 @@ style={ringStyle}
 return (
 <div
 className={`${size} flex shrink-0 items-center justify-center rounded-full border border-white/10 text-sm font-bold text-white/80`}
-style={{ background: getBg(user.id), …ringStyle }}
+style={{ background: getBg(user.id), ...ringStyle }}
 >
 {initials(user.username)}
 </div>
 );
 }
 
-// ─── Glass card ───────────────────────────────────────────────────────────────
+// --- Glass card ---------------------------------------------------------------
 
-function GlassCard({ children, className = “” }: { children: React.ReactNode; className?: string }) {
+function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
 return (
 <div
 className={`rounded-[18px] backdrop-blur-[50px] ${className}`}
 style={{
-background: “linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)”,
-border: “1px solid rgba(255,255,255,0.13)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-borderRight: “1px solid rgba(255,255,255,0.04)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.15),0 4px 20px rgba(0,0,0,0.4)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)",
+border: "1px solid rgba(255,255,255,0.13)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+borderRight: "1px solid rgba(255,255,255,0.04)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.15),0 4px 20px rgba(0,0,0,0.4)",
 }}
 >
 {children}
@@ -120,12 +120,12 @@ boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.
 );
 }
 
-// ─── Glass button ─────────────────────────────────────────────────────────────
+// --- Glass button -------------------------------------------------------------
 
-type BtnVariant = “default” | “wine” | “ghost”;
+type BtnVariant = "default" | "wine" | "ghost";
 
 function GlassBtn({
-children, onClick, disabled, variant = “default”, className = “”,
+children, onClick, disabled, variant = "default", className = "",
 }: {
 children: React.ReactNode;
 onClick?: () => void;
@@ -135,23 +135,23 @@ className?: string;
 }) {
 const styles: Record<BtnVariant, React.CSSProperties> = {
 default: {
-background: “linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)”,
-border: “1px solid rgba(255,255,255,0.14)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
-color: “rgba(255,255,255,0.8)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)",
+border: "1px solid rgba(255,255,255,0.14)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)",
+color: "rgba(255,255,255,0.8)",
 },
 wine: {
-background: “linear-gradient(160deg,rgba(90,16,32,0.65) 0%,rgba(50,8,18,0.55) 100%)”,
-border: “1px solid rgba(138,31,56,0.28)”,
-borderBottom: “1px solid rgba(138,31,56,0.06)”,
-boxShadow: “inset 0 1.5px 0 rgba(138,31,56,0.18)”,
-color: “rgba(255,255,255,0.85)”,
+background: "linear-gradient(160deg,rgba(90,16,32,0.65) 0%,rgba(50,8,18,0.55) 100%)",
+border: "1px solid rgba(138,31,56,0.28)",
+borderBottom: "1px solid rgba(138,31,56,0.06)",
+boxShadow: "inset 0 1.5px 0 rgba(138,31,56,0.18)",
+color: "rgba(255,255,255,0.85)",
 },
 ghost: {
-background: “transparent”,
-border: “1px solid rgba(255,255,255,0.07)”,
-color: “rgba(232,232,232,0.35)”,
+background: "transparent",
+border: "1px solid rgba(255,255,255,0.07)",
+color: "rgba(232,232,232,0.35)",
 },
 };
 
@@ -160,20 +160,20 @@ return (
 onClick={onClick}
 disabled={disabled}
 className={`inline-flex h-8 items-center gap-1.5 rounded-[9px] px-3 text-[11.5px] font-semibold transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
-style={{ fontFamily: “inherit”, …styles[variant] }}
+style={{ fontFamily: "inherit", ...styles[variant] }}
 >
 {children}
 </button>
 );
 }
 
-// ─── Tab bar with sliding indicator ──────────────────────────────────────────
+// --- Tab bar with sliding indicator ------------------------------------------
 
 function TabBar({ active, onChange, requestCount }: { active: Tab; onChange: (t: Tab) => void; requestCount: number }) {
 const TABS: { key: Tab; label: string }[] = [
-{ key: “friends”,  label: “Friends”  },
-{ key: “requests”, label: “Requests” },
-{ key: “blocked”,  label: “Blocked”  },
+{ key: "friends",  label: "Friends"  },
+{ key: "requests", label: "Requests" },
+{ key: "blocked",  label: "Blocked"  },
 ];
 const refs = useRef<(HTMLButtonElement | null)[]>([]);
 const [line, setLine] = useState({ left: 0, width: 0 });
@@ -191,17 +191,17 @@ return (
 key={t.key}
 ref={(el) => { refs.current[i] = el; }}
 onClick={() => onChange(t.key)}
-className=“relative flex items-center gap-1.5 pb-2.5 pr-5 text-[13px] font-semibold tracking-[0.01em] transition-colors duration-200”
+className="relative flex items-center gap-1.5 pb-2.5 pr-5 text-[13px] font-semibold tracking-[0.01em] transition-colors duration-200"
 style={{
-color: active === t.key ? “#fff” : “rgba(232,232,232,0.35)”,
-fontFamily: “‘Space Grotesk’, sans-serif”,
+color: active === t.key ? "#fff" : "rgba(232,232,232,0.35)",
+fontFamily: "'Space Grotesk', sans-serif",
 }}
 >
 {t.label}
-{t.key === “requests” && requestCount > 0 && (
+{t.key === "requests" && requestCount > 0 && (
 <span
-className=“flex h-[15px] w-[15px] items-center justify-center rounded-full text-[9px] font-bold text-white”
-style={{ background: “#8a1f38”, boxShadow: “0 0 6px rgba(90,16,32,0.4)” }}
+className="flex h-[15px] w-[15px] items-center justify-center rounded-full text-[9px] font-bold text-white"
+style={{ background: "#8a1f38", boxShadow: "0 0 6px rgba(90,16,32,0.4)" }}
 >
 {requestCount}
 </span>
@@ -209,16 +209,16 @@ style={{ background: “#8a1f38”, boxShadow: “0 0 6px rgba(90,16,32,0.4)” 
 </button>
 ))}
 <motion.div
-className=“absolute bottom-[-1px] h-[1.5px] rounded-full”
+className="absolute bottom-[-1px] h-[1.5px] rounded-full"
 animate={{ left: line.left, width: line.width }}
-transition={{ type: “spring”, stiffness: 400, damping: 32 }}
-style={{ background: “#8a1f38”, boxShadow: “0 0 8px rgba(90,16,32,0.35)” }}
+transition={{ type: "spring", stiffness: 400, damping: 32 }}
+style={{ background: "#8a1f38", boxShadow: "0 0 8px rgba(90,16,32,0.35)" }}
 />
 </div>
 );
 }
 
-// ─── Profile modal ────────────────────────────────────────────────────────────
+// --- Profile modal ------------------------------------------------------------
 
 function ProfileModal({
 user, requestMap, onClose, onSendRequest, onAccept, onReject, onRemove, onBlock, onUnblock, onMessage,
@@ -238,30 +238,29 @@ const reqId = requestMap.get(user.id);
 return (
 <>
 <motion.button
-className=“fixed inset-0 z-40 bg-black/70 backdrop-blur-sm”
+className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-onClick={onClose} aria-label=“Close”
+onClick={onClose} aria-label="Close"
 />
 <motion.div
 initial={{ opacity: 0, y: 10, scale: 0.95 }}
 animate={{ opacity: 1, y: 0, scale: 1 }}
 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-transition={{ duration: 0.25, ease: “easeOut” }}
-className=“fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[24px] p-6”
+transition={{ duration: 0.25, ease: "easeOut" }}
+className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[24px] p-6"
 style={{
-background: “linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 45%,rgba(0,0,0,0.1) 100%)”,
-border: “1px solid rgba(255,255,255,0.14)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-backdropFilter: “blur(60px) saturate(1.6)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),0 30px 80px rgba(0,0,0,0.7)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.02) 45%,rgba(0,0,0,0.1) 100%)",
+border: "1px solid rgba(255,255,255,0.14)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+backdropFilter: "blur(60px) saturate(1.6)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1),0 30px 80px rgba(0,0,0,0.7)",
 }}
 >
 <button
 onClick={onClose}
 className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-xs text-white/50 transition hover:text-white/80"
->✕</button>
+>x</button>
 
-```
     <div className="flex flex-col items-center text-center">
       <Avatar user={user} size="h-20 w-20" />
       <p className="mt-3 text-[15px] font-semibold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -272,7 +271,7 @@ className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center round
       </p>
       {user.verified && (
         <span className="mt-2 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-white/60">
-          ✓ Verified
+          v Verified
         </span>
       )}
       <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -298,38 +297,37 @@ className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center round
     </div>
   </motion.div>
 </>
-```
 
 );
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+// --- Main export --------------------------------------------------------------
 
 export function FriendsPage() {
 const router = useRouter();
 
-const [activeTab,     setActiveTab]     = useState<Tab>(“friends”);
+const [activeTab,     setActiveTab]     = useState<Tab>("friends");
 const [friends,       setFriends]       = useState<UserCard[]>([]);
 const [requests,      setRequests]      = useState<FriendRequestItem[]>([]);
 const [blockedUsers,  setBlockedUsers]  = useState<UserCard[]>([]);
-const [search,        setSearch]        = useState(””);
+const [search,        setSearch]        = useState("");
 const [searchResults, setSearchResults] = useState<UserCard[]>([]);
 const [selectedUser,  setSelectedUser]  = useState<UserCard | null>(null);
 const [toast,         setToast]         = useState<string | null>(null);
 
-// ── data loaders ──────────────────────────────────────────────────────────
-const loadFriends  = async () => { const r = await fetch(”/api/friends/list”,    { cache: “no-store” }); if (r.ok) setFriends((await r.json() as { friends: UserCard[] }).friends); };
-const loadRequests = async () => { const r = await fetch(”/api/friends/requests”,{ cache: “no-store” }); if (r.ok) setRequests((await r.json() as { requests: FriendRequestItem[] }).requests); };
-const loadBlocked  = async () => { const r = await fetch(”/api/friends/blocked”, { cache: “no-store” }); if (r.ok) setBlockedUsers((await r.json() as { blocked: UserCard[] }).blocked); };
+// -- data loaders ----------------------------------------------------------
+const loadFriends  = async () => { const r = await fetch("/api/friends/list",    { cache: "no-store" }); if (r.ok) setFriends((await r.json() as { friends: UserCard[] }).friends); };
+const loadRequests = async () => { const r = await fetch("/api/friends/requests",{ cache: "no-store" }); if (r.ok) setRequests((await r.json() as { requests: FriendRequestItem[] }).requests); };
+const loadBlocked  = async () => { const r = await fetch("/api/friends/blocked", { cache: "no-store" }); if (r.ok) setBlockedUsers((await r.json() as { blocked: UserCard[] }).blocked); };
 const refreshAll   = async () => Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
 
 useEffect(() => { void refreshAll(); }, []);
 
 // Escape key closes modal
 useEffect(() => {
-const fn = (e: KeyboardEvent) => { if (e.key === “Escape”) setSelectedUser(null); };
-window.addEventListener(“keydown”, fn);
-return () => window.removeEventListener(“keydown”, fn);
+const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedUser(null); };
+window.addEventListener("keydown", fn);
+return () => window.removeEventListener("keydown", fn);
 }, []);
 
 // Auto-dismiss toast
@@ -343,7 +341,7 @@ return () => clearTimeout(t);
 useEffect(() => {
 if (search.trim().length < 3) { setSearchResults([]); return; }
 const t = setTimeout(async () => {
-const r = await fetch(`/api/friends/search?username=${encodeURIComponent(search.trim())}`, { cache: “no-store” });
+const r = await fetch(`/api/friends/search?username=${encodeURIComponent(search.trim())}`, { cache: "no-store" });
 setSearchResults(r.ok ? (await r.json() as { users: UserCard[] }).users : []);
 }, 220);
 return () => clearTimeout(t);
@@ -355,72 +353,71 @@ for (const item of requests) m.set(item.sender.id, item.id);
 return m;
 }, [requests]);
 
-// ── actions ───────────────────────────────────────────────────────────────
+// -- actions ---------------------------------------------------------------
 const showToast = (msg: string) => setToast(msg);
 
 const sendRequest = async (receiverId: string) => {
-const r = await fetch(”/api/friends/request”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ receiverId }) });
-if (!r.ok) { const p = await r.json().catch(() => ({ error: “Unable to send request.” })) as { error?: string }; showToast(p.error ?? “Unable to send request.”); return; }
-setSearchResults((prev) => prev.map((u) => u.id === receiverId ? { …u, relationship: “pending” } : u));
-setSelectedUser((prev)  => prev?.id === receiverId ? { …prev, relationship: “pending” } : prev);
-showToast(“Request sent ✓”);
+const r = await fetch("/api/friends/request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ receiverId }) });
+if (!r.ok) { const p = await r.json().catch(() => ({ error: "Unable to send request." })) as { error?: string }; showToast(p.error ?? "Unable to send request."); return; }
+setSearchResults((prev) => prev.map((u) => u.id === receiverId ? { ...u, relationship: "pending" } : u));
+setSelectedUser((prev)  => prev?.id === receiverId ? { ...prev, relationship: "pending" } : prev);
+showToast("Request sent v");
 await refreshAll();
 };
 
-const actOnRequest = async (requestId: string, action: “accept” | “reject”) => {
-const r = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: “POST” });
+const actOnRequest = async (requestId: string, action: "accept" | "reject") => {
+const r = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: "POST" });
 if (!r.ok) return;
 setRequests((prev) => prev.filter((item) => item.id !== requestId));
-showToast(action === “accept” ? “Friend added ✓” : “Request rejected”);
+showToast(action === "accept" ? "Friend added v" : "Request rejected");
 await refreshAll();
 };
 
 const removeFriend = async (userId: string) => {
-await fetch(”/api/friends/remove”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
+await fetch("/api/friends/remove", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
 setSelectedUser(null);
-showToast(“Friend removed”);
+showToast("Friend removed");
 await refreshAll();
 };
 
 const blockUser = async (userId: string) => {
-await fetch(”/api/friends/block”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
-setSearchResults((prev) => prev.map((u) => u.id === userId ? { …u, relationship: “blocked” } : u));
-setSelectedUser((prev)  => prev?.id === userId ? { …prev, relationship: “blocked” } : prev);
-showToast(“User blocked”);
+await fetch("/api/friends/block", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
+setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, relationship: "blocked" } : u));
+setSelectedUser((prev)  => prev?.id === userId ? { ...prev, relationship: "blocked" } : prev);
+showToast("User blocked");
 await refreshAll();
 };
 
 const unblockUser = async (userId: string) => {
-await fetch(”/api/friends/unblock”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ userId }) });
-setSearchResults((prev) => prev.map((u) => u.id === userId ? { …u, relationship: “none” } : u));
-setSelectedUser((prev)  => prev?.id === userId ? { …prev, relationship: “none” } : prev);
-showToast(“User unblocked”);
+await fetch("/api/friends/unblock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
+setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, relationship: "none" } : u));
+setSelectedUser((prev)  => prev?.id === userId ? { ...prev, relationship: "none" } : prev);
+showToast("User unblocked");
 await refreshAll();
 };
 
 const openChat = async (userId: string) => {
-const r = await fetch(”/api/chats/open”, { method: “POST”, headers: { “Content-Type”: “application/json” }, body: JSON.stringify({ otherUserId: userId }) });
+const r = await fetch("/api/chats/open", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ otherUserId: userId }) });
 if (!r.ok) return;
 const d = await r.json() as { conversation: { id: string } };
 router.push(`/chats/${d.conversation.id}`);
 };
 
-// ─── render ───────────────────────────────────────────────────────────────
+// --- render ---------------------------------------------------------------
 return (
 <main
-className=“relative min-h-screen overflow-hidden pb-20 pt-4 text-white”
-style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
+className="relative min-h-screen overflow-hidden pb-20 pt-4 text-white"
+style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
 >
-{/* ambient blobs — same pattern as chats page */}
+{/* ambient blobs - same pattern as chats page */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-<div className=“absolute left-[-15%] top-16 h-56 w-56 rounded-full blur-[110px]” style={{ background: “rgba(90,16,32,0.1)” }} />
-<div className=“absolute right-[-20%] top-1/3 h-72 w-72 rounded-full blur-[140px]” style={{ background: “rgba(255,255,255,0.04)” }} />
+<div className="absolute left-[-15%] top-16 h-56 w-56 rounded-full blur-[110px]" style={{ background: "rgba(90,16,32,0.1)" }} />
+<div className="absolute right-[-20%] top-1/3 h-72 w-72 rounded-full blur-[140px]" style={{ background: "rgba(255,255,255,0.04)" }} />
 </div>
 
-```
   <div className="relative mx-auto w-full max-w-xl px-4">
 
-    {/* ── title row ─────────────────────────────────── */}
+    {/* -- title row ----------------------------------- */}
     <motion.div
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
@@ -440,7 +437,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
             className="inline-block h-[6px] w-[6px] rounded-full"
             style={{ background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }}
           />
-          {friends.filter(() => true).length} online · {friends.length} total
+          {friends.filter(() => true).length} online - {friends.length} total
         </div>
       </div>
 
@@ -466,7 +463,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
       </button>
     </motion.div>
 
-    {/* ── tabs ──────────────────────────────────────── */}
+    {/* -- tabs ---------------------------------------- */}
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -476,7 +473,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
       <TabBar active={activeTab} onChange={setActiveTab} requestCount={requests.length} />
     </motion.div>
 
-    {/* ── search ────────────────────────────────────── */}
+    {/* -- search -------------------------------------- */}
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -543,7 +540,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
       </AnimatePresence>
     </motion.div>
 
-    {/* ── tab panels ────────────────────────────────── */}
+    {/* -- tab panels ---------------------------------- */}
     <AnimatePresence mode="wait">
 
       {/* FRIENDS */}
@@ -728,7 +725,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
     </AnimatePresence>
   </div>
 
-  {/* ── profile modal ── */}
+  {/* -- profile modal -- */}
   <AnimatePresence>
     {selectedUser && (
       <ProfileModal
@@ -746,7 +743,7 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
     )}
   </AnimatePresence>
 
-  {/* ── toast — identical to existing pattern ── */}
+  {/* -- toast - identical to existing pattern -- */}
   <AnimatePresence>
     {toast && (
       <motion.div
@@ -767,7 +764,6 @@ style={{ background: “#000”, fontFamily: “‘Inter’, sans-serif” }}
     )}
   </AnimatePresence>
 </main>
-```
 
 );
 }
