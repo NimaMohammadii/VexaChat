@@ -278,3 +278,12 @@ model HomepageImage {
 
   @@index([slot, order])
 }
+
+model NoirQueue {
+  id        String   @id @default(cuid())
+  channel   String
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
