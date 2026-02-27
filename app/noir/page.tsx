@@ -1,15 +1,216 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+
+type Country = { code: string; name: string };
+
+const COUNTRIES: Country[] = [
+  { code: "GLOBAL", name: "Global" },
+  { code: "AF", name: "Afghanistan" },
+  { code: "AL", name: "Albania" },
+  { code: "DZ", name: "Algeria" },
+  { code: "AD", name: "Andorra" },
+  { code: "AO", name: "Angola" },
+  { code: "AG", name: "Antigua and Barbuda" },
+  { code: "AR", name: "Argentina" },
+  { code: "AM", name: "Armenia" },
+  { code: "AU", name: "Australia" },
+  { code: "AT", name: "Austria" },
+  { code: "AZ", name: "Azerbaijan" },
+  { code: "BS", name: "Bahamas" },
+  { code: "BH", name: "Bahrain" },
+  { code: "BD", name: "Bangladesh" },
+  { code: "BB", name: "Barbados" },
+  { code: "BY", name: "Belarus" },
+  { code: "BE", name: "Belgium" },
+  { code: "BZ", name: "Belize" },
+  { code: "BJ", name: "Benin" },
+  { code: "BT", name: "Bhutan" },
+  { code: "BO", name: "Bolivia" },
+  { code: "BA", name: "Bosnia and Herzegovina" },
+  { code: "BW", name: "Botswana" },
+  { code: "BR", name: "Brazil" },
+  { code: "BN", name: "Brunei" },
+  { code: "BG", name: "Bulgaria" },
+  { code: "BF", name: "Burkina Faso" },
+  { code: "BI", name: "Burundi" },
+  { code: "CV", name: "Cabo Verde" },
+  { code: "KH", name: "Cambodia" },
+  { code: "CM", name: "Cameroon" },
+  { code: "CA", name: "Canada" },
+  { code: "CF", name: "Central African Republic" },
+  { code: "TD", name: "Chad" },
+  { code: "CL", name: "Chile" },
+  { code: "CN", name: "China" },
+  { code: "CO", name: "Colombia" },
+  { code: "KM", name: "Comoros" },
+  { code: "CG", name: "Congo" },
+  { code: "CR", name: "Costa Rica" },
+  { code: "CI", name: "Côte d'Ivoire" },
+  { code: "HR", name: "Croatia" },
+  { code: "CU", name: "Cuba" },
+  { code: "CY", name: "Cyprus" },
+  { code: "CZ", name: "Czechia" },
+  { code: "CD", name: "Democratic Republic of the Congo" },
+  { code: "DK", name: "Denmark" },
+  { code: "DJ", name: "Djibouti" },
+  { code: "DM", name: "Dominica" },
+  { code: "DO", name: "Dominican Republic" },
+  { code: "EC", name: "Ecuador" },
+  { code: "EG", name: "Egypt" },
+  { code: "SV", name: "El Salvador" },
+  { code: "GQ", name: "Equatorial Guinea" },
+  { code: "ER", name: "Eritrea" },
+  { code: "EE", name: "Estonia" },
+  { code: "SZ", name: "Eswatini" },
+  { code: "ET", name: "Ethiopia" },
+  { code: "FJ", name: "Fiji" },
+  { code: "FI", name: "Finland" },
+  { code: "FR", name: "France" },
+  { code: "GA", name: "Gabon" },
+  { code: "GM", name: "Gambia" },
+  { code: "GE", name: "Georgia" },
+  { code: "DE", name: "Germany" },
+  { code: "GH", name: "Ghana" },
+  { code: "GR", name: "Greece" },
+  { code: "GD", name: "Grenada" },
+  { code: "GT", name: "Guatemala" },
+  { code: "GN", name: "Guinea" },
+  { code: "GW", name: "Guinea-Bissau" },
+  { code: "GY", name: "Guyana" },
+  { code: "HT", name: "Haiti" },
+  { code: "HN", name: "Honduras" },
+  { code: "HU", name: "Hungary" },
+  { code: "IS", name: "Iceland" },
+  { code: "IN", name: "India" },
+  { code: "ID", name: "Indonesia" },
+  { code: "IR", name: "Iran" },
+  { code: "IQ", name: "Iraq" },
+  { code: "IE", name: "Ireland" },
+  { code: "IL", name: "Israel" },
+  { code: "IT", name: "Italy" },
+  { code: "JM", name: "Jamaica" },
+  { code: "JP", name: "Japan" },
+  { code: "JO", name: "Jordan" },
+  { code: "KZ", name: "Kazakhstan" },
+  { code: "KE", name: "Kenya" },
+  { code: "KI", name: "Kiribati" },
+  { code: "KW", name: "Kuwait" },
+  { code: "KG", name: "Kyrgyzstan" },
+  { code: "LA", name: "Laos" },
+  { code: "LV", name: "Latvia" },
+  { code: "LB", name: "Lebanon" },
+  { code: "LS", name: "Lesotho" },
+  { code: "LR", name: "Liberia" },
+  { code: "LY", name: "Libya" },
+  { code: "LI", name: "Liechtenstein" },
+  { code: "LT", name: "Lithuania" },
+  { code: "LU", name: "Luxembourg" },
+  { code: "MG", name: "Madagascar" },
+  { code: "MW", name: "Malawi" },
+  { code: "MY", name: "Malaysia" },
+  { code: "MV", name: "Maldives" },
+  { code: "ML", name: "Mali" },
+  { code: "MT", name: "Malta" },
+  { code: "MH", name: "Marshall Islands" },
+  { code: "MR", name: "Mauritania" },
+  { code: "MU", name: "Mauritius" },
+  { code: "MX", name: "Mexico" },
+  { code: "FM", name: "Micronesia" },
+  { code: "MD", name: "Moldova" },
+  { code: "MC", name: "Monaco" },
+  { code: "MN", name: "Mongolia" },
+  { code: "ME", name: "Montenegro" },
+  { code: "MA", name: "Morocco" },
+  { code: "MZ", name: "Mozambique" },
+  { code: "MM", name: "Myanmar" },
+  { code: "NA", name: "Namibia" },
+  { code: "NR", name: "Nauru" },
+  { code: "NP", name: "Nepal" },
+  { code: "NL", name: "Netherlands" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "NI", name: "Nicaragua" },
+  { code: "NE", name: "Niger" },
+  { code: "NG", name: "Nigeria" },
+  { code: "KP", name: "North Korea" },
+  { code: "MK", name: "North Macedonia" },
+  { code: "NO", name: "Norway" },
+  { code: "OM", name: "Oman" },
+  { code: "PK", name: "Pakistan" },
+  { code: "PW", name: "Palau" },
+  { code: "PS", name: "Palestine" },
+  { code: "PA", name: "Panama" },
+  { code: "PG", name: "Papua New Guinea" },
+  { code: "PY", name: "Paraguay" },
+  { code: "PE", name: "Peru" },
+  { code: "PH", name: "Philippines" },
+  { code: "PL", name: "Poland" },
+  { code: "PT", name: "Portugal" },
+  { code: "QA", name: "Qatar" },
+  { code: "RO", name: "Romania" },
+  { code: "RU", name: "Russia" },
+  { code: "RW", name: "Rwanda" },
+  { code: "KN", name: "Saint Kitts and Nevis" },
+  { code: "LC", name: "Saint Lucia" },
+  { code: "VC", name: "Saint Vincent and the Grenadines" },
+  { code: "WS", name: "Samoa" },
+  { code: "SM", name: "San Marino" },
+  { code: "ST", name: "Sao Tome and Principe" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "SN", name: "Senegal" },
+  { code: "RS", name: "Serbia" },
+  { code: "SC", name: "Seychelles" },
+  { code: "SL", name: "Sierra Leone" },
+  { code: "SG", name: "Singapore" },
+  { code: "SK", name: "Slovakia" },
+  { code: "SI", name: "Slovenia" },
+  { code: "SB", name: "Solomon Islands" },
+  { code: "SO", name: "Somalia" },
+  { code: "ZA", name: "South Africa" },
+  { code: "KR", name: "South Korea" },
+  { code: "SS", name: "South Sudan" },
+  { code: "ES", name: "Spain" },
+  { code: "LK", name: "Sri Lanka" },
+  { code: "SD", name: "Sudan" },
+  { code: "SR", name: "Suriname" },
+  { code: "SE", name: "Sweden" },
+  { code: "CH", name: "Switzerland" },
+  { code: "SY", name: "Syria" },
+  { code: "TJ", name: "Tajikistan" },
+  { code: "TZ", name: "Tanzania" },
+  { code: "TH", name: "Thailand" },
+  { code: "TL", name: "Timor-Leste" },
+  { code: "TG", name: "Togo" },
+  { code: "TO", name: "Tonga" },
+  { code: "TT", name: "Trinidad and Tobago" },
+  { code: "TN", name: "Tunisia" },
+  { code: "TR", name: "Turkey" },
+  { code: "TM", name: "Turkmenistan" },
+  { code: "TV", name: "Tuvalu" },
+  { code: "UG", name: "Uganda" },
+  { code: "UA", name: "Ukraine" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "UY", name: "Uruguay" },
+  { code: "UZ", name: "Uzbekistan" },
+  { code: "VU", name: "Vanuatu" },
+  { code: "VA", name: "Vatican City" },
+  { code: "VE", name: "Venezuela" },
+  { code: "VN", name: "Vietnam" },
+  { code: "YE", name: "Yemen" },
+  { code: "ZM", name: "Zambia" },
+  { code: "ZW", name: "Zimbabwe" }
+];
 
 function CircleButton({ children, active = false, onClick }: { children: ReactNode; active?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`h-12 w-12 rounded-full border bg-white/[0.05] backdrop-blur transition-all duration-200 active:scale-[0.98] hover:border-[#FF2E63]/40 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)] ${
-        active ? "border-[#FF2E63]/45 text-[#FF2E63]" : "border-white/10 text-white"
+      className={`h-13 w-13 rounded-full border bg-white/[0.05] backdrop-blur transition-all duration-200 hover:border-[#FF2E63]/45 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)] active:scale-[0.98] ${
+        active ? "border-[#FF2E63]/50 text-[#FF2E63]" : "border-white/10 text-white"
       }`}
     >
       <span className="flex items-center justify-center">{children}</span>
@@ -17,53 +218,168 @@ function CircleButton({ children, active = false, onClick }: { children: ReactNo
   );
 }
 
-function PillButton({ variant, onClick, children }: { variant: "skip" | "stop"; onClick?: () => void; children: ReactNode }) {
+function PillButton({ children, variant = "skip", onClick }: { children: ReactNode; variant?: "skip" | "stop"; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`h-12 rounded-full px-5 transition-all duration-200 active:scale-[0.98] ${
+      className={`h-13 rounded-full px-6 transition-all duration-200 active:scale-[0.98] ${
         variant === "skip"
-          ? "border border-[#FF2E63]/35 bg-white/[0.06] text-white shadow-[0_0_18px_rgba(255,46,99,0.22)] hover:border-[#FF2E63]/55"
-          : "border border-white/15 bg-white/[0.06] text-white shadow-[0_0_14px_rgba(255,46,99,0.14)] hover:border-[#FF2E63]/35"
+          ? "border border-[#FF2E63]/40 bg-white/[0.06] text-white shadow-[0_0_20px_rgba(255,46,99,0.24)]"
+          : "border border-white/15 bg-white/[0.06] text-white shadow-[0_0_14px_rgba(255,46,99,0.14)]"
       }`}
     >
-      <span className="flex items-center justify-center gap-2">{children}</span>
+      <span className="flex items-center justify-center">{children}</span>
     </button>
+  );
+}
+
+function VideoTile({ label }: { label: string }) {
+  return (
+    <div className="relative flex-1 min-h-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_24px_rgba(255,46,99,0.16)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_25%,rgba(255,46,99,0.2),rgba(0,0,0,0)_58%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_75%,rgba(255,255,255,0.1),rgba(0,0,0,0)_60%)]" />
+      <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] tracking-[0.16em] text-white/80">{label}</span>
+    </div>
+  );
+}
+
+function CountrySheet({
+  open,
+  countries,
+  selected,
+  onClose,
+  onSelect,
+  query,
+  onQuery
+}: {
+  open: boolean;
+  countries: Country[];
+  selected: string;
+  onClose: () => void;
+  onSelect: (country: Country) => void;
+  query: string;
+  onQuery: (value: string) => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <>
+          <motion.button
+            type="button"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 bg-black/70"
+          />
+          <motion.div
+            initial={{ y: "100%", opacity: 0.8 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0.8 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-x-0 bottom-0 z-40 max-h-[70svh] rounded-t-3xl border-t border-white/10 bg-black/95 px-4 pb-4 pt-3 backdrop-blur"
+          >
+            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-white/20" />
+            <input
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
+              placeholder="Search country"
+              className="mb-3 h-12 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white placeholder:text-white/45 outline-none"
+            />
+            <div className="max-h-[52svh] space-y-2 overflow-y-auto pr-1">
+              {countries.map((country) => {
+                const isSelected = selected === country.code;
+
+                return (
+                  <button
+                    key={country.code}
+                    type="button"
+                    onClick={() => {
+                      onSelect(country);
+                      onClose();
+                    }}
+                    className={`flex h-12 w-full items-center justify-between rounded-xl px-3 text-left transition-all ${
+                      isSelected
+                        ? "border border-[#FF2E63]/35 bg-white/[0.05] shadow-[0_0_14px_rgba(255,46,99,0.2)]"
+                        : "border border-transparent bg-transparent hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    <span className="text-sm text-white/90">{country.name}</span>
+                    {isSelected ? <span className="h-2 w-2 rounded-full bg-[#FF2E63]" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
 export default function NoirPage() {
   const [started, setStarted] = useState(false);
+  const [countrySheetOpen, setCountrySheetOpen] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
+  const [countryQuery, setCountryQuery] = useState("");
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [friendPending, setFriendPending] = useState(false);
+
+  const filteredCountries = useMemo(() => {
+    const query = countryQuery.trim().toLowerCase();
+
+    if (!query) {
+      return COUNTRIES;
+    }
+
+    return COUNTRIES.filter((country) => country.name.toLowerCase().includes(query) || country.code.toLowerCase().includes(query));
+  }, [countryQuery]);
 
   return (
     <main
       className="relative h-[100svh] w-full overflow-hidden bg-black text-white"
       style={{
         paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)"
+        paddingBottom: "env(safe-area-inset-bottom)"
       }}
     >
       <motion.div
-        initial={{ opacity: 0.9, scale: 0.985 }}
-        animate={{ opacity: started ? 1 : 0.6, scale: started ? 1 : 0.992 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="flex h-full flex-col px-3 pb-3"
+        initial={{ opacity: 0.7, scale: 0.985 }}
+        animate={{ opacity: started ? 1 : 0.62, scale: started ? 1 : 0.992 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex h-full min-h-0 flex-col pb-3"
       >
-        <header className="flex shrink-0 items-center justify-between py-2">
-          <span className="text-[11px] tracking-[0.24em] text-white/70">NOIR</span>
-          <span className="text-xs text-white/75">00:42</span>
+        <header className="flex h-14 shrink-0 items-center justify-between px-4">
+          <button
+            type="button"
+            aria-label="Back"
+            onClick={() => setStarted(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white backdrop-blur transition-all hover:border-[#FF2E63]/45 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)]"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path d="M14.5 5.5 8 12l6.5 6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCountrySheetOpen(true)}
+            className="flex h-10 max-w-[58vw] items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 text-sm text-white/90 backdrop-blur"
+          >
+            <span className="truncate">{selectedCountry.name}</span>
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0">
+              <path d="m7 10 5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
           <button
             type="button"
             aria-label="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/80 transition-all duration-200 hover:border-[#FF2E63]/40 hover:shadow-[0_0_16px_rgba(255,46,99,0.2)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/85 backdrop-blur transition-all hover:border-[#FF2E63]/45 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)]"
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path
                 d="M10.9 3.5h2.2l.5 1.8c.5.2 1 .4 1.5.6l1.7-.9 1.6 1.6-.9 1.7c.3.5.5 1 .6 1.5l1.8.5v2.2l-1.8.5c-.2.5-.4 1-.6 1.5l.9 1.7-1.6 1.6-1.7-.9c-.5.3-1 .5-1.5.6l-.5 1.8h-2.2l-.5-1.8c-.5-.2-1-.4-1.5-.6l-1.7.9-1.6-1.6.9-1.7c-.3-.5-.5-1-.6-1.5l-1.8-.5v-2.2l1.8-.5c.2-.5.4-1 .6-1.5l-.9-1.7 1.6-1.6 1.7.9c.5-.3 1-.5 1.5-.6l.5-1.8Z"
                 stroke="currentColor"
@@ -75,17 +391,15 @@ export default function NoirPage() {
           </button>
         </header>
 
-        <section className="relative min-h-0 flex-1 py-1">
-          <div className="relative h-full overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_40px_rgba(255,46,99,0.2)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,46,99,0.2),rgba(0,0,0,0)_65%)]" />
-            <div className="absolute bottom-24 right-3 h-24 w-16 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] backdrop-blur">
-              <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0)_70%)]" />
-            </div>
+        <section className="min-h-0 flex-1 px-4">
+          <div className="flex h-full min-h-0 flex-col gap-3">
+            <VideoTile label="PARTNER" />
+            <VideoTile label="YOU" />
           </div>
         </section>
 
-        <footer className="shrink-0 pt-3">
-          <div className="mx-auto flex w-full max-w-md items-center justify-center gap-2">
+        <footer className="shrink-0 px-4 pt-3">
+          <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2">
             <PillButton variant="skip">
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -141,18 +455,31 @@ export default function NoirPage() {
       <AnimatePresence>
         {!started ? (
           <motion.div
-            key="landing"
+            key="overlay"
             initial={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute inset-0 z-30 flex items-center justify-center bg-black"
+            exit={{ opacity: 0, scale: 0.965 }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black px-7"
           >
-            <div className="flex flex-col items-center gap-6">
+            <div className="w-full max-w-sm text-center">
               <h1 className="text-4xl font-semibold tracking-[0.34em] text-white">NOIR</h1>
+              <p className="mt-4 text-sm leading-6 text-white/55">Random video encounters in a refined space.</p>
+              <p className="text-sm leading-6 text-white/55">Private. Minimal. Instant.</p>
+              <ul className="mx-auto mt-6 w-fit space-y-2 text-left text-sm text-white/45">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/45" />Choose country
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/45" />Skip &amp; stop instantly
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/45" />Add friend after a vibe
+                </li>
+              </ul>
               <button
                 type="button"
                 onClick={() => setStarted(true)}
-                className="rounded-full border border-[#FF2E63]/40 bg-white/[0.06] px-8 py-3 text-sm text-white shadow-[0_0_24px_rgba(255,46,99,0.28)] transition-all duration-200 active:scale-[0.98] hover:border-[#FF2E63]/60 hover:bg-white/[0.1]"
+                className="mt-8 h-[52px] w-full rounded-full border border-[#FF2E63]/45 bg-[#FF2E63]/10 px-8 text-sm font-medium tracking-[0.08em] text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-200 hover:bg-[#FF2E63]/18 active:scale-[0.98]"
               >
                 Start
               </button>
@@ -160,6 +487,16 @@ export default function NoirPage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <CountrySheet
+        open={countrySheetOpen}
+        countries={filteredCountries}
+        selected={selectedCountry.code}
+        onClose={() => setCountrySheetOpen(false)}
+        onSelect={setSelectedCountry}
+        query={countryQuery}
+        onQuery={setCountryQuery}
+      />
     </main>
   );
 }
