@@ -91,7 +91,9 @@ export function MeetCreateWizard() {
         {done ? (
           <div className="space-y-3">
             <p>Card saved.</p>
-            <Link href="/meet/browse" className="bw-button inline-flex">Go to browse</Link>
+            <Link href="/meet/browse" className="bw-button inline-flex">
+              Go to browse
+            </Link>
           </div>
         ) : (
           <>
