@@ -1,19 +1,19 @@
-“use client”;
+"use client";
 
-import Link from “next/link”;
-import { AnimatePresence, motion, useMotionValue, useTransform } from “framer-motion”;
-import { useEffect, useState } from “react”;
+import Link from "next/link";
+import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useState } from "react";
 
 type MeetCard = { id: string; userId: string; displayName: string; age: number; city: string; bio: string | null; imageUrl: string; intentTags: string[] };
 
 const THRESHOLD = 120;
 
 const glassBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)”,
-border: “1px solid rgba(255,255,255,0.14)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
-color: “rgba(255,255,255,0.8)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)",
+border: "1px solid rgba(255,255,255,0.14)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)",
+color: "rgba(255,255,255,0.8)",
 };
 
 // ── SwipeCard ─────────────────────────────────────────────────────────────────
@@ -27,32 +27,31 @@ const [imgErr, setImgErr] = useState(false);
 
 return (
 <motion.div
-drag=“x”
+drag="x"
 dragConstraints={{ left: 0, right: 0 }}
-style={{ x, rotate, borderRadius: 26, boxShadow: “0 20px 60px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.07)” }}
+style={{ x, rotate, borderRadius: 26, boxShadow: "0 20px 60px rgba(0,0,0,0.8),0 0 0 1px rgba(255,255,255,0.07)" }}
 onDragEnd={(_, info) => {
 if (info.offset.x > THRESHOLD)  onLike();
 if (info.offset.x < -THRESHOLD) onPass();
 }}
-className=“absolute inset-0 cursor-grab select-none overflow-hidden active:cursor-grabbing”
+className="absolute inset-0 cursor-grab select-none overflow-hidden active:cursor-grabbing"
 >
 {!imgErr ? (
-<img src={card.imageUrl} alt={card.displayName} onError={() => setImgErr(true)} className=“h-full w-full object-cover” />
+<img src={card.imageUrl} alt={card.displayName} onError={() => setImgErr(true)} className="h-full w-full object-cover" />
 ) : (
-<div className=“flex h-full w-full items-center justify-center” style={{ background: “linear-gradient(135deg,#0d0103,#3a0a14)” }}>
-<span style={{ fontFamily: “‘Instrument Serif’, serif”, fontSize: 72, color: “rgba(255,255,255,0.2)” }}>{card.displayName[0]}</span>
+<div className="flex h-full w-full items-center justify-center" style={{ background: "linear-gradient(135deg,#0d0103,#3a0a14)" }}>
+<span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 72, color: "rgba(255,255,255,0.2)" }}>{card.displayName[0]}</span>
 </div>
 )}
 
-```
   {/* overlay */}
   <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 42%,rgba(0,0,0,0.65) 72%,rgba(0,0,0,0.97) 100%)" }} />
 
   {/* drag indicators */}
-  <motion.div style={{ opacity: likeOp }} className="pointer-events-none absolute left-5 top-7 rounded-[10px] px-4 py-2 text-[12px] font-bold tracking-[0.1em]"
-    sx={{ color: "#4ade80", background: "rgba(74,222,128,0.12)", border: "1.5px solid rgba(74,222,128,0.5)" }}>LIKE</motion.div>
-  <motion.div style={{ opacity: passOp }} className="pointer-events-none absolute right-5 top-7 rounded-[10px] px-4 py-2 text-[12px] font-bold tracking-[0.1em]"
-    sx={{ color: "#f87171", background: "rgba(248,113,113,0.12)", border: "1.5px solid rgba(248,113,113,0.45)" }}>PASS</motion.div>
+  <motion.div className="pointer-events-none absolute left-5 top-7 rounded-[10px] px-4 py-2 text-[12px] font-bold tracking-[0.1em]"
+    style={{ opacity: likeOp, color: "#4ade80", background: "rgba(74,222,128,0.12)", border: "1.5px solid rgba(74,222,128,0.5)" }}>LIKE</motion.div>
+  <motion.div className="pointer-events-none absolute right-5 top-7 rounded-[10px] px-4 py-2 text-[12px] font-bold tracking-[0.1em]"
+    style={{ opacity: passOp, color: "#f87171", background: "rgba(248,113,113,0.12)", border: "1.5px solid rgba(248,113,113,0.45)" }}>PASS</motion.div>
 
   {/* card info */}
   <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -78,7 +77,6 @@ className=“absolute inset-0 cursor-grab select-none overflow-hidden active:cur
     )}
   </div>
 </motion.div>
-```
 
 );
 }
@@ -93,7 +91,7 @@ const current = queue[0] ?? null;
 
 useEffect(() => {
 void (async () => {
-const r = await fetch(”/api/meet/browse”, { cache: “no-store” });
+const r = await fetch("/api/meet/browse", { cache: "no-store" });
 if (r.ok) {
 const payload = (await r.json()) as { cards: MeetCard[] };
 setQueue(payload.cards);
@@ -102,14 +100,14 @@ setLoading(false);
 })();
 }, []);
 
-const doAction = async (action: “like” | “pass” | “block”, userId: string) => {
+const doAction = async (action: "like" | "pass" | "block", userId: string) => {
 if (busy) return;
 setBusy(true);
-const endpoint = action === “like” ? “/api/meet/like” : action === “pass” ? “/api/meet/pass” : “/api/meet/block”;
+const endpoint = action === "like" ? "/api/meet/like" : action === "pass" ? "/api/meet/pass" : "/api/meet/block";
 await fetch(endpoint, {
-method: “POST”,
-headers: { “Content-Type”: “application/json” },
-body: JSON.stringify(action === “block” ? { blockedUserId: userId } : { toUserId: userId }),
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify(action === "block" ? { blockedUserId: userId } : { toUserId: userId }),
 });
 setQueue((items) => items.slice(1));
 setBusy(false);
@@ -119,16 +117,15 @@ return (
 <motion.main
 initial={{ opacity: 0, y: 8 }}
 animate={{ opacity: 1, y: 0 }}
-transition={{ duration: 0.28, ease: “easeOut” }}
-className=“relative flex h-dvh w-full flex-col overflow-hidden text-white”
-style={{ background: “#000”, maxWidth: 430, margin: “0 auto”, fontFamily: “‘DM Sans’, sans-serif” }}
+transition={{ duration: 0.28, ease: "easeOut" }}
+className="relative flex h-dvh w-full flex-col overflow-hidden text-white"
+style={{ background: "#000", maxWidth: 430, margin: "0 auto", fontFamily: "'DM Sans', sans-serif" }}
 >
 {/* ambient */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-<div className=“absolute rounded-full” style={{ left: “-15%”, top: “20%”, width: 200, height: 200, background: “rgba(90,16,32,0.1)”, filter: “blur(100px)” }} />
+<div className="absolute rounded-full" style={{ left: "-15%", top: "20%", width: 200, height: 200, background: "rgba(90,16,32,0.1)", filter: "blur(100px)" }} />
 </div>
 
-```
   {/* header */}
   <div className="relative z-10 flex shrink-0 items-center justify-between px-5 pb-3 pt-6">
     <div className="flex items-center gap-3">
@@ -159,7 +156,7 @@ style={{ background: “#000”, maxWidth: 430, margin: “0 auto”, fontFamily
         <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="absolute inset-0 flex items-center justify-center rounded-[26px]"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading…</p>
+          <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading...</p>
         </motion.div>
       )}
       {!loading && !current && (
@@ -220,7 +217,6 @@ style={{ background: “#000”, maxWidth: 430, margin: “0 auto”, fontFamily
     </motion.button>
   </div>
 </motion.main>
-```
 
 );
 }

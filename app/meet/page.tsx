@@ -1,36 +1,36 @@
-“use client”;
+"use client";
 
-import Link from “next/link”;
-import { AnimatePresence, motion } from “framer-motion”;
-import { useEffect, useState } from “react”;
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 type MeetCard = { displayName: string; city: string; imageUrl: string; intentTags?: string[] };
 
 // ── glass helpers ─────────────────────────────────────────────────────────────
 
 const glassStyle: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)”,
-border: “1px solid rgba(255,255,255,0.13)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-borderRight: “1px solid rgba(255,255,255,0.04)”,
-backdropFilter: “blur(50px) saturate(1.6)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.15),0 4px 20px rgba(0,0,0,0.4)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)",
+border: "1px solid rgba(255,255,255,0.13)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+borderRight: "1px solid rgba(255,255,255,0.04)",
+backdropFilter: "blur(50px) saturate(1.6)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1),inset 0 -1px 0 rgba(0,0,0,0.15),0 4px 20px rgba(0,0,0,0.4)",
 };
 
 const wineBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(120,25,48,0.95) 0%,rgba(65,10,24,0.92) 55%,rgba(30,4,12,0.97) 100%)”,
-border: “1px solid rgba(150,40,65,0.28)”,
-borderBottom: “1px solid rgba(0,0,0,0.4)”,
-boxShadow: “inset 0 1.5px 0 rgba(220,80,110,0.2),0 4px 16px rgba(0,0,0,0.4)”,
-color: “rgba(255,255,255,0.9)”,
+background: "linear-gradient(160deg,rgba(120,25,48,0.95) 0%,rgba(65,10,24,0.92) 55%,rgba(30,4,12,0.97) 100%)",
+border: "1px solid rgba(150,40,65,0.28)",
+borderBottom: "1px solid rgba(0,0,0,0.4)",
+boxShadow: "inset 0 1.5px 0 rgba(220,80,110,0.2),0 4px 16px rgba(0,0,0,0.4)",
+color: "rgba(255,255,255,0.9)",
 };
 
 const glassBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)”,
-border: “1px solid rgba(255,255,255,0.14)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
-color: “rgba(255,255,255,0.8)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.03) 50%,rgba(0,0,0,0.08) 100%)",
+border: "1px solid rgba(255,255,255,0.14)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)",
+color: "rgba(255,255,255,0.8)",
 };
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ const [imgErr,  setImgErr]  = useState(false);
 
 useEffect(() => {
 void (async () => {
-const r = await fetch(”/api/meet/card”, { cache: “no-store” });
+const r = await fetch("/api/meet/card", { cache: "no-store" });
 if (r.ok) {
 const payload = (await r.json()) as { card: MeetCard | null };
 setCard(payload.card);
@@ -54,37 +54,36 @@ setLoading(false);
 return (
 <AnimatePresence mode="wait">
 <motion.main
-key={loading ? “loading” : card ? “ready” : “create”}
+key={loading ? "loading" : card ? "ready" : "create"}
 initial={{ opacity: 0, y: 10 }}
 animate={{ opacity: 1, y: 0 }}
 exit={{ opacity: 0, y: -10 }}
-transition={{ duration: 0.28, ease: “easeOut” }}
-className=“relative flex min-h-screen w-full flex-col overflow-hidden pb-16 text-white”
-style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif” }}
+transition={{ duration: 0.28, ease: "easeOut" }}
+className="relative flex min-h-screen w-full flex-col overflow-hidden pb-16 text-white"
+style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 >
 {/* ── animated blobs ── */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
 <motion.div
 animate={{ x: [0, 30, 0], y: [0, 40, 0], scale: [1, 1.12, 1] }}
-transition={{ duration: 12, repeat: Infinity, repeatType: “mirror”, ease: “easeInOut” }}
-className=“absolute rounded-full”
-style={{ left: “-20%”, top: “8%”, width: 320, height: 320, background: “rgba(90,16,32,0.18)”, filter: “blur(90px)” }}
+transition={{ duration: 12, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+className="absolute rounded-full"
+style={{ left: "-20%", top: "8%", width: 320, height: 320, background: "rgba(90,16,32,0.18)", filter: "blur(90px)" }}
 />
 <motion.div
 animate={{ x: [0, -25, 0], y: [0, 30, 0], scale: [1, 0.9, 1] }}
-transition={{ duration: 16, repeat: Infinity, repeatType: “mirror”, ease: “easeInOut” }}
-className=“absolute rounded-full”
-style={{ right: “-25%”, top: “25%”, width: 280, height: 280, background: “rgba(90,16,32,0.1)”, filter: “blur(110px)” }}
+transition={{ duration: 16, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+className="absolute rounded-full"
+style={{ right: "-25%", top: "25%", width: 280, height: 280, background: "rgba(90,16,32,0.1)", filter: "blur(110px)" }}
 />
 <motion.div
 animate={{ x: [0, 20, 0], y: [0, -35, 0], scale: [1, 1.08, 1] }}
-transition={{ duration: 20, repeat: Infinity, repeatType: “mirror”, ease: “easeInOut” }}
-className=“absolute rounded-full”
-style={{ left: “10%”, bottom: “15%”, width: 240, height: 240, background: “rgba(255,255,255,0.03)”, filter: “blur(120px)” }}
+transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+className="absolute rounded-full"
+style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(255,255,255,0.03)", filter: "blur(120px)" }}
 />
 </div>
 
-```
     {/* ── header ── */}
     <header className="relative z-10 mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-6">
       <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.25)" }}>
@@ -137,7 +136,7 @@ style={{ left: “10%”, bottom: “15%”, width: 240, height: 240, background
       >
         {loading && (
           <div className="flex items-center justify-center rounded-[22px] py-16" style={glassStyle}>
-            <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading…</p>
+            <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading...</p>
           </div>
         )}
 
@@ -212,7 +211,6 @@ style={{ left: “10%”, bottom: “15%”, width: 240, height: 240, background
     </div>
   </motion.main>
 </AnimatePresence>
-```
 
 );
 }
