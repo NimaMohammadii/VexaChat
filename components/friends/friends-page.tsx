@@ -18,6 +18,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 // --- Types --------------------------------------------------------------------
 
@@ -235,8 +236,17 @@ onBlock: (id: string) => void;
 onUnblock: (id: string) => void;
 onMessage: (id: string) => void;
 }) {
+const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+setMounted(true);
+return () => setMounted(false);
+}, []);
+
 const reqId = requestMap.get(user.id);
-return (
+if (!mounted) return null;
+
+return createPortal(
 <>
 <motion.button
 className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
@@ -298,7 +308,8 @@ className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center round
     </div>
   </motion.div>
 </>
-
+,
+document.body
 );
 }
 
