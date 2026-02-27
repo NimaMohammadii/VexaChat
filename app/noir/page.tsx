@@ -1,7 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState, type ReactNode } from "react";
+import AgoraRTC, {
+  type IAgoraRTCClient,
+  type ICameraVideoTrack,
+  type IMicrophoneAudioTrack,
+  type IRemoteUser
+} from "agora-rtc-sdk-ng";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type Country = { code: string; name: string };
 
@@ -234,9 +240,10 @@ function PillButton({ children, variant = "skip", onClick }: { children: ReactNo
   );
 }
 
-function VideoTile({ label }: { label: string }) {
+function VideoTile({ label, containerId }: { label: string; containerId: string }) {
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_24px_rgba(255,46,99,0.16)]">
+      <div id={containerId} className="absolute inset-0" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_25%,rgba(255,46,99,0.2),rgba(0,0,0,0)_58%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_75%,rgba(255,255,255,0.1),rgba(0,0,0,0)_60%)]" />
       <span className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] tracking-[0.16em] text-white/80">{label}</span>
@@ -319,6 +326,7 @@ function CountrySheet({
 }
 
 export default function NoirPage() {
+  const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
   const [started, setStarted] = useState(false);
   const [countrySheetOpen, setCountrySheetOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
@@ -326,6 +334,164 @@ export default function NoirPage() {
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [friendPending, setFriendPending] = useState(false);
+  const clientRef = useRef<IAgoraRTCClient | null>(null);
+  const localAudioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
+  const localVideoTrackRef = useRef<ICameraVideoTrack | null>(null);
+
+  const clearVideoContainer = useCallback((id: string) => {
+    const container = document.getElementById(id);
+
+    if (container) {
+      container.innerHTML = "";
+    }
+  }, []);
+
+  const clearAllVideoContainers = useCallback(() => {
+    clearVideoContainer("local-video-container");
+    clearVideoContainer("remote-video-container");
+  }, [clearVideoContainer]);
+
+  const closeLocalTracks = useCallback(() => {
+    localAudioTrackRef.current?.close();
+    localVideoTrackRef.current?.close();
+    localAudioTrackRef.current = null;
+    localVideoTrackRef.current = null;
+  }, []);
+
+  const leaveChannel = useCallback(async () => {
+    if (clientRef.current) {
+      await clientRef.current.leave();
+    }
+  }, []);
+
+  const resetControlState = useCallback(() => {
+    setMicOff(false);
+    setCamOff(false);
+  }, []);
+
+  const createClient = useCallback(() => {
+    if (clientRef.current) {
+      return clientRef.current;
+    }
+
+    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+    client.on("user-published", async (user: IRemoteUser, mediaType) => {
+      await client.subscribe(user, mediaType);
+
+      if (mediaType === "video") {
+        const remoteContainer = document.getElementById("remote-video-container");
+
+        if (remoteContainer) {
+          remoteContainer.innerHTML = "";
+          user.videoTrack?.play(remoteContainer);
+        }
+      }
+
+      if (mediaType === "audio") {
+        user.audioTrack?.play();
+      }
+    });
+
+    client.on("user-unpublished", (user: IRemoteUser, mediaType) => {
+      if (mediaType === "video") {
+        user.videoTrack?.stop();
+        clearVideoContainer("remote-video-container");
+      }
+    });
+
+    client.on("user-left", () => {
+      clearVideoContainer("remote-video-container");
+    });
+
+    clientRef.current = client;
+
+    return client;
+  }, [clearVideoContainer]);
+
+  const fetchToken = useCallback(async (channel: string, uid: number) => {
+    const response = await fetch(`/api/agora/token?channel=${encodeURIComponent(channel)}&uid=${uid}`);
+
+    if (!response.ok) {
+      throw new Error("Unable to fetch Agora token");
+    }
+
+    const data = (await response.json()) as { token?: string };
+
+    if (!data.token) {
+      throw new Error("Invalid Agora token response");
+    }
+
+    return data.token;
+  }, []);
+
+  const startSession = useCallback(async () => {
+    if (!appId) {
+      console.error("Missing NEXT_PUBLIC_AGORA_APP_ID");
+      return;
+    }
+
+    const channel = `noir-${Math.floor(Math.random() * 1_000_000_000)}`;
+    const uid = Math.floor(Math.random() * 1_000_000_000);
+    const client = createClient();
+
+    try {
+      await leaveChannel();
+      closeLocalTracks();
+      clearAllVideoContainers();
+
+      const token = await fetchToken(channel, uid);
+
+      await client.join(appId, channel, token, uid);
+      const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+
+      localAudioTrackRef.current = audioTrack;
+      localVideoTrackRef.current = videoTrack;
+
+      await client.publish([audioTrack, videoTrack]);
+
+      const localContainer = document.getElementById("local-video-container");
+
+      if (localContainer) {
+        localContainer.innerHTML = "";
+        videoTrack.play(localContainer);
+      }
+
+      resetControlState();
+      setStarted(true);
+    } catch (error) {
+      console.error("Failed to start session", error);
+      await leaveChannel();
+      closeLocalTracks();
+      clearAllVideoContainers();
+      resetControlState();
+      setStarted(false);
+    }
+  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchToken, leaveChannel, resetControlState]);
+
+  const stopSession = useCallback(async () => {
+    await leaveChannel();
+    closeLocalTracks();
+    clearAllVideoContainers();
+    resetControlState();
+    setStarted(false);
+  }, [clearAllVideoContainers, closeLocalTracks, leaveChannel, resetControlState]);
+
+  const skipSession = useCallback(async () => {
+    if (!started) {
+      return;
+    }
+
+    await startSession();
+  }, [startSession, started]);
+
+  useEffect(() => {
+    return () => {
+      void leaveChannel();
+      closeLocalTracks();
+      clearAllVideoContainers();
+    };
+  }, [clearAllVideoContainers, closeLocalTracks, leaveChannel]);
 
   const filteredCountries = useMemo(() => {
     const query = countryQuery.trim().toLowerCase();
@@ -355,7 +521,7 @@ export default function NoirPage() {
           <button
             type="button"
             aria-label="Back"
-            onClick={() => setStarted(false)}
+            onClick={() => void stopSession()}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white backdrop-blur transition-all hover:border-[#FF2E63]/45 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)]"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -393,20 +559,28 @@ export default function NoirPage() {
 
         <section className="min-h-0 flex-1 px-4">
           <div className="flex h-full min-h-0 flex-col gap-3">
-            <VideoTile label="PARTNER" />
-            <VideoTile label="YOU" />
+            <VideoTile label="PARTNER" containerId="remote-video-container" />
+            <VideoTile label="YOU" containerId="local-video-container" />
           </div>
         </section>
 
         <footer className="shrink-0 px-4 pt-3">
           <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2">
-            <PillButton variant="skip">
+            <PillButton variant="skip" onClick={() => void skipSession()}>
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
             </PillButton>
 
-            <CircleButton active={micOff} onClick={() => setMicOff((value) => !value)}>
+            <CircleButton
+              active={micOff}
+              onClick={() => {
+                const nextMicOff = !micOff;
+
+                setMicOff(nextMicOff);
+                void localAudioTrackRef.current?.setEnabled(!nextMicOff);
+              }}
+            >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" />
                 <path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -414,7 +588,15 @@ export default function NoirPage() {
               </svg>
             </CircleButton>
 
-            <CircleButton active={camOff} onClick={() => setCamOff((value) => !value)}>
+            <CircleButton
+              active={camOff}
+              onClick={() => {
+                const nextCamOff = !camOff;
+
+                setCamOff(nextCamOff);
+                void localVideoTrackRef.current?.setEnabled(!nextCamOff);
+              }}
+            >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
                 <path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -443,7 +625,7 @@ export default function NoirPage() {
               </svg>
             </CircleButton>
 
-            <PillButton variant="stop">
+            <PillButton variant="stop" onClick={() => void stopSession()}>
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
                 <rect x="7" y="7" width="10" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.8" />
               </svg>
@@ -478,7 +660,7 @@ export default function NoirPage() {
               </ul>
               <button
                 type="button"
-                onClick={() => setStarted(true)}
+                onClick={() => void startSession()}
                 className="mt-8 h-[52px] w-full rounded-full border border-[#FF2E63]/45 bg-[#FF2E63]/10 px-8 text-sm font-medium tracking-[0.08em] text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-200 hover:bg-[#FF2E63]/18 active:scale-[0.98]"
               >
                 Start
