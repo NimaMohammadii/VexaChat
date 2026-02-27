@@ -281,9 +281,14 @@ model HomepageImage {
 
 model NoirQueue {
   id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  countryCode String
   channel   String
   status    String
   createdAt DateTime @default(now())
 
   @@index([status])
+  @@index([countryCode, status])
+  @@index([sessionId, status])
 }

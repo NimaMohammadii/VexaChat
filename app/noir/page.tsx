@@ -447,9 +447,13 @@ export default function NoirPage() {
     return data.token;
   }, []);
 
-  const fetchMatchChannel = useCallback(async () => {
+  const fetchMatchChannel = useCallback(async (countryCode: string) => {
     const response = await fetch("/api/noir/match", {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ countryCode })
     });
 
     if (!response.ok) {
@@ -485,7 +489,7 @@ export default function NoirPage() {
     }
 
     try {
-      const channel = await fetchMatchChannel();
+      const channel = await fetchMatchChannel(selectedCountry.code);
       await leaveChannel();
       closeLocalTracks();
       clearAllVideoContainers();
@@ -517,7 +521,7 @@ export default function NoirPage() {
       resetControlState();
       setStarted(false);
     }
-  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchMatchChannel, fetchToken, leaveChannel, resetControlState]);
+  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchMatchChannel, fetchToken, leaveChannel, resetControlState, selectedCountry.code]);
 
   const stopSession = useCallback(async () => {
     await leaveChannel();
