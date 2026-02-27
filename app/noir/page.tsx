@@ -4,8 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import AgoraRTC, {
   type IAgoraRTCClient,
   type ICameraVideoTrack,
-  type IMicrophoneAudioTrack,
-  type IRemoteUser
+  type IMicrophoneAudioTrack
 } from "agora-rtc-sdk-ng";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -376,7 +375,7 @@ export default function NoirPage() {
 
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-    client.on("user-published", async (user: IRemoteUser, mediaType) => {
+    client.on("user-published", async (user, mediaType) => {
       await client.subscribe(user, mediaType);
 
       if (mediaType === "video") {
@@ -393,7 +392,7 @@ export default function NoirPage() {
       }
     });
 
-    client.on("user-unpublished", (user: IRemoteUser, mediaType) => {
+    client.on("user-unpublished", (user, mediaType) => {
       if (mediaType === "video") {
         user.videoTrack?.stop();
         clearVideoContainer("remote-video-container");
