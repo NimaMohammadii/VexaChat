@@ -425,17 +425,35 @@ export default function NoirPage() {
     return data.token;
   }, []);
 
+  const fetchMatchChannel = useCallback(async () => {
+    const response = await fetch("/api/noir/match", {
+      method: "POST"
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to fetch match channel");
+    }
+
+    const data = (await response.json()) as { channel?: string };
+
+    if (!data.channel) {
+      throw new Error("Invalid match channel response");
+    }
+
+    return data.channel;
+  }, []);
+
   const startSession = useCallback(async () => {
     if (!appId) {
       console.error("Missing NEXT_PUBLIC_AGORA_APP_ID");
       return;
     }
 
-    const channel = `noir-${Math.floor(Math.random() * 1_000_000_000)}`;
     const uid = Math.floor(Math.random() * 1_000_000_000);
     const client = createClient();
 
     try {
+      const channel = await fetchMatchChannel();
       await leaveChannel();
       closeLocalTracks();
       clearAllVideoContainers();
@@ -467,7 +485,7 @@ export default function NoirPage() {
       resetControlState();
       setStarted(false);
     }
-  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchToken, leaveChannel, resetControlState]);
+  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchMatchChannel, fetchToken, leaveChannel, resetControlState]);
 
   const stopSession = useCallback(async () => {
     await leaveChannel();
