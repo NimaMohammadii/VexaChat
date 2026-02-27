@@ -1,9 +1,9 @@
-“use client”;
+"use client";
 
-import { motion } from “framer-motion”;
-import { useEffect, useState } from “react”;
-import { useRouter } from “next/navigation”;
-import Link from “next/link”;
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type InboxPayload = {
 incoming: Array<{ id: string; fromUserId: string; createdAt: string }>;
@@ -16,18 +16,18 @@ currentUserId: string;
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const glassCard: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)”,
-border: “1px solid rgba(255,255,255,0.13)”,
-borderBottom: “1px solid rgba(255,255,255,0.04)”,
-backdropFilter: “blur(50px) saturate(1.6)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,0.1)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.022) 45%,rgba(0,0,0,0.06) 100%)",
+border: "1px solid rgba(255,255,255,0.13)",
+borderBottom: "1px solid rgba(255,255,255,0.04)",
+backdropFilter: "blur(50px) saturate(1.6)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)",
 };
 
 const GRADIENTS = [
-“linear-gradient(135deg,#0d0103,#3a0a14)”,
-“linear-gradient(135deg,#04080f,#0e1726)”,
-“linear-gradient(135deg,#030d05,#0c1c0e)”,
-“linear-gradient(135deg,#07041a,#150e30)”,
+"linear-gradient(135deg,#0d0103,#3a0a14)",
+"linear-gradient(135deg,#04080f,#0e1726)",
+"linear-gradient(135deg,#030d05,#0c1c0e)",
+"linear-gradient(135deg,#07041a,#150e30)",
 ];
 function getBg(id: string) {
 let h = 0;
@@ -44,9 +44,9 @@ return `${Math.floor(diff / 86400000)}d ago`;
 
 function Avatar({ id, name }: { id: string; name: string }) {
 return (
-<div className=“flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[15px] font-semibold”
-style={{ background: getBg(id), border: “1px solid rgba(255,255,255,0.07)”, color: “rgba(255,255,255,0.7)” }}>
-{(name?.[0] ?? “?”).toUpperCase()}
+<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] text-[15px] font-semibold"
+style={{ background: getBg(id), border: "1px solid rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)" }}>
+{(name?.[0] ?? "?").toUpperCase()}
 </div>
 );
 }
@@ -58,21 +58,21 @@ const router = useRouter();
 const [data, setData] = useState<InboxPayload | null>(null);
 
 const load = async () => {
-const r = await fetch(”/api/meet/inbox”, { cache: “no-store” });
+const r = await fetch("/api/meet/inbox", { cache: "no-store" });
 if (r.ok) setData((await r.json()) as InboxPayload);
 };
 
 useEffect(() => { void load(); }, []);
 
-const act = async (requestId: string, action: “accept” | “reject”) => {
-await fetch(`/api/meet/requests/${requestId}/${action}`, { method: “POST” });
+const act = async (requestId: string, action: "accept" | "reject") => {
+await fetch(`/api/meet/requests/${requestId}/${action}`, { method: "POST" });
 void load();
 };
 
 const openChat = async (userId: string) => {
-const r = await fetch(”/api/chats/open”, {
-method: “POST”,
-headers: { “Content-Type”: “application/json” },
+const r = await fetch("/api/chats/open", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ otherUserId: userId }),
 });
 if (!r.ok) return;
@@ -86,16 +86,15 @@ return (
 <motion.main
 initial={{ opacity: 0, y: 10 }}
 animate={{ opacity: 1, y: 0 }}
-transition={{ duration: 0.28, ease: “easeOut” }}
-className=“relative min-h-screen w-full overflow-hidden pb-20 text-white”
-style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif” }}
+transition={{ duration: 0.28, ease: "easeOut" }}
+className="relative min-h-screen w-full overflow-hidden pb-20 text-white"
+style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 >
 {/* ambient */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-<div className=“absolute rounded-full” style={{ right: “-20%”, top: “15%”, width: 220, height: 220, background: “rgba(90,16,32,0.1)”, filter: “blur(110px)” }} />
+<div className="absolute rounded-full" style={{ right: "-20%", top: "15%", width: 220, height: 220, background: "rgba(90,16,32,0.1)", filter: "blur(110px)" }} />
 </div>
 
-```
   <div className="relative z-10 mx-auto max-w-xl px-5">
 
     {/* header */}
@@ -120,7 +119,7 @@ style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif” }}
           Incoming{data?.incoming.length ? ` · ${data.incoming.length}` : ""}
         </p>
         <div className="flex flex-col gap-2.5">
-          {!data && <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading…</p>}
+          {!data && <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.35)" }}>Loading...</p>}
           {data && !data.incoming.length && (
             <div className="flex items-center justify-center rounded-[18px] py-10" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
               <p className="text-[13px]" style={{ color: "rgba(232,232,232,0.28)" }}>No pending requests</p>
@@ -221,7 +220,6 @@ style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif” }}
     </div>
   </div>
 </motion.main>
-```
 
 );
 }
