@@ -16,7 +16,7 @@
 //   POST /api/chats/open               { otherUserId }
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // --- Types --------------------------------------------------------------------
@@ -37,6 +37,12 @@ sender: UserCard;
 };
 
 type Tab = "friends" | "requests" | "blocked";
+
+const TABS: { key: Tab; label: string }[] = [
+{ key: "friends",  label: "Friends"  },
+{ key: "requests", label: "Requests" },
+{ key: "blocked",  label: "Blocked"  },
+];
 
 // --- Motion presets -----------------------------------------------------------
 
@@ -170,11 +176,6 @@ style={{ fontFamily: "inherit", ...styles[variant] }}
 // --- Tab bar with sliding indicator ------------------------------------------
 
 function TabBar({ active, onChange, requestCount }: { active: Tab; onChange: (t: Tab) => void; requestCount: number }) {
-const TABS: { key: Tab; label: string }[] = [
-{ key: "friends",  label: "Friends"  },
-{ key: "requests", label: "Requests" },
-{ key: "blocked",  label: "Blocked"  },
-];
 const refs = useRef<(HTMLButtonElement | null)[]>([]);
 const [line, setLine] = useState({ left: 0, width: 0 });
 
@@ -314,14 +315,24 @@ const [search,        setSearch]        = useState("");
 const [searchResults, setSearchResults] = useState<UserCard[]>([]);
 const [selectedUser,  setSelectedUser]  = useState<UserCard | null>(null);
 const [toast,         setToast]         = useState<string | null>(null);
+const loadedTabsRef = useRef<Record<Tab, boolean>>({ friends: false, requests: false, blocked: false });
 
 // -- data loaders ----------------------------------------------------------
-const loadFriends  = async () => { const r = await fetch("/api/friends/list",    { cache: "no-store" }); if (r.ok) setFriends((await r.json() as { friends: UserCard[] }).friends); };
-const loadRequests = async () => { const r = await fetch("/api/friends/requests",{ cache: "no-store" }); if (r.ok) setRequests((await r.json() as { requests: FriendRequestItem[] }).requests); };
-const loadBlocked  = async () => { const r = await fetch("/api/friends/blocked", { cache: "no-store" }); if (r.ok) setBlockedUsers((await r.json() as { blocked: UserCard[] }).blocked); };
-const refreshAll   = async () => Promise.all([loadFriends(), loadRequests(), loadBlocked()]);
+const loadFriends = useCallback(async () => { const r = await fetch("/api/friends/list", { cache: "no-store" }); if (r.ok) setFriends((await r.json() as { friends: UserCard[] }).friends); }, []);
+const loadRequests = useCallback(async () => { const r = await fetch("/api/friends/requests", { cache: "no-store" }); if (r.ok) setRequests((await r.json() as { requests: FriendRequestItem[] }).requests); }, []);
+const loadBlocked = useCallback(async () => { const r = await fetch("/api/friends/blocked", { cache: "no-store" }); if (r.ok) setBlockedUsers((await r.json() as { blocked: UserCard[] }).blocked); }, []);
+const loadTabData = useCallback(async (tab: Tab, force = false) => {
+if (!force && loadedTabsRef.current[tab]) return;
 
-useEffect(() => { void refreshAll(); }, []);
+if (tab === "friends") await loadFriends();
+if (tab === "requests") await loadRequests();
+if (tab === "blocked") await loadBlocked();
+
+loadedTabsRef.current[tab] = true;
+}, [loadBlocked, loadFriends, loadRequests]);
+
+useEffect(() => { void loadTabData("friends"); }, [loadTabData]);
+useEffect(() => { void loadTabData(activeTab); }, [activeTab, loadTabData]);
 
 // Escape key closes modal
 useEffect(() => {
@@ -362,7 +373,8 @@ if (!r.ok) { const p = await r.json().catch(() => ({ error: "Unable to send requ
 setSearchResults((prev) => prev.map((u) => u.id === receiverId ? { ...u, relationship: "pending" } : u));
 setSelectedUser((prev)  => prev?.id === receiverId ? { ...prev, relationship: "pending" } : prev);
 showToast("Request sent v");
-await refreshAll();
+loadedTabsRef.current.requests = false;
+void loadTabData("requests", true);
 };
 
 const actOnRequest = async (requestId: string, action: "accept" | "reject") => {
@@ -370,14 +382,18 @@ const r = await fetch(`/api/friends/requests/${requestId}/${action}`, { method: 
 if (!r.ok) return;
 setRequests((prev) => prev.filter((item) => item.id !== requestId));
 showToast(action === "accept" ? "Friend added v" : "Request rejected");
-await refreshAll();
+if (action === "accept") {
+loadedTabsRef.current.friends = false;
+void loadTabData("friends", true);
+}
 };
 
 const removeFriend = async (userId: string) => {
 await fetch("/api/friends/remove", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
 setSelectedUser(null);
 showToast("Friend removed");
-await refreshAll();
+setFriends((prev) => prev.filter((friend) => friend.id !== userId));
+setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, relationship: "none" } : u));
 };
 
 const blockUser = async (userId: string) => {
@@ -385,7 +401,9 @@ await fetch("/api/friends/block", { method: "POST", headers: { "Content-Type": "
 setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, relationship: "blocked" } : u));
 setSelectedUser((prev)  => prev?.id === userId ? { ...prev, relationship: "blocked" } : prev);
 showToast("User blocked");
-await refreshAll();
+setFriends((prev) => prev.filter((friend) => friend.id !== userId));
+loadedTabsRef.current.blocked = false;
+void loadTabData("blocked", true);
 };
 
 const unblockUser = async (userId: string) => {
@@ -393,7 +411,7 @@ await fetch("/api/friends/unblock", { method: "POST", headers: { "Content-Type":
 setSearchResults((prev) => prev.map((u) => u.id === userId ? { ...u, relationship: "none" } : u));
 setSelectedUser((prev)  => prev?.id === userId ? { ...prev, relationship: "none" } : prev);
 showToast("User unblocked");
-await refreshAll();
+setBlockedUsers((prev) => prev.filter((user) => user.id !== userId));
 };
 
 const openChat = async (userId: string) => {
@@ -437,7 +455,7 @@ style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
             className="inline-block h-[6px] w-[6px] rounded-full"
             style={{ background: "#4ade80", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }}
           />
-          {friends.filter(() => true).length} online - {friends.length} total
+          {friends.length} online - {friends.length} total
         </div>
       </div>
 
@@ -562,7 +580,7 @@ style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
                     key={f.id}
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ ...spring, delay: i * 0.05 }}
+                    transition={{ ...spring, delay: Math.min(i, 5) * 0.03 }}
                     whileHover={{ scale: 1.08, y: -2 }}
                     whileTap={{ scale: 0.94 }}
                     onClick={() => void openChat(f.id)}
@@ -593,11 +611,10 @@ style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
               {friends.map((friend, i) => (
                 <motion.div
                   key={friend.id}
-                  layout
                   initial={{ opacity: 0, y: 10, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8 }}
-                  transition={{ ...spring, delay: i * 0.06 }}
+                  transition={{ ...spring, delay: Math.min(i, 6) * 0.02 }}
                   whileHover={{ y: -1, transition: { duration: 0.2 } }}
                 >
                   <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
@@ -653,11 +670,10 @@ style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
             requests.map((req, i) => (
               <motion.div
                 key={req.id}
-                layout
                 initial={{ opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -16 }}
-                transition={{ ...spring, delay: i * 0.07 }}
+                transition={{ ...spring, delay: Math.min(i, 6) * 0.02 }}
               >
                 <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
                   <button type="button" onClick={() => setSelectedUser({ ...req.sender, relationship: "none" })}>
@@ -698,11 +714,10 @@ style={{ background: "#000", fontFamily: "'Inter', sans-serif" }}
             blockedUsers.map((user, i) => (
               <motion.div
                 key={user.id}
-                layout
                 initial={{ opacity: 0, y: 10, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -16 }}
-                transition={{ ...spring, delay: i * 0.07 }}
+                transition={{ ...spring, delay: Math.min(i, 6) * 0.02 }}
               >
                 <GlassCard className="flex min-h-[70px] items-center gap-3 px-4 py-3">
                   <button type="button" onClick={() => setSelectedUser({ ...user, relationship: "blocked" })}>
