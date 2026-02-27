@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 type InboxPayload = {
 incoming: Array<{ id: string; fromUserId: string; createdAt: string }>;
@@ -99,11 +100,14 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 
     {/* header */}
     <div className="flex items-center justify-between pt-6">
-      <div>
+      <div className="flex items-center gap-3">
+        <HeaderMenuDrawer />
+        <div>
         <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.28)" }}>Meet</p>
         <h1 className="leading-none text-white" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 32, letterSpacing: "-1.2px", fontWeight: 400 }}>
           Inbox
         </h1>
+        </div>
       </div>
       <Link href="/meet" className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white/60 transition-all active:scale-90"
         style={{ background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)", border: "1px solid rgba(255,255,255,0.13)", boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)" }}>

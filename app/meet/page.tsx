@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 type MeetCard = { displayName: string; city: string; imageUrl: string; intentTags?: string[] };
 
@@ -86,9 +87,12 @@ style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(
 
     {/* ── header ── */}
     <header className="relative z-10 mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-6">
-      <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.25)" }}>
-        Vexa
-      </span>
+      <div className="flex items-center gap-3">
+        <HeaderMenuDrawer />
+        <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.25)" }}>
+          Vexa
+        </span>
+      </div>
       <Link
         href="/meet/inbox"
         className="inline-flex h-9 items-center gap-2 rounded-[14px] px-4 text-[12px] font-semibold transition-all active:scale-95"
