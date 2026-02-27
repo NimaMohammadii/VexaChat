@@ -17,15 +17,17 @@
     "storage:assert-r2-only": "node scripts/assert-r2-only.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.883.0",
+    "@aws-sdk/s3-request-presigner": "^3.883.0",
     "@prisma/client": "^6.3.1",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.8",
+    "agora-access-token": "^2.0.4",
+    "agora-rtc-sdk-ng": "^4.23.2",
+    "framer-motion": "^11.18.2",
     "next": "14.2.5",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "@supabase/ssr": "^0.5.2",
-    "framer-motion": "^11.18.2",
-    "@aws-sdk/client-s3": "^3.883.0",
-    "@aws-sdk/s3-request-presigner": "^3.883.0"
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
