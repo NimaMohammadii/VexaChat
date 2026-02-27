@@ -1,0 +1,2 @@
+ALTER TABLE "MeetCard"
+ADD COLUMN "countryCode" TEXT NOT NULL DEFAULT '';

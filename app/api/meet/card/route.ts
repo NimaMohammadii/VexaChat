@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     update: {
       displayName: validated.data.displayName!,
       age: validated.data.age!,
+      countryCode: validated.data.countryCode!,
       city: validated.data.city!,
       gender: validated.data.gender!,
       lookingFor: validated.data.lookingFor!,
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
       userId: user.id,
       displayName: validated.data.displayName!,
       age: validated.data.age!,
+      countryCode: validated.data.countryCode!,
       city: validated.data.city!,
       gender: validated.data.gender!,
       lookingFor: validated.data.lookingFor!,

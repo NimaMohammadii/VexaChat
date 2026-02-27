@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
-type MeetCard = { id: string; userId: string; displayName: string; age: number; city: string; bio: string | null; imageUrl: string; intentTags: string[] };
+type MeetCard = { id: string; userId: string; displayName: string; age: number; countryCode: string; city: string; bio: string | null; imageUrl: string; intentTags: string[] };
 
 const THRESHOLD = 120;
 
@@ -129,6 +130,7 @@ style={{ background: "#000", maxWidth: 430, margin: "0 auto", fontFamily: "'DM S
   {/* header */}
   <div className="relative z-10 flex shrink-0 items-center justify-between px-5 pb-3 pt-6">
     <div className="flex items-center gap-3">
+      <HeaderMenuDrawer />
       <Link href="/meet" className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white/60 transition-all active:scale-90"
         style={{ background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)", border: "1px solid rgba(255,255,255,0.13)", boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)" }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>

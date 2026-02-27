@@ -183,6 +183,7 @@ model MeetCard {
   userId           String   @unique
   displayName      String
   age              Int
+  countryCode      String   @default("")
   city             String
   gender           String
   lookingFor       String

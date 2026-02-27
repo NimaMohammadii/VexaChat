@@ -7,6 +7,7 @@ export type MeetLookingFor = (typeof meetLookingFor)[number];
 export type MeetCardPayload = {
   displayName?: string;
   age?: number;
+  countryCode?: string;
   city?: string;
   gender?: string;
   lookingFor?: string;
@@ -26,6 +27,7 @@ export function orderedUserPair(firstUserId: string, secondUserId: string) {
 export function validateMeetCardPayload(payload: MeetCardPayload, mode: "create" | "update") {
   const displayName = payload.displayName?.trim();
   const city = payload.city?.trim();
+  const countryCode = payload.countryCode?.trim();
   const gender = payload.gender;
   const lookingFor = payload.lookingFor;
   const intentTags = payload.intentTags?.map((tag) => tag.trim()).filter(Boolean) ?? [];
@@ -38,6 +40,10 @@ export function validateMeetCardPayload(payload: MeetCardPayload, mode: "create"
 
   if ((mode === "create" || payload.city !== undefined) && !city) {
     return { error: "City is required." } as const;
+  }
+
+  if ((mode === "create" || payload.countryCode !== undefined) && !countryCode) {
+    return { error: "Country is required." } as const;
   }
 
   if ((mode === "create" || payload.gender !== undefined) && !meetGenders.includes(gender as MeetGender)) {
@@ -88,6 +94,7 @@ export function validateMeetCardPayload(payload: MeetCardPayload, mode: "create"
     data: {
       displayName,
       age: payload.age,
+      countryCode,
       city,
       gender: gender as MeetGender | undefined,
       lookingFor: lookingFor as MeetLookingFor | undefined,

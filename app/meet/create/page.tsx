@@ -4,12 +4,14 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChangeEvent, useState } from "react";
 import { presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 // ── types (identical to original) ────────────────────────────────────────────
 
 type FormState = {
 displayName: string;
 age: string;
+countryCode: string;
 city: string;
 gender: "male" | "female" | "other" | "prefer_not";
 lookingFor: "male" | "female" | "any";
@@ -21,6 +23,7 @@ imageUrl: string;
 const initial: FormState = {
 displayName: "",
 age: "",
+countryCode: "",
 city: "",
 gender: "prefer_not",
 lookingFor: "any",
@@ -30,6 +33,18 @@ imageUrl: "",
 };
 
 const INTENT_OPTIONS = ["Dinner", "Chat", "Dating", "Friendship", "Activities"];
+const COUNTRY_OPTIONS = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "TR", name: "Turkey" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "IN", name: "India" },
+  { code: "BR", name: "Brazil" }
+];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -85,6 +100,25 @@ setError(err instanceof Error ? err.message : "Unable to upload image.");
 setUploading(false);
 };
 
+const removePhoto = async () => {
+  setError(null);
+  const response = await fetch("/api/meet/card/image", { method: "DELETE" });
+  if (response.status === 404) {
+    setPreviewUrl("");
+    set("imageUrl", "");
+    return;
+  }
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    setError(payload.error ?? "Unable to remove photo.");
+    return;
+  }
+
+  setPreviewUrl("");
+  set("imageUrl", "");
+};
+
 // ── submit (identical to original) ───────────────────────────────────────
 const submit = async () => {
 setSaving(true);
@@ -134,6 +168,7 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 
     {/* header */}
     <div className="flex items-center gap-3 pt-6">
+      <HeaderMenuDrawer />
       <Link href="/meet" className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white/60 transition-all active:scale-90"
         style={{ background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)", border: "1px solid rgba(255,255,255,0.13)", boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)" }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
@@ -173,6 +208,15 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
             )}
             <input type="file" accept="image/*" className="hidden" onChange={(e) => void onUpload(e)} disabled={uploading} />
           </label>
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={() => void removePhoto()}
+              className="mt-2 rounded-[10px] border border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/70 transition-all hover:border-[#8a1f38]/60 hover:text-white"
+            >
+              Remove photo
+            </button>
+          )}
         </motion.div>
 
         {/* name + age */}
@@ -195,8 +239,26 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
           </div>
         </motion.div>
 
-        {/* city */}
+        {/* country */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...fade, delay: 0.1 }}>
+          <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: "rgba(232,232,232,0.38)" }}>Country</p>
+          <select
+            value={form.countryCode}
+            onChange={(e) => set("countryCode", e.target.value)}
+            className="w-full rounded-[13px] px-4 py-3 text-[14px]"
+            style={inputStyle}
+          >
+            <option value="" style={{ background: "#080808" }}>Select country</option>
+            {COUNTRY_OPTIONS.map((country) => (
+              <option key={country.code} value={country.code} style={{ background: "#080808" }}>
+                {country.name}
+              </option>
+            ))}
+          </select>
+        </motion.div>
+
+        {/* city */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...fade, delay: 0.115 }}>
           <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: "rgba(232,232,232,0.38)" }}>City</p>
           <input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Berlin"
             className="w-full rounded-[13px] px-4 py-3 text-[14px] placeholder:text-white/20"
@@ -277,7 +339,7 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 
         {/* save */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...fade, delay: 0.25 }} className="pb-4">
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => void submit()} disabled={uploading || saving || !form.imageUrl}
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => void submit()} disabled={uploading || saving || !form.imageUrl || !form.countryCode}
             className="flex w-full items-center justify-center gap-2 rounded-[14px] py-3.5 text-[14px] font-semibold text-white/90 transition-all disabled:opacity-40"
             style={{ background: "linear-gradient(160deg,rgba(120,25,48,0.95) 0%,rgba(65,10,24,0.92) 55%,rgba(30,4,12,0.97) 100%)", border: "1px solid rgba(150,40,65,0.28)", borderBottom: "1px solid rgba(0,0,0,0.4)", boxShadow: "inset 0 1.5px 0 rgba(220,80,110,0.2),0 4px 16px rgba(0,0,0,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
             {saving ? "Saving..." : uploading ? "Uploading..." : (
