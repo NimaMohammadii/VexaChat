@@ -1,459 +1,165 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useState, type ReactNode } from "react";
 
-type NoirState = "landing" | "setup" | "matching" | "room" | "ended";
-
-const COUNTRIES = [
-  "Afghanistan",
-  "Albania",
-  "Algeria",
-  "Andorra",
-  "Angola",
-  "Antigua and Barbuda",
-  "Argentina",
-  "Armenia",
-  "Australia",
-  "Austria",
-  "Azerbaijan",
-  "Bahamas",
-  "Bahrain",
-  "Bangladesh",
-  "Barbados",
-  "Belarus",
-  "Belgium",
-  "Belize",
-  "Benin",
-  "Bhutan",
-  "Bolivia",
-  "Bosnia and Herzegovina",
-  "Botswana",
-  "Brazil",
-  "Brunei",
-  "Bulgaria",
-  "Burkina Faso",
-  "Burundi",
-  "Cabo Verde",
-  "Cambodia",
-  "Cameroon",
-  "Canada",
-  "Central African Republic",
-  "Chad",
-  "Chile",
-  "China",
-  "Colombia",
-  "Comoros",
-  "Congo",
-  "Costa Rica",
-  "Croatia",
-  "Cuba",
-  "Cyprus",
-  "Czechia",
-  "Denmark",
-  "Djibouti",
-  "Dominica",
-  "Dominican Republic",
-  "DR Congo",
-  "Ecuador",
-  "Egypt",
-  "El Salvador",
-  "Equatorial Guinea",
-  "Eritrea",
-  "Estonia",
-  "Eswatini",
-  "Ethiopia",
-  "Fiji",
-  "Finland",
-  "France",
-  "Gabon",
-  "Gambia",
-  "Georgia",
-  "Germany",
-  "Ghana",
-  "Greece",
-  "Grenada",
-  "Guatemala",
-  "Guinea",
-  "Guinea-Bissau",
-  "Guyana",
-  "Haiti",
-  "Honduras",
-  "Hungary",
-  "Iceland",
-  "India",
-  "Indonesia",
-  "Iran",
-  "Iraq",
-  "Ireland",
-  "Israel",
-  "Italy",
-  "Ivory Coast",
-  "Jamaica",
-  "Japan",
-  "Jordan",
-  "Kazakhstan",
-  "Kenya",
-  "Kiribati",
-  "Kuwait",
-  "Kyrgyzstan",
-  "Laos",
-  "Latvia",
-  "Lebanon",
-  "Lesotho",
-  "Liberia",
-  "Libya",
-  "Liechtenstein",
-  "Lithuania",
-  "Luxembourg",
-  "Madagascar",
-  "Malawi",
-  "Malaysia",
-  "Maldives",
-  "Mali",
-  "Malta",
-  "Marshall Islands",
-  "Mauritania",
-  "Mauritius",
-  "Mexico",
-  "Micronesia",
-  "Moldova",
-  "Monaco",
-  "Mongolia",
-  "Montenegro",
-  "Morocco",
-  "Mozambique",
-  "Myanmar",
-  "Namibia",
-  "Nauru",
-  "Nepal",
-  "Netherlands",
-  "New Zealand",
-  "Nicaragua",
-  "Niger",
-  "Nigeria",
-  "North Korea",
-  "North Macedonia",
-  "Norway",
-  "Oman",
-  "Pakistan",
-  "Palau",
-  "Palestine",
-  "Panama",
-  "Papua New Guinea",
-  "Paraguay",
-  "Peru",
-  "Philippines",
-  "Poland",
-  "Portugal",
-  "Qatar",
-  "Romania",
-  "Russia",
-  "Rwanda",
-  "Saint Kitts and Nevis",
-  "Saint Lucia",
-  "Saint Vincent and the Grenadines",
-  "Samoa",
-  "San Marino",
-  "Sao Tome and Principe",
-  "Saudi Arabia",
-  "Senegal",
-  "Serbia",
-  "Seychelles",
-  "Sierra Leone",
-  "Singapore",
-  "Slovakia",
-  "Slovenia",
-  "Solomon Islands",
-  "Somalia",
-  "South Africa",
-  "South Korea",
-  "South Sudan",
-  "Spain",
-  "Sri Lanka",
-  "Sudan",
-  "Suriname",
-  "Sweden",
-  "Switzerland",
-  "Syria",
-  "Tajikistan",
-  "Tanzania",
-  "Thailand",
-  "Timor-Leste",
-  "Togo",
-  "Tonga",
-  "Trinidad and Tobago",
-  "Tunisia",
-  "Turkey",
-  "Turkmenistan",
-  "Tuvalu",
-  "Uganda",
-  "Ukraine",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
-  "Uruguay",
-  "Uzbekistan",
-  "Vanuatu",
-  "Vatican City",
-  "Venezuela",
-  "Vietnam",
-  "Yemen",
-  "Zambia",
-  "Zimbabwe"
-];
-
-function CountryChip({ onClick, selectedCountry }: { onClick: () => void; selectedCountry: string }) {
+function CircleButton({ children, active = false, onClick }: { children: ReactNode; active?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white transition hover:border-[#FF2E63]/40 hover:bg-white/[0.08]"
+      className={`h-12 w-12 rounded-full border bg-white/[0.05] backdrop-blur transition-all duration-200 active:scale-[0.98] hover:border-[#FF2E63]/40 hover:shadow-[0_0_18px_rgba(255,46,99,0.22)] ${
+        active ? "border-[#FF2E63]/45 text-[#FF2E63]" : "border-white/10 text-white"
+      }`}
     >
-      {selectedCountry}
+      <span className="flex items-center justify-center">{children}</span>
     </button>
   );
 }
 
-function CountrySheet({
-  open,
-  selectedCountry,
-  onClose,
-  onSelect
-}: {
-  open: boolean;
-  selectedCountry: string;
-  onClose: () => void;
-  onSelect: (country: string) => void;
-}) {
-  const [search, setSearch] = useState("");
-
-  const filteredCountries = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) {
-      return COUNTRIES;
-    }
-
-    return COUNTRIES.filter((country) => country.toLowerCase().includes(query));
-  }, [search]);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close country sheet"
-        className={`fixed inset-0 z-40 bg-black/70 transition-opacity duration-300 ${open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
-      />
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t border-white/10 bg-black/95 p-5 backdrop-blur transition-transform duration-300 ${open ? "translate-y-0" : "translate-y-full"}`}
-      >
-        <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-white/20" />
-        <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2">
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search country"
-            className="w-full bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
-          />
-        </div>
-        <div className="mt-4 max-h-[55vh] space-y-1 overflow-y-auto pr-1">
-          {filteredCountries.map((country) => {
-            const isSelected = country === selectedCountry;
-            return (
-              <button
-                key={country}
-                type="button"
-                onClick={() => {
-                  onSelect(country);
-                  onClose();
-                }}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/[0.05]"
-              >
-                <span>{country}</span>
-                <span className={`text-xs ${isSelected ? "text-[#FF2E63]" : "text-white/35"}`}>{isSelected ? "Selected" : ""}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ControlButton({
-  label,
-  accent,
-  pending,
-  onClick
-}: {
-  label: string;
-  accent?: boolean;
-  pending?: boolean;
-  onClick?: () => void;
-}) {
+function PillButton({ variant, onClick, children }: { variant: "skip" | "stop"; onClick?: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`h-14 w-14 rounded-full border bg-white/[0.05] text-[10px] transition-all hover:border-[#FF2E63]/50 hover:shadow-[0_0_20px_rgba(255,46,99,0.25)] ${accent ? "border-[#FF2E63]/40 text-[#FF2E63]" : pending ? "border-white/20 text-white/70" : "border-white/10 text-white"}`}
+      className={`h-12 rounded-full px-5 transition-all duration-200 active:scale-[0.98] ${
+        variant === "skip"
+          ? "border border-[#FF2E63]/35 bg-white/[0.06] text-white shadow-[0_0_18px_rgba(255,46,99,0.22)] hover:border-[#FF2E63]/55"
+          : "border border-white/15 bg-white/[0.06] text-white shadow-[0_0_14px_rgba(255,46,99,0.14)] hover:border-[#FF2E63]/35"
+      }`}
     >
-      {label}
+      <span className="flex items-center justify-center gap-2">{children}</span>
     </button>
   );
 }
 
 export default function NoirPage() {
-  const [state, setState] = useState<NoirState>("landing");
-  const [selectedCountry, setSelectedCountry] = useState("United States");
-  const [isCountrySheetOpen, setIsCountrySheetOpen] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [micOff, setMicOff] = useState(false);
+  const [camOff, setCamOff] = useState(false);
   const [friendPending, setFriendPending] = useState(false);
 
   return (
-    <main className="relative min-h-screen bg-black text-white">
-      {(state === "landing" || state === "room") && (
-        <div className="absolute left-4 top-4 z-20">
-          <CountryChip selectedCountry={selectedCountry} onClick={() => setIsCountrySheetOpen(true)} />
-        </div>
-      )}
-
-      {state === "landing" && (
-        <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-white/60">NOIR</p>
-          <h1 className="mt-6 text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl">Enter the unknown.</h1>
-          <p className="mt-4 text-base text-white/50">Random encounters. Minimal. Private.</p>
+    <main
+      className="relative h-[100svh] w-full overflow-hidden bg-black text-white"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)"
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0.9, scale: 0.985 }}
+        animate={{ opacity: started ? 1 : 0.6, scale: started ? 1 : 0.992 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="flex h-full flex-col px-3 pb-3"
+      >
+        <header className="flex shrink-0 items-center justify-between py-2">
+          <span className="text-[11px] tracking-[0.24em] text-white/70">NOIR</span>
+          <span className="text-xs text-white/75">00:42</span>
           <button
             type="button"
-            onClick={() => setState("setup")}
-            className="mt-10 rounded-full border border-[#FF2E63]/40 bg-[#FF2E63]/10 px-8 py-3 text-sm font-medium text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-300 hover:bg-[#FF2E63]/20"
+            aria-label="Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/80 transition-all duration-200 hover:border-[#FF2E63]/40 hover:shadow-[0_0_16px_rgba(255,46,99,0.2)]"
           >
-            Start Encounter
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+              <path
+                d="M10.9 3.5h2.2l.5 1.8c.5.2 1 .4 1.5.6l1.7-.9 1.6 1.6-.9 1.7c.3.5.5 1 .6 1.5l1.8.5v2.2l-1.8.5c-.2.5-.4 1-.6 1.5l.9 1.7-1.6 1.6-1.7-.9c-.5.3-1 .5-1.5.6l-.5 1.8h-2.2l-.5-1.8c-.5-.2-1-.4-1.5-.6l-1.7.9-1.6-1.6.9-1.7c-.3-.5-.5-1-.6-1.5l-1.8-.5v-2.2l1.8-.5c.2-.5.4-1 .6-1.5l-.9-1.7 1.6-1.6 1.7.9c.5-.3 1-.5 1.5-.6l.5-1.8Z"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
           </button>
-        </section>
-      )}
+        </header>
 
-      {state === "setup" && (
-        <section className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-10">
-          <div className="relative h-[46vh] overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_40px_rgba(255,46,99,0.22)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,46,99,0.18),rgba(0,0,0,0)_62%)]" />
-            <div className="relative flex h-full items-center justify-center text-sm text-white/45">Camera Preview Placeholder</div>
+        <section className="relative min-h-0 flex-1 py-1">
+          <div className="relative h-full overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_40px_rgba(255,46,99,0.2)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,46,99,0.2),rgba(0,0,0,0)_65%)]" />
+            <div className="absolute bottom-24 right-3 h-24 w-16 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] backdrop-blur">
+              <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),rgba(0,0,0,0)_70%)]" />
+            </div>
           </div>
-
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] px-5">
-            <div className="flex items-center justify-between border-b border-white/5 py-4 text-sm text-white">
-              <span>Camera</span>
-              <span className="text-white/60">Ready</span>
-            </div>
-            <div className="flex items-center justify-between py-4 text-sm text-white">
-              <span>Microphone</span>
-              <span className="text-white/60">Ready</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setState("matching")}
-            className="mt-8 self-center rounded-full border border-[#FF2E63]/40 bg-[#FF2E63]/10 px-8 py-3 text-sm font-medium text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-300 hover:bg-[#FF2E63]/20"
-          >
-            Continue
-          </button>
         </section>
-      )}
 
-      {state === "matching" && (
-        <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-          <div className="h-14 w-14 animate-spin rounded-full border-2 border-[#FF2E63]/40 border-t-[#FF2E63]" />
-          <p className="mt-6 text-lg text-white">Searching...</p>
-          <p className="mt-2 text-sm text-white/50">Finding someone in {selectedCountry}</p>
-          <button
-            type="button"
-            onClick={() => setState("setup")}
-            className="mt-8 text-sm text-white/60 transition hover:text-white"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => setState("room")}
-            className="mt-4 rounded-full border border-[#FF2E63]/40 bg-[#FF2E63]/10 px-5 py-2 text-sm shadow-[0_0_20px_rgba(255,46,99,0.2)] transition hover:bg-[#FF2E63]/20"
-          >
-            Simulate Match
-          </button>
-        </section>
-      )}
-
-      {state === "room" && (
-        <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-8 pt-4 sm:px-6">
-          <div className="grid grid-cols-3 items-center">
-            <div className="justify-self-start pl-20 sm:pl-24">
-              <CountryChip selectedCountry={selectedCountry} onClick={() => setIsCountrySheetOpen(true)} />
-            </div>
-            <p className="justify-self-center text-sm tracking-[0.2em] text-white/80">00:47</p>
-            <button
-              type="button"
-              className="justify-self-end rounded-full border border-white/10 bg-white/[0.05] p-3 text-white transition hover:border-[#FF2E63]/40 hover:shadow-[0_0_20px_rgba(255,46,99,0.2)]"
-              aria-label="Settings"
-            >
-              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4">
-                <path d="M10 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8Z" stroke="currentColor" strokeWidth="1.6" />
-                <path d="M16.2 10a1 1 0 0 0 .8-1l-.8-.2a6.8 6.8 0 0 0-.5-1.3l.5-.7a1 1 0 0 0-.2-1.2l-.7-.7a1 1 0 0 0-1.2-.2l-.7.5a6.8 6.8 0 0 0-1.3-.5L12 3.8a1 1 0 0 0-1-.8H9a1 1 0 0 0-1 .8l-.2.8a6.8 6.8 0 0 0-1.3.5l-.7-.5a1 1 0 0 0-1.2.2l-.7.7a1 1 0 0 0-.2 1.2l.5.7c-.2.4-.4.8-.5 1.3l-.8.2a1 1 0 0 0-.8 1v1a1 1 0 0 0 .8 1l.8.2c.1.5.3.9.5 1.3l-.5.7a1 1 0 0 0 .2 1.2l.7.7a1 1 0 0 0 1.2.2l.7-.5c.4.2.8.4 1.3.5l.2.8a1 1 0 0 0 1 .8h1a1 1 0 0 0 1-.8l.2-.8c.5-.1.9-.3 1.3-.5l.7.5a1 1 0 0 0 1.2-.2l.7-.7a1 1 0 0 0 .2-1.2l-.5-.7c.2-.4.4-.8.5-1.3l.8-.2a1 1 0 0 0 .8-1v-1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+        <footer className="shrink-0 pt-3">
+          <div className="mx-auto flex w-full max-w-md items-center justify-center gap-2">
+            <PillButton variant="skip">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
               </svg>
-            </button>
-          </div>
+            </PillButton>
 
-          <div className="relative mt-4 flex-1 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_45px_rgba(255,46,99,0.18)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(255,46,99,0.14),rgba(0,0,0,0)_65%)]" />
-            <div className="relative flex h-full min-h-[56vh] items-center justify-center text-white/45">Remote Video Placeholder</div>
-            <div className="absolute bottom-4 right-4 h-28 w-20 rounded-2xl border border-white/15 bg-black/60 shadow-[0_0_25px_rgba(255,46,99,0.14)] backdrop-blur">
-              <div className="flex h-full items-center justify-center text-[10px] text-white/50">You</div>
+            <CircleButton active={micOff} onClick={() => setMicOff((value) => !value)}>
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                {micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}
+              </svg>
+            </CircleButton>
+
+            <CircleButton active={camOff} onClick={() => setCamOff((value) => !value)}>
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                <path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                {camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}
+              </svg>
+            </CircleButton>
+
+            <CircleButton active={friendPending} onClick={() => setFriendPending((value) => !value)}>
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                {friendPending ? (
+                  <path d="M6 12.5 10.2 17 18 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                ) : (
+                  <>
+                    <circle cx="10" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M4.5 18a5.5 5.5 0 0 1 11 0M18.5 8v6M15.5 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </>
+                )}
+              </svg>
+            </CircleButton>
+
+            <CircleButton>
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <path d="M12 15v-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <circle cx="12" cy="18" r="0.9" fill="currentColor" />
+                <path d="m12 4 8 14H4L12 4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+              </svg>
+            </CircleButton>
+
+            <PillButton variant="stop">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                <rect x="7" y="7" width="10" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+            </PillButton>
+          </div>
+        </footer>
+      </motion.div>
+
+      <AnimatePresence>
+        {!started ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black"
+          >
+            <div className="flex flex-col items-center gap-6">
+              <h1 className="text-4xl font-semibold tracking-[0.34em] text-white">NOIR</h1>
+              <button
+                type="button"
+                onClick={() => setStarted(true)}
+                className="rounded-full border border-[#FF2E63]/40 bg-white/[0.06] px-8 py-3 text-sm text-white shadow-[0_0_24px_rgba(255,46,99,0.28)] transition-all duration-200 active:scale-[0.98] hover:border-[#FF2E63]/60 hover:bg-white/[0.1]"
+              >
+                Start
+              </button>
             </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <ControlButton label="Skip" accent onClick={() => setState("ended")} />
-            <ControlButton label="Mute" />
-            <ControlButton label="Camera" />
-            <ControlButton
-              label={friendPending ? "Pending" : "Friend"}
-              pending={friendPending}
-              onClick={() => setFriendPending(true)}
-            />
-            <ControlButton label="Report" />
-          </div>
-        </section>
-      )}
-
-      {state === "ended" && (
-        <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-          <h2 className="text-3xl font-semibold text-white">Session Ended</h2>
-          <button
-            type="button"
-            onClick={() => {
-              setFriendPending(false);
-              setState("matching");
-            }}
-            className="mt-8 rounded-full border border-[#FF2E63]/40 bg-[#FF2E63]/10 px-8 py-3 text-sm font-medium text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-300 hover:bg-[#FF2E63]/20"
-          >
-            Next
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFriendPending(false);
-              setState("landing");
-            }}
-            className="mt-4 text-sm text-white/60 transition hover:text-white"
-          >
-            Back to Noir
-          </button>
-        </section>
-      )}
-
-      <CountrySheet
-        open={isCountrySheetOpen}
-        selectedCountry={selectedCountry}
-        onClose={() => setIsCountrySheetOpen(false)}
-        onSelect={setSelectedCountry}
-      />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }
