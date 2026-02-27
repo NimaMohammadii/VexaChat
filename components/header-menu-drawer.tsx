@@ -67,10 +67,11 @@ function FriendsIcon() {
   );
 }
 
-function FavoritesIcon() {
+function NoirIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className={iconClassName()} aria-hidden>
-      <path d="m10 3 2.2 4.5 5 .7-3.6 3.5.9 4.9-4.5-2.4-4.5 2.4.9-4.9L2.8 8.2l5-.7L10 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M2.6 10s2.4-4 7.4-4 7.4 4 7.4 4-2.4 4-7.4 4-7.4-4-7.4-4Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 11.8a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -90,8 +91,8 @@ const items: MenuItem[] = [
   { href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
   { href: "/chats", label: "Chats", match: (pathname) => pathname === "/chats" || pathname.startsWith("/chats/"), Icon: ChatsIcon },
   { href: "/friends", label: "Friends", match: (pathname) => pathname === "/friends", Icon: FriendsIcon },
+  { href: "/noir", label: "Noir", match: (pathname) => pathname === "/noir", Icon: NoirIcon },
   { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
-  { href: "/me?tab=favorites", label: "Favorites", match: (pathname) => pathname === "/me", Icon: FavoritesIcon }
 ];
 
 function MenuIcon({ open }: { open: boolean }) {
