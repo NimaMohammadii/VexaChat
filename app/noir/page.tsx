@@ -1,17 +1,10 @@
 "use client";
 
+import type { IAgoraRTCClient } from "agora-rtc-sdk-ng";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type Country = { code: string; name: string };
-
-type AgoraClient = {
-  on: (event: string, listener: (...args: any[]) => void | Promise<void>) => void;
-  subscribe: (user: any, mediaType: string) => Promise<void>;
-  join: (appId: string, channel: string, token: string, uid: number) => Promise<void>;
-  publish: (tracks: any[]) => Promise<void>;
-  leave: () => Promise<void>;
-};
 
 type LocalAudioTrack = {
   close: () => void;
@@ -24,7 +17,7 @@ type LocalVideoTrack = {
   setEnabled: (enabled: boolean) => Promise<void>;
 };
 
-async function loadAgora() {
+async function loadAgora(): Promise<typeof import("agora-rtc-sdk-ng").default | null> {
   if (typeof window === "undefined") {
     return null;
   }
@@ -357,7 +350,7 @@ export default function NoirPage() {
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [friendPending, setFriendPending] = useState(false);
-  const clientRef = useRef<AgoraClient | null>(null);
+  const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
   const localVideoTrackRef = useRef<LocalVideoTrack | null>(null);
 
@@ -392,18 +385,18 @@ export default function NoirPage() {
     setCamOff(false);
   }, []);
 
-  const createClient = useCallback(async () => {
+  const createClient = useCallback(async (): Promise<IAgoraRTCClient> => {
     const AgoraRTC = await loadAgora();
 
     if (!AgoraRTC) {
-      return null;
+      throw new Error("Agora RTC SDK is unavailable");
     }
 
     if (clientRef.current) {
       return clientRef.current;
     }
 
-    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" }) as AgoraClient;
+    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
     client.on("user-published", async (user, mediaType) => {
       await client.subscribe(user, mediaType);
