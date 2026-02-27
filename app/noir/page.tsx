@@ -226,6 +226,8 @@ const COUNTRIES: Country[] = [
   { code: "ZW", name: "Zimbabwe" }
 ];
 
+const SEARCH_RETRY_MS = 12_000;
+
 function CircleButton({ children, active = false, onClick }: { children: ReactNode; active?: boolean; onClick?: () => void }) {
   return (
     <button
@@ -350,9 +352,21 @@ export default function NoirPage() {
   const [micOff, setMicOff] = useState(false);
   const [camOff, setCamOff] = useState(false);
   const [friendPending, setFriendPending] = useState(false);
+  const [searching, setSearching] = useState(false);
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
   const localVideoTrackRef = useRef<LocalVideoTrack | null>(null);
+  const remoteUserConnectedRef = useRef(false);
+  const sessionAttemptRef = useRef(0);
+  const searchRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startInProgressRef = useRef(false);
+
+  const clearSearchRetryTimer = useCallback(() => {
+    if (searchRetryTimerRef.current) {
+      clearTimeout(searchRetryTimerRef.current);
+      searchRetryTimerRef.current = null;
+    }
+  }, []);
 
   const clearVideoContainer = useCallback((id: string) => {
     const container = document.getElementById(id);
@@ -385,6 +399,16 @@ export default function NoirPage() {
     setCamOff(false);
   }, []);
 
+  const leaveWaitingQueue = useCallback(async () => {
+    try {
+      await fetch("/api/noir/leave", {
+        method: "POST"
+      });
+    } catch (error) {
+      console.error("Failed to leave noir queue", error);
+    }
+  }, []);
+
   const createClient = useCallback(async (): Promise<IAgoraRTCClient> => {
     const AgoraRTC = await loadAgora();
 
@@ -398,8 +422,14 @@ export default function NoirPage() {
 
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
+    const hasRemoteUser = () => client.remoteUsers.some((user) => Boolean(user.videoTrack || user.audioTrack || user.hasVideo || user.hasAudio));
+
     client.on("user-published", async (user, mediaType) => {
       await client.subscribe(user, mediaType);
+
+      remoteUserConnectedRef.current = true;
+      setSearching(false);
+      clearSearchRetryTimer();
 
       if (mediaType === "video") {
         const remoteContainer = document.getElementById("remote-video-container");
@@ -420,16 +450,32 @@ export default function NoirPage() {
         user.videoTrack?.stop();
         clearVideoContainer("remote-video-container");
       }
+
+      if (!hasRemoteUser()) {
+        remoteUserConnectedRef.current = false;
+        setSearching(true);
+      }
     });
 
     client.on("user-left", () => {
       clearVideoContainer("remote-video-container");
+
+      if (!hasRemoteUser()) {
+        remoteUserConnectedRef.current = false;
+        setSearching(true);
+      }
+    });
+
+    client.on("user-joined", () => {
+      remoteUserConnectedRef.current = true;
+      setSearching(false);
+      clearSearchRetryTimer();
     });
 
     clientRef.current = client;
 
     return client;
-  }, [clearVideoContainer]);
+  }, [clearSearchRetryTimer, clearVideoContainer]);
 
   const fetchToken = useCallback(async (channel: string, uid: number) => {
     const response = await fetch(`/api/agora/token?channel=${encodeURIComponent(channel)}&uid=${uid}`);
@@ -470,25 +516,33 @@ export default function NoirPage() {
   }, []);
 
   const startSession = useCallback(async () => {
-    const AgoraRTC = await loadAgora();
-
-    if (!AgoraRTC) {
+    if (startInProgressRef.current) {
       return;
     }
 
-    if (!appId) {
-      console.error("Missing NEXT_PUBLIC_AGORA_APP_ID");
-      return;
-    }
-
-    const uid = Math.floor(Math.random() * 1_000_000_000);
-    const client = await createClient();
-
-    if (!client) {
-      return;
-    }
-
+    startInProgressRef.current = true;
     try {
+      const AgoraRTC = await loadAgora();
+
+      if (!AgoraRTC) {
+        return;
+      }
+
+      if (!appId) {
+        console.error("Missing NEXT_PUBLIC_AGORA_APP_ID");
+        return;
+      }
+
+      const uid = Math.floor(Math.random() * 1_000_000_000);
+      const client = await createClient();
+
+      const attempt = sessionAttemptRef.current + 1;
+
+      sessionAttemptRef.current = attempt;
+      remoteUserConnectedRef.current = false;
+      setSearching(true);
+      clearSearchRetryTimer();
+      await leaveWaitingQueue();
       const channel = await fetchMatchChannel(selectedCountry.code);
       await leaveChannel();
       closeLocalTracks();
@@ -513,23 +567,40 @@ export default function NoirPage() {
 
       resetControlState();
       setStarted(true);
+
+      searchRetryTimerRef.current = setTimeout(() => {
+        if (sessionAttemptRef.current !== attempt || remoteUserConnectedRef.current) {
+          return;
+        }
+
+        void startSession();
+      }, SEARCH_RETRY_MS);
     } catch (error) {
       console.error("Failed to start session", error);
+      clearSearchRetryTimer();
       await leaveChannel();
       closeLocalTracks();
       clearAllVideoContainers();
       resetControlState();
+      setSearching(false);
       setStarted(false);
+    } finally {
+      startInProgressRef.current = false;
     }
-  }, [appId, clearAllVideoContainers, closeLocalTracks, createClient, fetchMatchChannel, fetchToken, leaveChannel, resetControlState, selectedCountry.code]);
+  }, [appId, clearAllVideoContainers, clearSearchRetryTimer, closeLocalTracks, createClient, fetchMatchChannel, fetchToken, leaveChannel, leaveWaitingQueue, resetControlState, selectedCountry.code]);
 
   const stopSession = useCallback(async () => {
+    clearSearchRetryTimer();
+    sessionAttemptRef.current += 1;
+    remoteUserConnectedRef.current = false;
+    await leaveWaitingQueue();
     await leaveChannel();
     closeLocalTracks();
     clearAllVideoContainers();
     resetControlState();
+    setSearching(false);
     setStarted(false);
-  }, [clearAllVideoContainers, closeLocalTracks, leaveChannel, resetControlState]);
+  }, [clearAllVideoContainers, clearSearchRetryTimer, closeLocalTracks, leaveChannel, leaveWaitingQueue, resetControlState]);
 
   const skipSession = useCallback(async () => {
     if (!started) {
@@ -541,11 +612,13 @@ export default function NoirPage() {
 
   useEffect(() => {
     return () => {
+      clearSearchRetryTimer();
+      void leaveWaitingQueue();
       void leaveChannel();
       closeLocalTracks();
       clearAllVideoContainers();
     };
-  }, [clearAllVideoContainers, closeLocalTracks, leaveChannel]);
+  }, [clearAllVideoContainers, clearSearchRetryTimer, closeLocalTracks, leaveChannel, leaveWaitingQueue]);
 
   const filteredCountries = useMemo(() => {
     const query = countryQuery.trim().toLowerCase();
@@ -733,6 +806,23 @@ export default function NoirPage() {
         query={countryQuery}
         onQuery={setCountryQuery}
       />
+
+      <AnimatePresence>
+        {started && searching ? (
+          <motion.div
+            key="searching"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/45 px-8"
+          >
+            <div className="rounded-2xl border border-white/10 bg-black/65 px-6 py-4 text-center backdrop-blur">
+              <p className="text-xs tracking-[0.2em] text-white/55">SEARCHING</p>
+              <p className="mt-2 text-sm text-white/80">Looking for someone to join...</p>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }
