@@ -99,9 +99,9 @@ const items: MenuItem[] = [
 function MenuIcon({ open }: { open: boolean }) {
   return (
     <span className="relative block h-5 w-6" aria-hidden>
-      <span className={`absolute left-0 top-0 h-[2px] w-6 rounded-full bg-gradient-to-r from-white via-white to-[#FF2E63] shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 ${open ? "translate-y-[9px] rotate-45" : ""}`} />
-      <span className={`absolute left-0 top-[9px] h-[2px] w-6 rounded-full bg-white/95 transition-all duration-300 ${open ? "scale-x-0 opacity-0" : "opacity-100"}`} />
-      <span className={`absolute left-0 top-[18px] h-[2px] w-6 rounded-full bg-gradient-to-r from-[#FF2E63] via-white to-white shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 ${open ? "-translate-y-[9px] -rotate-45" : ""}`} />
+      <span className={`absolute left-0 top-0 h-[2px] w-6 origin-center rounded-full bg-gradient-to-r from-white via-white to-[#FF2E63] shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 will-change-transform ${open ? "translate-y-[9px] rotate-45" : ""}`} />
+      <span className={`absolute left-0 top-[9px] h-[2px] w-6 origin-center rounded-full bg-white/95 transition-all duration-300 will-change-transform ${open ? "scale-x-0 opacity-0" : "opacity-100"}`} />
+      <span className={`absolute left-0 top-[18px] h-[2px] w-6 origin-center rounded-full bg-gradient-to-r from-[#FF2E63] via-white to-white shadow-[0_0_12px_rgba(255,46,99,0.45)] transition-all duration-300 will-change-transform ${open ? "-translate-y-[9px] -rotate-45" : ""}`} />
     </span>
   );
 }
@@ -110,6 +110,7 @@ export function HeaderMenuDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
@@ -160,6 +161,19 @@ export function HeaderMenuDrawer() {
     setIsOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsVisible(false);
+    }, 280);
+
+    return () => window.clearTimeout(timer);
+  }, [isOpen]);
+
   const handleSignOut = async () => {
     const supabase = createSupabaseClient();
     await supabase.auth.signOut();
@@ -179,19 +193,19 @@ export function HeaderMenuDrawer() {
         <MenuIcon open={isOpen} />
       </button>
 
-      {mounted &&
+      {mounted && isVisible &&
         createPortal(
           <>
             <button
               type="button"
               aria-label="Close navigation menu"
               tabIndex={isOpen ? 0 : -1}
-              className={`fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              className={`fixed inset-0 z-[9998] bg-black/70 transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
               onClick={() => setIsOpen(false)}
             />
 
             <aside
-              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-transform duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-all duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-95"}`}
               aria-hidden={!isOpen}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
