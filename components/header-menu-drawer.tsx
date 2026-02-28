@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { createSupabaseClient } from "@/lib/supabase-client";
 import { SvjHeartIcon, SvjHomeIcon } from "@/components/svj-icons";
 
@@ -109,7 +110,12 @@ export function HeaderMenuDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const supabase = createSupabaseClient();
@@ -173,18 +179,21 @@ export function HeaderMenuDrawer() {
         <MenuIcon open={isOpen} />
       </button>
 
-      <button
-        type="button"
-        aria-label="Close navigation menu"
-        tabIndex={isOpen ? 0 : -1}
-        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={() => setIsOpen(false)}
-      />
+      {mounted &&
+        createPortal(
+          <>
+            <button
+              type="button"
+              aria-label="Close navigation menu"
+              tabIndex={isOpen ? 0 : -1}
+              className={`fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              onClick={() => setIsOpen(false)}
+            />
 
-      <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-transform duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
-        aria-hidden={!isOpen}
-      >
+            <aside
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-transform duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+              aria-hidden={!isOpen}
+            >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div className="absolute -left-14 top-[-12%] h-44 w-44 rounded-full bg-[#FF2E63]/18 blur-3xl" />
                 <div className="absolute right-[-30%] top-1/3 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
@@ -231,6 +240,9 @@ export function HeaderMenuDrawer() {
                 </button>
               </div>
             </aside>
+          </>,
+          document.body
+        )}
     </>
   );
 }
