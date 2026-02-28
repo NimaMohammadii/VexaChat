@@ -65,23 +65,17 @@ style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}
 >
 {/* ── animated blobs ── */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-<motion.div
-animate={{ x: [0, 30, 0], y: [0, 40, 0], scale: [1, 1.12, 1] }}
-transition={{ duration: 12, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+<div
 className="absolute rounded-full"
-style={{ left: "-20%", top: "8%", width: 320, height: 320, background: "rgba(90,16,32,0.18)", filter: "blur(90px)" }}
+style={{ left: "-20%", top: "8%", width: 320, height: 320, background: "rgba(90,16,32,0.18)", filter: "blur(90px)", transform: "translate3d(0,0,0)" }}
 />
-<motion.div
-animate={{ x: [0, -25, 0], y: [0, 30, 0], scale: [1, 0.9, 1] }}
-transition={{ duration: 16, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+<div
 className="absolute rounded-full"
-style={{ right: "-25%", top: "25%", width: 280, height: 280, background: "rgba(90,16,32,0.1)", filter: "blur(110px)" }}
+style={{ right: "-25%", top: "25%", width: 280, height: 280, background: "rgba(90,16,32,0.1)", filter: "blur(110px)", transform: "translate3d(0,0,0)" }}
 />
-<motion.div
-animate={{ x: [0, 20, 0], y: [0, -35, 0], scale: [1, 1.08, 1] }}
-transition={{ duration: 20, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+<div
 className="absolute rounded-full"
-style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(255,255,255,0.03)", filter: "blur(120px)" }}
+style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(255,255,255,0.03)", filter: "blur(120px)", transform: "translate3d(0,0,0)" }}
 />
 </div>
 
