@@ -11,6 +11,7 @@ uploadFileWithPresignedUrl,
 } from “@/lib/client/storage”;
 import { previewUrl, processImageFile } from “@/lib/image-processing”;
 import { createSupabaseClient } from “@/lib/supabase-client”;
+import { HeaderMenuDrawer } from “@/components/header-menu-drawer”;
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -355,12 +356,13 @@ style={{ right: “-20%”, top: “40%”, width: 220, height: 220, background:
 
 ```
   {/* ── header ── */}
-  <div className="relative z-10 flex shrink-0 items-center justify-between px-5" style={{ paddingTop: 52 }}>
-    <Link href="/" className="flex h-9 w-9 items-center justify-center rounded-[12px] text-white/60 transition-all active:scale-90"
-      style={{ background: "linear-gradient(160deg,rgba(255,255,255,0.07) 0%,rgba(0,0,0,0.1) 100%)", border: "1px solid rgba(255,255,255,0.13)", boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.1)" }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-    </Link>
-    <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(232,232,232,0.28)" }}>My Profile</span>
+  <header className="relative z-10 flex shrink-0 items-center justify-between px-5" style={{ paddingTop: 24 }}>
+    <div className="flex items-center gap-3">
+      <HeaderMenuDrawer />
+      <span className="text-[10px] font-medium uppercase tracking-[0.2em]" style={{ color: "rgba(255,255,255,0.25)" }}>
+        Vexa
+      </span>
+    </div>
     <button
       onClick={() => void logout()}
       className="rounded-[10px] px-3.5 py-1.5 text-[12px] font-medium transition-all"
@@ -370,7 +372,7 @@ style={{ right: “-20%”, top: “40%”, width: 220, height: 220, background:
     >
       Sign out
     </button>
-  </div>
+  </header>
 
   {/* ── scrollable body ── */}
   <div className="relative z-10 flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
