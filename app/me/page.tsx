@@ -1,17 +1,17 @@
-“use client”;
+"use client";
 
-import { ChangeEvent, useEffect, useRef, useState } from “react”;
-import { useRouter } from “next/navigation”;
-import Link from “next/link”;
+import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
 deleteStoredObject,
 presignRead,
 presignUpload,
 uploadFileWithPresignedUrl,
-} from “@/lib/client/storage”;
-import { previewUrl, processImageFile } from “@/lib/image-processing”;
-import { createSupabaseClient } from “@/lib/supabase-client”;
-import { HeaderMenuDrawer } from “@/components/header-menu-drawer”;
+} from "@/lib/client/storage";
+import { previewUrl, processImageFile } from "@/lib/image-processing";
+import { createSupabaseClient } from "@/lib/supabase-client";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -28,27 +28,27 @@ createdAt?: string;
 // ── countries list ────────────────────────────────────────────────────────────
 
 const COUNTRIES: [string, string][] = [
-[“🇦🇫”,“Afghanistan”],[“🇦🇱”,“Albania”],[“🇩🇿”,“Algeria”],[“🇦🇷”,“Argentina”],
-[“🇦🇲”,“Armenia”],[“🇦🇺”,“Australia”],[“🇦🇹”,“Austria”],[“🇦🇿”,“Azerbaijan”],
-[“🇧🇭”,“Bahrain”],[“🇧🇩”,“Bangladesh”],[“🇧🇾”,“Belarus”],[“🇧🇪”,“Belgium”],
-[“🇧🇷”,“Brazil”],[“🇧🇬”,“Bulgaria”],[“🇨🇦”,“Canada”],[“🇨🇱”,“Chile”],
-[“🇨🇳”,“China”],[“🇨🇴”,“Colombia”],[“🇭🇷”,“Croatia”],[“🇨🇿”,“Czech Republic”],
-[“🇩🇰”,“Denmark”],[“🇪🇬”,“Egypt”],[“🇪🇪”,“Estonia”],[“🇪🇹”,“Ethiopia”],
-[“🇫🇮”,“Finland”],[“🇫🇷”,“France”],[“🇬🇪”,“Georgia”],[“🇩🇪”,“Germany”],
-[“🇬🇭”,“Ghana”],[“🇬🇷”,“Greece”],[“🇭🇺”,“Hungary”],[“🇮🇳”,“India”],
-[“🇮🇩”,“Indonesia”],[“🇮🇷”,“Iran”],[“🇮🇶”,“Iraq”],[“🇮🇪”,“Ireland”],
-[“🇮🇱”,“Israel”],[“🇮🇹”,“Italy”],[“🇯🇵”,“Japan”],[“🇯🇴”,“Jordan”],
-[“🇰🇿”,“Kazakhstan”],[“🇰🇪”,“Kenya”],[“🇰🇼”,“Kuwait”],[“🇱🇻”,“Latvia”],
-[“🇱🇧”,“Lebanon”],[“🇱🇹”,“Lithuania”],[“🇲🇾”,“Malaysia”],[“🇲🇽”,“Mexico”],
-[“🇲🇦”,“Morocco”],[“🇳🇱”,“Netherlands”],[“🇳🇿”,“New Zealand”],[“🇳🇬”,“Nigeria”],
-[“🇳🇴”,“Norway”],[“🇴🇲”,“Oman”],[“🇵🇰”,“Pakistan”],[“🇵🇭”,“Philippines”],
-[“🇵🇱”,“Poland”],[“🇵🇹”,“Portugal”],[“🇶🇦”,“Qatar”],[“🇷🇴”,“Romania”],
-[“🇷🇺”,“Russia”],[“🇸🇦”,“Saudi Arabia”],[“🇷🇸”,“Serbia”],[“🇸🇬”,“Singapore”],
-[“🇸🇰”,“Slovakia”],[“🇿🇦”,“South Africa”],[“🇰🇷”,“South Korea”],[“🇪🇸”,“Spain”],
-[“🇸🇪”,“Sweden”],[“🇨🇭”,“Switzerland”],[“🇸🇾”,“Syria”],[“🇹🇼”,“Taiwan”],
-[“🇹🇿”,“Tanzania”],[“🇹🇭”,“Thailand”],[“🇹🇳”,“Tunisia”],[“🇹🇷”,“Türkiye”],
-[“🇺🇦”,“Ukraine”],[“🇦🇪”,“UAE”],[“🇬🇧”,“United Kingdom”],[“🇺🇸”,“United States”],
-[“🇺🇿”,“Uzbekistan”],[“🇻🇳”,“Vietnam”],[“🇾🇪”,“Yemen”],[“🇿🇲”,“Zambia”],[“🇿🇼”,“Zimbabwe”],
+["🇦🇫","Afghanistan"],["🇦🇱","Albania"],["🇩🇿","Algeria"],["🇦🇷","Argentina"],
+["🇦🇲","Armenia"],["🇦🇺","Australia"],["🇦🇹","Austria"],["🇦🇿","Azerbaijan"],
+["🇧🇭","Bahrain"],["🇧🇩","Bangladesh"],["🇧🇾","Belarus"],["🇧🇪","Belgium"],
+["🇧🇷","Brazil"],["🇧🇬","Bulgaria"],["🇨🇦","Canada"],["🇨🇱","Chile"],
+["🇨🇳","China"],["🇨🇴","Colombia"],["🇭🇷","Croatia"],["🇨🇿","Czech Republic"],
+["🇩🇰","Denmark"],["🇪🇬","Egypt"],["🇪🇪","Estonia"],["🇪🇹","Ethiopia"],
+["🇫🇮","Finland"],["🇫🇷","France"],["🇬🇪","Georgia"],["🇩🇪","Germany"],
+["🇬🇭","Ghana"],["🇬🇷","Greece"],["🇭🇺","Hungary"],["🇮🇳","India"],
+["🇮🇩","Indonesia"],["🇮🇷","Iran"],["🇮🇶","Iraq"],["🇮🇪","Ireland"],
+["🇮🇱","Israel"],["🇮🇹","Italy"],["🇯🇵","Japan"],["🇯🇴","Jordan"],
+["🇰🇿","Kazakhstan"],["🇰🇪","Kenya"],["🇰🇼","Kuwait"],["🇱🇻","Latvia"],
+["🇱🇧","Lebanon"],["🇱🇹","Lithuania"],["🇲🇾","Malaysia"],["🇲🇽","Mexico"],
+["🇲🇦","Morocco"],["🇳🇱","Netherlands"],["🇳🇿","New Zealand"],["🇳🇬","Nigeria"],
+["🇳🇴","Norway"],["🇴🇲","Oman"],["🇵🇰","Pakistan"],["🇵🇭","Philippines"],
+["🇵🇱","Poland"],["🇵🇹","Portugal"],["🇶🇦","Qatar"],["🇷🇴","Romania"],
+["🇷🇺","Russia"],["🇸🇦","Saudi Arabia"],["🇷🇸","Serbia"],["🇸🇬","Singapore"],
+["🇸🇰","Slovakia"],["🇿🇦","South Africa"],["🇰🇷","South Korea"],["🇪🇸","Spain"],
+["🇸🇪","Sweden"],["🇨🇭","Switzerland"],["🇸🇾","Syria"],["🇹🇼","Taiwan"],
+["🇹🇿","Tanzania"],["🇹🇭","Thailand"],["🇹🇳","Tunisia"],["🇹🇷","Türkiye"],
+["🇺🇦","Ukraine"],["🇦🇪","UAE"],["🇬🇧","United Kingdom"],["🇺🇸","United States"],
+["🇺🇿","Uzbekistan"],["🇻🇳","Vietnam"],["🇾🇪","Yemen"],["🇿🇲","Zambia"],["🇿🇼","Zimbabwe"],
 ];
 
 const countryByName = Object.fromEntries(COUNTRIES.map(([f, n]) => [n, f]));
@@ -58,35 +58,35 @@ const countryByName = Object.fromEntries(COUNTRIES.map(([f, n]) => [n, f]));
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function extensionFromFile(file: File) {
-return file.name.split(”.”).pop()?.toLowerCase() ?? file.type.split(”/”).pop()?.toLowerCase() ?? “png”;
+return file.name.split(".").pop()?.toLowerCase() ?? file.type.split("/").pop()?.toLowerCase() ?? "png";
 }
 
 function formatJoined(iso?: string) {
 if (!iso) return null;
-return new Date(iso).toLocaleDateString(“en-US”, { month: “long”, year: “numeric” });
+return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 // ── inline style constants ────────────────────────────────────────────────────
 
 const glassField: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.018) 45%,rgba(0,0,0,0.06) 100%)”,
-border: “1px solid rgba(255,255,255,0.1)”,
-backdropFilter: “blur(30px) saturate(1.4)”,
-boxShadow: “inset 0 1px 0 rgba(255,255,255,0.07)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.018) 45%,rgba(0,0,0,0.06) 100%)",
+border: "1px solid rgba(255,255,255,0.1)",
+backdropFilter: "blur(30px) saturate(1.4)",
+boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07)",
 };
 
 const wineBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(120,25,48,0.95) 0%,rgba(65,10,24,0.92) 55%,rgba(30,4,12,0.97) 100%)”,
-border: “1px solid rgba(150,40,65,0.28)”,
-borderBottom: “1px solid rgba(0,0,0,0.4)”,
-boxShadow: “inset 0 1.5px 0 rgba(220,80,110,0.2),0 4px 16px rgba(0,0,0,0.4)”,
-color: “rgba(255,255,255,0.9)”,
+background: "linear-gradient(160deg,rgba(120,25,48,0.95) 0%,rgba(65,10,24,0.92) 55%,rgba(30,4,12,0.97) 100%)",
+border: "1px solid rgba(150,40,65,0.28)",
+borderBottom: "1px solid rgba(0,0,0,0.4)",
+boxShadow: "inset 0 1.5px 0 rgba(220,80,110,0.2),0 4px 16px rgba(0,0,0,0.4)",
+color: "rgba(255,255,255,0.9)",
 };
 
 const inputCss: React.CSSProperties = {
-flex: 1, background: “none”, border: “none”, outline: “none”,
-fontFamily: “‘DM Sans’, sans-serif”, fontSize: 14,
-color: “#e8e8e8”, caretColor: “#8a1f38”, minWidth: 0,
+flex: 1, background: "none", border: "none", outline: "none",
+fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+color: "#e8e8e8", caretColor: "#8a1f38", minWidth: 0,
 };
 
 // ── sub-components ────────────────────────────────────────────────────────────
@@ -98,10 +98,10 @@ return (
 <div
 onClick={onClick}
 className={`flex items-center gap-3 px-4 ${onClick ? "cursor-pointer" : ""}`}
-style={{ minHeight: 52, borderBottom: “1px solid rgba(255,255,255,0.06)” }}
+style={{ minHeight: 52, borderBottom: "1px solid rgba(255,255,255,0.06)" }}
 >
-<span style={{ color: “rgba(232,232,232,0.3)”, flexShrink: 0 }}>{icon}</span>
-<span style={{ fontSize: 11, fontWeight: 500, color: “rgba(232,232,232,0.38)”, minWidth: 80, flexShrink: 0 }}>
+<span style={{ color: "rgba(232,232,232,0.3)", flexShrink: 0 }}>{icon}</span>
+<span style={{ fontSize: 11, fontWeight: 500, color: "rgba(232,232,232,0.38)", minWidth: 80, flexShrink: 0 }}>
 {label}
 </span>
 {children}
@@ -111,14 +111,14 @@ style={{ minHeight: 52, borderBottom: “1px solid rgba(255,255,255,0.06)” }}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
 return (
-<p style={{ fontSize: 10, fontWeight: 600, letterSpacing: “0.1em”, textTransform: “uppercase”, color: “rgba(232,232,232,0.28)”, marginBottom: 10, marginTop: 6 }}>
+<p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(232,232,232,0.28)", marginBottom: 10, marginTop: 6 }}>
 {children}
 </p>
 );
 }
 
-function Sep() {
-return <div style={{ height: 1, background: “rgba(255,255,255,0.06)”, margin: “14px 0” }} />;
+function Sep({ style }: { style?: React.CSSProperties }) {
+return <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "14px 0", ...style }} />;
 }
 
 // ── country picker ────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ return <div style={{ height: 1, background: “rgba(255,255,255,0.06)”, margin
 function CountryPicker({ current, onSelect, onClose }: {
 current: string; onSelect: (flag: string, name: string) => void; onClose: () => void;
 }) {
-const [q, setQ] = useState(””);
+const [q, setQ] = useState("");
 const filtered = q ? COUNTRIES.filter(([, n]) => n.toLowerCase().includes(q.toLowerCase())) : COUNTRIES;
 
 return (
@@ -134,50 +134,50 @@ return (
 {/* overlay */}
 <div
 onClick={onClose}
-className=“fixed inset-0 z-50”
-style={{ background: “rgba(0,0,0,0.65)”, backdropFilter: “blur(4px)” }}
+className="fixed inset-0 z-50"
+style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
 />
 {/* sheet */}
 <div
-className=“fixed bottom-0 left-1/2 z-50 w-full pb-8”
+className="fixed bottom-0 left-1/2 z-50 w-full pb-8"
 style={{
-maxWidth: 430, transform: “translateX(-50%)”,
-background: “#0d0d0d”, borderTop: “1px solid rgba(255,255,255,0.1)”,
-borderRadius: “24px 24px 0 0”,
-animation: “slideUp 0.32s cubic-bezier(0.34,1.15,0.64,1)”,
+maxWidth: 430, transform: "translateX(-50%)",
+background: "#0d0d0d", borderTop: "1px solid rgba(255,255,255,0.1)",
+borderRadius: "24px 24px 0 0",
+animation: "slideUp 0.32s cubic-bezier(0.34,1.15,0.64,1)",
 }}
 >
 <style>{`@keyframes slideUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}}`}</style>
-<div style={{ width: 36, height: 4, borderRadius: 2, background: “rgba(255,255,255,0.15)”, margin: “10px auto 14px” }} />
-<p style={{ textAlign: “center”, fontSize: 12, fontWeight: 600, letterSpacing: “0.1em”, textTransform: “uppercase”, color: “rgba(232,232,232,0.35)”, marginBottom: 14 }}>
+<div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "10px auto 14px" }} />
+<p style={{ textAlign: "center", fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(232,232,232,0.35)", marginBottom: 14 }}>
 Select country
 </p>
 <input
 autoFocus
 value={q}
 onChange={(e) => setQ(e.target.value)}
-placeholder=“Search countries…”
+placeholder="Search countries…"
 style={{
-display: “block”, width: “calc(100% - 32px)”, margin: “0 16px 12px”,
-padding: “11px 14px”, borderRadius: 12,
-background: “rgba(255,255,255,0.06)”, border: “1px solid rgba(255,255,255,0.09)”,
-color: “#e8e8e8”, fontFamily: “‘DM Sans’, sans-serif”, fontSize: 14,
-outline: “none”, caretColor: “#8a1f38”,
+display: "block", width: "calc(100% - 32px)", margin: "0 16px 12px",
+padding: "11px 14px", borderRadius: 12,
+background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)",
+color: "#e8e8e8", fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+outline: "none", caretColor: "#8a1f38",
 }}
 />
-<div style={{ maxHeight: 280, overflowY: “auto”, padding: “0 8px” }}>
+<div style={{ maxHeight: 280, overflowY: "auto", padding: "0 8px" }}>
 {filtered.map(([flag, name]) => (
 <div
 key={name}
 onClick={() => { onSelect(flag, name); onClose(); }}
-className=“flex items-center gap-3 rounded-xl px-3 py-3 transition-colors”
+className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors"
 style={{
-cursor: “pointer”, fontSize: 14,
-color: name === current ? “#e8e8e8” : “rgba(232,232,232,0.55)”,
-background: name === current ? “rgba(255,255,255,0.07)” : “transparent”,
+cursor: "pointer", fontSize: 14,
+color: name === current ? "#e8e8e8" : "rgba(232,232,232,0.55)",
+background: name === current ? "rgba(255,255,255,0.07)" : "transparent",
 }}
-onMouseEnter={(e) => (e.currentTarget.style.background = “rgba(255,255,255,0.06)”)}
-onMouseLeave={(e) => (e.currentTarget.style.background = name === current ? “rgba(255,255,255,0.07)” : “transparent”)}
+onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+onMouseLeave={(e) => (e.currentTarget.style.background = name === current ? "rgba(255,255,255,0.07)" : "transparent")}
 >
 <span style={{ fontSize: 20 }}>{flag}</span>
 <span>{name}</span>
@@ -199,16 +199,16 @@ const [data,    setData]   = useState<MeData | null>(null);
 const [loading, setLoading] = useState(true);
 
 // ── form fields
-const [name,     setName]     = useState(””);
-const [username, setUsername] = useState(””);
-const [bio,      setBio]      = useState(””);
-const [country,  setCountry]  = useState(””);
-const [city,     setCity]     = useState(””);
+const [name,     setName]     = useState("");
+const [username, setUsername] = useState("");
+const [bio,      setBio]      = useState("");
+const [country,  setCountry]  = useState("");
+const [city,     setCity]     = useState("");
 
 // ── avatar
-const [avatarKey,      setAvatarKey]      = useState(””);
-const [avatarDisplay,  setAvatarDisplay]  = useState(””);
-const [avatarPreview,  setAvatarPreview]  = useState(””);
+const [avatarKey,      setAvatarKey]      = useState("");
+const [avatarDisplay,  setAvatarDisplay]  = useState("");
+const [avatarPreview,  setAvatarPreview]  = useState("");
 const [uploadingAvatar, setUploadingAvatar] = useState(false);
 const deviceInputRef = useRef<HTMLInputElement>(null);
 
@@ -220,13 +220,12 @@ const [countryOpen,  setCountryOpen]  = useState(false);
 // ── load
 useEffect(() => {
 void (async () => {
-const r = await fetch(”/api/me”, { cache: “no-store” }).catch(() => null);
-if (!r || r.status === 401) { router.push(”/”); return; }
+const r = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+if (!r || r.status === 401) { router.push("/"); return; }
 if (!r.ok) { setLoading(false); return; }
 const payload = (await r.json()) as MeData;
 setData(payload);
 
-```
   const p = payload.profile;
   setName(p?.name ?? payload.user.name ?? "");
   setUsername(p?.username ?? "");
@@ -243,7 +242,6 @@ setData(payload);
 
   setLoading(false);
 })();
-```
 
 }, [router]);
 
@@ -251,57 +249,57 @@ setData(payload);
 const onAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
 const file = e.target.files?.[0];
 if (!file || !data) return;
-if (!file.type.startsWith(“image/”)) { showToast(“Please upload an image file.”); return; }
+if (!file.type.startsWith("image/")) { showToast("Please upload an image file."); return; }
 setUploadingAvatar(true);
 try {
-const processed = await processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: “square” });
-if (processed.size > MAX_FILE_SIZE) { showToast(“Image must be 5MB or less.”); return; }
+const processed = await processImageFile(file, { maxWidth: 1024, quality: 0.8, cropAspect: "square" });
+if (processed.size > MAX_FILE_SIZE) { showToast("Image must be 5MB or less."); return; }
 setAvatarPreview(previewUrl(processed));
 const ext = extensionFromFile(processed);
 const key = `avatars/${data.user.id}/${crypto.randomUUID()}.${ext}`;
-const { uploadUrl } = await presignUpload(key, processed.type || “application/octet-stream”);
+const { uploadUrl } = await presignUpload(key, processed.type || "application/octet-stream");
 await uploadFileWithPresignedUrl(uploadUrl, processed);
 if (avatarKey) await deleteStoredObject(avatarKey).catch(() => {});
-const r = await fetch(”/api/me”, {
-method: “PUT”,
-headers: { “Content-Type”: “application/json” },
+const r = await fetch("/api/me", {
+method: "PUT",
+headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ avatarUrl: key }),
 });
 const result = (await r.json()) as { error?: string; profile?: { avatarUrl: string } };
-if (!r.ok) { showToast(result.error ?? “Upload failed.”); return; }
+if (!r.ok) { showToast(result.error ?? "Upload failed."); return; }
 const nextKey = result.profile?.avatarUrl ?? key;
 setAvatarKey(nextKey);
-const displayUrl = await presignRead(nextKey).catch(() => “”);
+const displayUrl = await presignRead(nextKey).catch(() => "");
 setAvatarDisplay(displayUrl || nextKey);
-window.dispatchEvent(new CustomEvent(“profile-avatar-updated”, { detail: { avatarUrl: displayUrl || nextKey } }));
-showToast(“Avatar updated.”);
-} catch { showToast(“Unable to upload avatar right now.”); }
+window.dispatchEvent(new CustomEvent("profile-avatar-updated", { detail: { avatarUrl: displayUrl || nextKey } }));
+showToast("Avatar updated.");
+} catch { showToast("Unable to upload avatar right now."); }
 finally {
 setUploadingAvatar(false);
-if (deviceInputRef.current) deviceInputRef.current.value = “”;
+if (deviceInputRef.current) deviceInputRef.current.value = "";
 }
 };
 
 // ── save profile
 const save = async () => {
-if (!username.trim()) { showToast(“Username is required.”); return; }
+if (!username.trim()) { showToast("Username is required."); return; }
 setSaving(true);
-const r = await fetch(”/api/me”, {
-method: “POST”,
-headers: { “Content-Type”: “application/json” },
+const r = await fetch("/api/me", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
 body: JSON.stringify({
 name: name.trim(),
 username: username.trim().toLowerCase(),
 bio: bio.trim(),
 country: country.trim(),
 city: city.trim(),
-…(avatarKey ? { avatarUrl: avatarKey } : {}),
+...(avatarKey ? { avatarUrl: avatarKey } : {}),
 }),
 });
 const result = (await r.json()) as { error?: string };
 setSaving(false);
-if (!r.ok) { showToast(result.error ?? “Unable to save.”); return; }
-showToast(“Profile saved ✓”);
+if (!r.ok) { showToast(result.error ?? "Unable to save."); return; }
+showToast("Profile saved ✓");
 };
 
 // ── logout
@@ -317,25 +315,25 @@ setToast(msg);
 setTimeout(() => setToast(null), 2800);
 };
 
-const verStatus = data?.profile?.identityStatus ?? “none”;
+const verStatus = data?.profile?.identityStatus ?? "none";
 const verDisplay: Record<string, { label: string; color: string; bg: string; border: string }> = {
-none:     { label: “Not verified”,       color: “rgba(232,232,232,0.45)”, bg: “rgba(255,255,255,0.04)”,   border: “rgba(255,255,255,0.1)” },
-pending:  { label: “Pending review”,      color: “rgba(253,224,71,0.85)”, bg: “rgba(251,191,36,0.08)”,   border: “rgba(251,191,36,0.22)” },
-approved: { label: “Identity verified ✓”, color: “rgba(110,231,183,0.85)”, bg: “rgba(52,211,153,0.08)”, border: “rgba(52,211,153,0.22)” },
-rejected: { label: “Rejected — resubmit”, color: “rgba(252,165,165,0.85)”, bg: “rgba(239,68,68,0.08)”,  border: “rgba(239,68,68,0.2)” },
+none:     { label: "Not verified",       color: "rgba(232,232,232,0.45)", bg: "rgba(255,255,255,0.04)",   border: "rgba(255,255,255,0.1)" },
+pending:  { label: "Pending review",      color: "rgba(253,224,71,0.85)", bg: "rgba(251,191,36,0.08)",   border: "rgba(251,191,36,0.22)" },
+approved: { label: "Identity verified ✓", color: "rgba(110,231,183,0.85)", bg: "rgba(52,211,153,0.08)", border: "rgba(52,211,153,0.22)" },
+rejected: { label: "Rejected — resubmit", color: "rgba(252,165,165,0.85)", bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.2)" },
 };
 const ver = verDisplay[verStatus] ?? verDisplay.none;
 
 const displayAvatar = avatarPreview || avatarDisplay;
-const initials = (name || data?.user?.email || “U”)[0].toUpperCase();
+const initials = (name || data?.user?.email || "U")[0].toUpperCase();
 const joined = formatJoined(data?.profile?.createdAt as string | undefined);
-const countryFlag = countryByName[country] ?? “”;
+const countryFlag = countryByName[country] ?? "";
 
 if (loading) {
 return (
-<main className=“relative flex min-h-screen w-full flex-col overflow-hidden” style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif” }}>
+<main className="relative flex min-h-screen w-full flex-col overflow-hidden" style={{ background: "#000", fontFamily: "'DM Sans', sans-serif" }}>
 <div className="flex flex-1 items-center justify-center">
-<p style={{ color: “rgba(232,232,232,0.35)”, fontSize: 13 }}>Loading…</p>
+<p style={{ color: "rgba(232,232,232,0.35)", fontSize: 13 }}>Loading…</p>
 </div>
 </main>
 );
@@ -343,18 +341,17 @@ return (
 
 return (
 <main
-className=“relative flex min-h-screen w-full flex-col overflow-hidden”
-style={{ background: “#000”, fontFamily: “‘DM Sans’, sans-serif”, maxWidth: 430, margin: “0 auto” }}
+className="relative flex min-h-screen w-full flex-col overflow-hidden"
+style={{ background: "#000", fontFamily: "'DM Sans', sans-serif", maxWidth: 430, margin: "0 auto" }}
 >
 {/* animated blobs */}
 <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-<div className=“absolute rounded-full”
-style={{ left: “-20%”, top: “5%”, width: 280, height: 280, background: “rgba(90,16,32,0.14)”, filter: “blur(90px)” }} />
-<div className=“absolute rounded-full”
-style={{ right: “-20%”, top: “40%”, width: 220, height: 220, background: “rgba(90,16,32,0.08)”, filter: “blur(110px)” }} />
+<div className="absolute rounded-full"
+style={{ left: "-20%", top: "5%", width: 280, height: 280, background: "rgba(90,16,32,0.14)", filter: "blur(90px)" }} />
+<div className="absolute rounded-full"
+style={{ right: "-20%", top: "40%", width: 220, height: 220, background: "rgba(90,16,32,0.08)", filter: "blur(110px)" }} />
 </div>
 
-```
   {/* ── header ── */}
   <header className="relative z-10 flex shrink-0 items-center justify-between px-5" style={{ paddingTop: 24 }}>
     <div className="flex items-center gap-3">
@@ -571,7 +568,6 @@ style={{ right: “-20%”, top: “40%”, width: 220, height: 220, background:
   )}
 
 </main>
-```
 
 );
 }
