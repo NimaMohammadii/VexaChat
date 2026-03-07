@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
 deleteStoredObject,
-presignRead,
 presignUpload,
 uploadFileWithPresignedUrl,
 } from "@/lib/client/storage";
@@ -19,7 +18,7 @@ type MeData = {
 user: { id: string; email: string; name: string; avatarUrl: string };
 profile: {
 name: string; username: string; bio: string; avatarKey: string; avatarUrl: string;
-country?: string; city?: string;
+country: string; city: string;
 identityVerified?: boolean; identityStatus?: string;
 createdAt?: string;
 } | null;
@@ -267,11 +266,11 @@ method: "PUT",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ avatarUrl: key }),
 });
-const result = (await r.json()) as { error?: string; profile?: { avatarUrl: string } };
+const result = (await r.json()) as { error?: string; profile?: { avatarKey: string; avatarUrl: string } };
 if (!r.ok) { showToast(result.error ?? "Upload failed."); return; }
-const nextKey = result.profile?.avatarUrl ?? key;
+const nextKey = result.profile?.avatarKey ?? key;
 setAvatarKey(nextKey);
-const displayUrl = await presignRead(nextKey).catch(() => "");
+const displayUrl = result.profile?.avatarUrl ?? "";
 setAvatarDisplay(displayUrl || nextKey);
 window.dispatchEvent(new CustomEvent("profile-avatar-updated", { detail: { avatarUrl: displayUrl || nextKey } }));
 showToast("Avatar updated.");
@@ -300,9 +299,19 @@ city: city.trim(),
 ...(avatarKey ? { avatarUrl: avatarKey } : {}),
 }),
 });
-const result = (await r.json()) as { error?: string };
+const result = (await r.json()) as {
+error?: string;
+profile?: { name: string; username: string; bio: string; country: string; city: string; avatarKey: string; avatarUrl: string };
+};
 setSaving(false);
-if (!r.ok) { showToast(result.error ?? "Unable to save."); return; }
+if (!r.ok || !result.profile) { showToast(result.error ?? "Unable to save."); return; }
+setName(result.profile.name);
+setUsername(result.profile.username);
+setBio(result.profile.bio);
+setCountry(result.profile.country);
+setCity(result.profile.city);
+setAvatarKey(result.profile.avatarKey);
+setAvatarDisplay(result.profile.avatarUrl || result.profile.avatarKey);
 showToast("Profile saved ✓");
 };
 

@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, UserProfile } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
@@ -9,6 +9,8 @@ type MePayload = {
   username?: string;
   bio?: string;
   avatarUrl?: string;
+  country?: string;
+  city?: string;
 };
 
 type ValidatedProfileData = {
@@ -16,7 +18,21 @@ type ValidatedProfileData = {
   username?: string;
   bio?: string;
   avatarUrl?: string;
+  country?: string;
+  city?: string;
 };
+
+async function serializeProfile(profile: UserProfile | null) {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    ...profile,
+    avatarKey: profile.avatarUrl,
+    avatarUrl: await resolveStoredFileUrl(profile.avatarUrl)
+  };
+}
 
 function validateProfileBody(body: MePayload, mode: "full" | "partial") {
   const data: ValidatedProfileData = {};
@@ -43,6 +59,14 @@ function validateProfileBody(body: MePayload, mode: "full" | "partial") {
 
   if (mode === "full" || body.bio !== undefined) {
     data.bio = body.bio?.trim() ?? "";
+  }
+
+  if (mode === "full" || body.country !== undefined) {
+    data.country = body.country?.trim() ?? "";
+  }
+
+  if (mode === "full" || body.city !== undefined) {
+    data.city = body.city?.trim() ?? "";
   }
 
   if (body.avatarUrl !== undefined) {
@@ -86,13 +110,7 @@ export async function GET() {
       name: user.user_metadata.full_name ?? user.user_metadata.name ?? "",
       avatarUrl: user.user_metadata.avatar_url ?? ""
     },
-    profile: profile
-      ? {
-          ...profile,
-          avatarKey: profile.avatarUrl,
-          avatarUrl: await resolveStoredFileUrl(profile.avatarUrl)
-        }
-      : null
+    profile: await serializeProfile(profile)
   });
 }
 
@@ -118,17 +136,21 @@ export async function POST(request: Request) {
         name: validated.data.name!,
         username: validated.data.username!,
         bio: validated.data.bio!,
-        avatarUrl: validated.data.avatarUrl ?? ""
+        avatarUrl: validated.data.avatarUrl ?? "",
+        country: validated.data.country!,
+        city: validated.data.city!
       },
       update: {
         name: validated.data.name!,
         username: validated.data.username!,
         bio: validated.data.bio!,
-        avatarUrl: validated.data.avatarUrl ?? ""
+        avatarUrl: validated.data.avatarUrl ?? "",
+        country: validated.data.country!,
+        city: validated.data.city!
       }
     });
 
-    return NextResponse.json({ profile });
+    return NextResponse.json({ profile: await serializeProfile(profile) });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return NextResponse.json({ error: "Username is already taken." }, { status: 400 });
@@ -161,12 +183,14 @@ export async function PUT(request: Request) {
         name: validated.data.name ?? user.user_metadata.full_name ?? user.user_metadata.name ?? user.email ?? "User",
         username: validated.data.username ?? `user-${user.id.slice(0, 8)}`,
         bio: validated.data.bio ?? "",
-        avatarUrl: validated.data.avatarUrl ?? ""
+        avatarUrl: validated.data.avatarUrl ?? "",
+        country: validated.data.country ?? "",
+        city: validated.data.city ?? ""
       },
       update: validated.data
     });
 
-    return NextResponse.json({ profile });
+    return NextResponse.json({ profile: await serializeProfile(profile) });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return NextResponse.json({ error: "Username is already taken." }, { status: 400 });

@@ -59,6 +59,8 @@ model UserProfile {
   username  String   @unique
   bio       String   @default("")
   avatarUrl        String   @default("")
+  country          String   @default("")
+  city             String   @default("")
   identityVerified Boolean  @default(false)
   identityStatus   String   @default("none")
   createdAt        DateTime @default(now())

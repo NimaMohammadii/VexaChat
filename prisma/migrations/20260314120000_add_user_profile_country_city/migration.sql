@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "UserProfile"
+ADD COLUMN "country" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "city" TEXT NOT NULL DEFAULT '';
