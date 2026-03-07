@@ -86,7 +86,13 @@ export async function GET() {
       name: user.user_metadata.full_name ?? user.user_metadata.name ?? "",
       avatarUrl: user.user_metadata.avatar_url ?? ""
     },
-    profile: profile ? { ...profile, avatarUrl: await resolveStoredFileUrl(profile.avatarUrl) } : null
+    profile: profile
+      ? {
+          ...profile,
+          avatarKey: profile.avatarUrl,
+          avatarUrl: await resolveStoredFileUrl(profile.avatarUrl)
+        }
+      : null
   });
 }
 

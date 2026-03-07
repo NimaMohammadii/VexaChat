@@ -18,7 +18,7 @@ import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 type MeData = {
 user: { id: string; email: string; name: string; avatarUrl: string };
 profile: {
-name: string; username: string; bio: string; avatarUrl: string;
+name: string; username: string; bio: string; avatarKey: string; avatarUrl: string;
 country?: string; city?: string;
 identityVerified?: boolean; identityStatus?: string;
 createdAt?: string;
@@ -232,10 +232,10 @@ setData(payload);
   setBio(p?.bio ?? "");
   setCountry(p?.country ?? "");
   setCity(p?.city ?? "");
-  setAvatarKey(p?.avatarUrl ?? "");
+  setAvatarKey(p?.avatarKey ?? "");
 
   if (p?.avatarUrl) {
-    presignRead(p.avatarUrl).then(setAvatarDisplay).catch(() => {});
+    setAvatarDisplay(p.avatarUrl);
   } else if (payload.user.avatarUrl) {
     setAvatarDisplay(payload.user.avatarUrl);
   }
