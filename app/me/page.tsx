@@ -210,7 +210,9 @@ const [avatarKey,      setAvatarKey]      = useState("");
 const [avatarDisplay,  setAvatarDisplay]  = useState("");
 const [avatarPreview,  setAvatarPreview]  = useState("");
 const [uploadingAvatar, setUploadingAvatar] = useState(false);
-const deviceInputRef = useRef<HTMLInputElement>(null);
+const photoInputRef = useRef<HTMLInputElement>(null);
+const fileInputRef = useRef<HTMLInputElement>(null);
+const cameraInputRef = useRef<HTMLInputElement>(null);
 
 // ── UI state
 const [saving,       setSaving]       = useState(false);
@@ -276,7 +278,9 @@ showToast("Avatar updated.");
 } catch { showToast("Unable to upload avatar right now."); }
 finally {
 setUploadingAvatar(false);
-if (deviceInputRef.current) deviceInputRef.current.value = "";
+if (photoInputRef.current) photoInputRef.current.value = "";
+if (fileInputRef.current) fileInputRef.current.value = "";
+if (cameraInputRef.current) cameraInputRef.current.value = "";
 }
 };
 
@@ -376,7 +380,7 @@ style={{ right: "-20%", top: "40%", width: 220, height: 220, background: "rgba(9
 
     {/* ── avatar zone ── */}
     <div className="flex flex-col items-center px-5" style={{ paddingTop: 24, paddingBottom: 20 }}>
-      <div className="relative cursor-pointer" style={{ width: 88 }} onClick={() => deviceInputRef.current?.click()}>
+      <div className="relative cursor-pointer" style={{ width: 88 }} onClick={() => photoInputRef.current?.click()}>
         {displayAvatar ? (
           <img src={displayAvatar} alt={name} className="object-cover"
             style={{ width: 88, height: 88, borderRadius: 28, border: "1.5px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 30px rgba(0,0,0,0.5)" }} />
@@ -396,7 +400,54 @@ style={{ right: "-20%", top: "40%", width: 220, height: 220, background: "rgba(9
           </div>
         )}
       </div>
-      <input ref={deviceInputRef} type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => void onAvatarChange(e)} disabled={uploadingAvatar} />
+      <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onAvatarChange(e)} disabled={uploadingAvatar} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/*"
+        className="hidden"
+        onChange={(e) => void onAvatarChange(e)}
+        disabled={uploadingAvatar}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="user"
+        className="hidden"
+        onChange={(e) => void onAvatarChange(e)}
+        disabled={uploadingAvatar}
+      />
+
+      <div className="mt-3 flex flex-wrap justify-center gap-2">
+        <button
+          type="button"
+          className="rounded-lg px-3 py-1.5 text-[11px] font-medium"
+          style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(232,232,232,0.7)", background: "rgba(255,255,255,0.04)" }}
+          onClick={() => photoInputRef.current?.click()}
+          disabled={uploadingAvatar}
+        >
+          Photos
+        </button>
+        <button
+          type="button"
+          className="rounded-lg px-3 py-1.5 text-[11px] font-medium"
+          style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(232,232,232,0.7)", background: "rgba(255,255,255,0.04)" }}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingAvatar}
+        >
+          Files
+        </button>
+        <button
+          type="button"
+          className="rounded-lg px-3 py-1.5 text-[11px] font-medium"
+          style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(232,232,232,0.7)", background: "rgba(255,255,255,0.04)" }}
+          onClick={() => cameraInputRef.current?.click()}
+          disabled={uploadingAvatar}
+        >
+          Camera
+        </button>
+      </div>
 
       <p style={{ marginTop: 12, fontSize: 12.5, color: "rgba(232,232,232,0.38)" }}>{data?.user.email}</p>
       {joined && <p style={{ marginTop: 2, fontSize: 11, color: "rgba(232,232,232,0.2)" }}>Member since {joined}</p>}
