@@ -12,6 +12,10 @@ Core Prisma models include:
 
 - `DATABASE_URL` must point to your **Supabase Postgres connection string** in production.
 - On Render, prefer Supabase **Session pooler** host (port `6543`) with `?sslmode=require` to avoid `PrismaClientInitializationError: Can't reach database server`.
+- `DATABASE_URL` must use the Supabase pooler username format `<db_role>.<project_ref>` when using `*.pooler.supabase.com`.
+  - Example: `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require`
+  - If you use only `postgres` as username against pooler, Postgres can return `FATAL: Tenant or user not found`.
+
 - Prisma runtime and migrations use only `DATABASE_URL`.
 - Keep using production-safe Prisma flow:
   - `prisma migrate deploy`

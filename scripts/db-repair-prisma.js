@@ -26,6 +26,8 @@ function summarizeDatabaseUrl(databaseUrl) {
     const parsed = new URL(databaseUrl);
     const protocol = parsed.protocol.replace(':', '');
     const host = parsed.hostname || '(unknown-host)';
+    const port = parsed.port || '(default)';
+    const username = parsed.username || '(missing-user)';
     const database = parsed.pathname.replace(/^\//, '') || '(unknown-db)';
 
     if (!['postgres', 'postgresql'].includes(protocol)) {
@@ -33,7 +35,19 @@ function summarizeDatabaseUrl(databaseUrl) {
       return false;
     }
 
-    console.log(`[db:repair] DATABASE_URL looks valid. host=${host} database=${database}`);
+    console.log(`[db:repair] DATABASE_URL looks valid. host=${host} port=${port} database=${database}`);
+
+    if (host.includes('pooler.supabase.com') && (parsed.port === '6543' || parsed.port === '')) {
+      const hasTenantUsername = username.includes('.');
+
+      if (!hasTenantUsername) {
+        console.error('[db:repair] Supabase pooler URL detected, but username is missing tenant suffix.');
+        console.error('[db:repair] Expected pooler username format: <role>.<project-ref> (example: postgres.abcd1234).');
+        console.error('[db:repair] This commonly causes: FATAL: Tenant or user not found');
+        return false;
+      }
+    }
+
     return true;
   } catch {
     console.error('[db:repair] DATABASE_URL is not a valid URL.');
