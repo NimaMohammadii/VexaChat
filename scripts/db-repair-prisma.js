@@ -21,9 +21,59 @@ function runCommand(command, commandArgs) {
   return result.status === 0;
 }
 
+function summarizeDatabaseUrl(databaseUrl) {
+  try {
+    const parsed = new URL(databaseUrl);
+    const protocol = parsed.protocol.replace(':', '');
+    const host = parsed.hostname || '(unknown-host)';
+    const database = parsed.pathname.replace(/^\//, '') || '(unknown-db)';
+
+    if (!['postgres', 'postgresql'].includes(protocol)) {
+      console.error(`[db:repair] DATABASE_URL has unexpected protocol: ${protocol}. Expected postgres/postgresql.`);
+      return false;
+    }
+
+    console.log(`[db:repair] DATABASE_URL looks valid. host=${host} database=${database}`);
+    return true;
+  } catch {
+    console.error('[db:repair] DATABASE_URL is not a valid URL.');
+    return false;
+  }
+}
+
+function isInitializationError(error) {
+  return error && (error.name === 'PrismaClientInitializationError' || error.code === 'P1000' || error.code === 'P1001');
+}
+
+function logInitializationError(error) {
+  console.error('[db:repair] Database configuration/connection error detected.');
+  console.error('[db:repair] Prisma initialization failed; startup cannot continue.');
+
+  if (error?.code) {
+    console.error(`[db:repair] Prisma error code: ${error.code}`);
+  }
+
+  if (error?.message) {
+    console.error(`[db:repair] Details: ${error.message}`);
+  }
+}
+
+function logMigrationStateIssue(message, error) {
+  console.warn(`[db:repair] Migration state issue: ${message}`);
+  if (error?.message) {
+    console.warn(`[db:repair] Details: ${error.message}`);
+  }
+}
+
 async function main() {
-  if (!process.env.DATABASE_URL) {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
     console.error('[db:repair] DATABASE_URL is required.');
+    process.exit(1);
+  }
+
+  if (!summarizeDatabaseUrl(databaseUrl)) {
     process.exit(1);
   }
 
@@ -43,12 +93,17 @@ async function main() {
 
       migrationsTableExists = tableExistsRows.length > 0 && tableExistsRows[0].regclass !== null;
     } catch (error) {
-      console.warn('[db:repair] Unable to check _prisma_migrations table. Skipping repair.', error);
+      if (isInitializationError(error)) {
+        logInitializationError(error);
+        process.exit(1);
+      }
+
+      logMigrationStateIssue('Unable to check _prisma_migrations table. Skipping repair.', error);
       process.exit(0);
     }
 
     if (!migrationsTableExists) {
-      console.warn('[db:repair] _prisma_migrations does not exist yet. Skipping repair.');
+      logMigrationStateIssue('_prisma_migrations does not exist yet. Skipping repair.');
       process.exit(0);
     }
 
@@ -130,8 +185,16 @@ async function main() {
 
     console.log('[db:repair] Repair step complete.');
   } catch (error) {
-    console.warn('[db:repair] Repair skipped due to query error or missing migrations state.', error);
-    process.exit(0);
+    if (isInitializationError(error)) {
+      logInitializationError(error);
+      process.exit(1);
+    }
+
+    console.error('[db:repair] Query failure during repair step.');
+    if (error?.message) {
+      console.error(`[db:repair] Details: ${error.message}`);
+    }
+    process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
