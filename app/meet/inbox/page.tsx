@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MeetShell, meetGhostButtonClass, meetPanelClass, meetPrimaryButtonClass } from "@/components/meet/meet-shell";
+import { MeetShell, meetGhostButtonClass, meetPanelClass, meetPrimaryButtonClass, meetSecondaryPanelClass } from "@/components/meet/meet-shell";
 
 type InboxPayload = {
   incoming: Array<{ id: string; fromUserId: string; createdAt: string }>;
@@ -51,20 +51,36 @@ export default function MeetInboxPage() {
   };
 
   return (
-    <MeetShell eyebrow="Meet • Inbox" title="Requests and matches" subtitle="Approve, reject, and continue conversations from one place." actions={<Link href="/meet" className={meetGhostButtonClass}>Home</Link>}>
-      <div className="mt-6 space-y-5 pb-5">
-        <section className={`${meetPanelClass} p-4`}>
+    <MeetShell eyebrow="Meet • Inbox" title="Requests and matches" subtitle="A cleaner command center for approvals and conversations." actions={<Link href="/meet" className={meetGhostButtonClass}>Home</Link>}>
+      <div className="space-y-4 pb-5">
+        <section className={meetPanelClass + " p-4"}>
+          <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">Incoming</p>
+              <p className="mt-1 text-lg font-semibold">{data?.incoming.length ?? 0}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">Matches</p>
+              <p className="mt-1 text-lg font-semibold">{data?.matches.length ?? 0}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">Sent</p>
+              <p className="mt-1 text-lg font-semibold">{data?.outgoing.length ?? 0}</p>
+            </div>
+          </div>
+        </section>
+
+        <section className={meetPanelClass + " p-4"}>
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs uppercase tracking-[0.14em] text-white/50">Incoming</p>
-            <span className="text-xs text-white/50">{data?.incoming.length ?? 0}</span>
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">Incoming requests</p>
           </div>
           <div className="space-y-2.5">
-            {data && !data.incoming.length && <p className="text-sm text-white/55">No pending requests.</p>}
+            {data && !data.incoming.length && <p className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/55">No pending requests.</p>}
             {data?.incoming.map((item) => (
-              <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 p-3">
+              <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={meetSecondaryPanelClass + " flex items-center justify-between gap-3 p-3"}>
                 <div>
                   <p className="text-sm font-medium">{data.cardByUser[item.fromUserId]?.displayName ?? "Unknown"}</p>
-                  <p className="text-xs text-white/50">{data.cardByUser[item.fromUserId]?.city ?? ""} • {timeAgo(item.createdAt)}</p>
+                  <p className="text-xs text-white/55">{data.cardByUser[item.fromUserId]?.city ?? ""} • {timeAgo(item.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => void act(item.id, "accept")} className={meetPrimaryButtonClass + " px-4 py-2 text-xs"}>Accept</button>
@@ -75,18 +91,18 @@ export default function MeetInboxPage() {
           </div>
         </section>
 
-        <section className={`${meetPanelClass} p-4`}>
+        <section className={meetPanelClass + " p-4"}>
           <p className="mb-3 text-xs uppercase tracking-[0.14em] text-white/50">Matches</p>
           <div className="space-y-2.5">
-            {data && !data.matches.length && <p className="text-sm text-white/55">No matches yet.</p>}
+            {data && !data.matches.length && <p className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/55">No matches yet.</p>}
             {data?.matches.map((item) => {
               const otherId = item.userLowId === data.currentUserId ? item.userHighId : item.userLowId;
               const other = data.cardByUser[otherId];
               return (
-                <div key={item.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 p-3">
+                <div key={item.id} className={meetSecondaryPanelClass + " flex items-center justify-between p-3"}>
                   <div>
                     <p className="text-sm font-medium">{other?.displayName ?? "Match"}</p>
-                    <p className="text-xs text-white/50">{other?.city ?? ""}</p>
+                    <p className="text-xs text-white/55">{other?.city ?? ""}</p>
                   </div>
                   <button onClick={() => void openChat(otherId)} className={meetGhostButtonClass + " px-4 py-2 text-xs"}>Message</button>
                 </div>
@@ -95,17 +111,17 @@ export default function MeetInboxPage() {
           </div>
         </section>
 
-        <section className={`${meetPanelClass} p-4`}>
-          <p className="mb-3 text-xs uppercase tracking-[0.14em] text-white/50">Sent</p>
+        <section className={meetPanelClass + " p-4"}>
+          <p className="mb-3 text-xs uppercase tracking-[0.14em] text-white/50">Sent requests</p>
           <div className="space-y-2.5">
-            {data && !data.outgoing.length && <p className="text-sm text-white/55">No sent requests.</p>}
+            {data && !data.outgoing.length && <p className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/55">No sent requests.</p>}
             {data?.outgoing.map((item) => (
-              <div key={item.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 p-3">
+              <div key={item.id} className={meetSecondaryPanelClass + " flex items-center justify-between p-3"}>
                 <div>
                   <p className="text-sm font-medium">{data.cardByUser[item.toUserId]?.displayName ?? "Unknown"}</p>
-                  <p className="text-xs text-white/50">{data.cardByUser[item.toUserId]?.city ?? ""}</p>
+                  <p className="text-xs text-white/55">{data.cardByUser[item.toUserId]?.city ?? ""}</p>
                 </div>
-                <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-white/60">{item.status}</span>
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.08em] text-white/65">{item.status}</span>
               </div>
             ))}
           </div>

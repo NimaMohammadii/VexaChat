@@ -43,17 +43,17 @@ export function MeetBrowse() {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.main key={current?.id ?? "empty"} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 bg-black px-4 py-12 text-white">
-        <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Browse</h1><Link href="/meet/inbox" className="bw-button-muted inline-flex">Inbox</Link></div>
+      <motion.main key={current?.id ?? "empty"} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 bg-[#060609] px-4 py-12 text-white">
+        <div className="flex items-center justify-between"><h1 className="text-2xl font-semibold">Browse</h1><Link href="/meet/inbox" className="inline-flex rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2 text-sm">Inbox</Link></div>
         {loading && <p className="text-white/60">Loading…</p>}
-        {!loading && !current && <div className="bw-card p-8 text-center text-white/65">No cards available.</div>}
+        {!loading && !current && <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-8 text-center text-white/65">No cards available.</div>}
         {current && (
           <>
             <div className="relative h-[560px]">{current && <SwipeCard card={current} onLike={() => void doAction("like", current.userId)} onPass={() => void doAction("pass", current.userId)} />}</div>
             <div className="flex items-center justify-center gap-3">
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="bw-button-muted gap-2" disabled={busy} onClick={() => void doAction("pass", current.userId)}><SvjXIcon className="h-4 w-4" />Pass</motion.button>
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="bw-button gap-2" disabled={busy} onClick={() => void doAction("like", current.userId)}><SvjHeartIcon className="h-4 w-4" />Request</motion.button>
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="bw-button-muted gap-2" disabled={busy} onClick={() => void doAction("block", current.userId)}><SvjBlockIcon className="h-4 w-4" />Block</motion.button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2" disabled={busy} onClick={() => void doAction("pass", current.userId)}><SvjXIcon className="h-4 w-4" />Pass</motion.button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white px-4 py-2 font-semibold text-black" disabled={busy} onClick={() => void doAction("like", current.userId)}><SvjHeartIcon className="h-4 w-4" />Request</motion.button>
+              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2" disabled={busy} onClick={() => void doAction("block", current.userId)}><SvjBlockIcon className="h-4 w-4" />Block</motion.button>
             </div>
           </>
         )}
@@ -70,7 +70,7 @@ function SwipeCard({ card, onLike, onPass }: { card: MeetCard; onLike: () => voi
     <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} style={{ x, rotate }} onDragEnd={(_, info) => {
       if (info.offset.x > threshold) onLike();
       if (info.offset.x < -threshold) onPass();
-    }} className="absolute inset-0 overflow-hidden rounded-3xl border border-white/15 bg-black">
+    }} className="absolute inset-0 overflow-hidden rounded-[32px] border border-white/12 bg-black">
       <img src={card.imageUrl} alt={card.displayName} className="h-[70%] w-full object-cover" />
       <div className="space-y-2 p-4"><p className="text-xl font-semibold">{card.displayName}, {card.age}</p><p className="text-sm text-white/65">{card.city}</p>{card.bio && <p className="text-sm text-white/70">{card.bio}</p>}</div>
     </motion.div>
