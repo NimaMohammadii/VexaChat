@@ -85,34 +85,34 @@ export function MeetCreateWizard() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-black px-4 py-12 text-white">
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-[#060609] px-4 py-12 text-white">
       <p className="text-xs tracking-[0.2em] text-white/60">MEET CREATE</p>
-      <section className="bw-card space-y-4 p-6">
+      <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
         {done ? (
           <div className="space-y-3">
             <p>Card saved.</p>
-            <Link href="/meet/browse" className="bw-button inline-flex">
+            <Link href="/meet/browse" className="inline-flex rounded-2xl border border-white/10 bg-white px-5 py-2.5 text-sm font-semibold text-black">
               Go to browse
             </Link>
           </div>
         ) : (
           <>
-            <input className="w-full rounded-xl border border-white/20 bg-black px-4 py-3" placeholder="Display name" value={form.displayName} onChange={(event) => setForm((c) => ({ ...c, displayName: event.target.value }))} />
-            <input className="w-full rounded-xl border border-white/20 bg-black px-4 py-3" placeholder="Age" type="number" value={form.age} onChange={(event) => setForm((c) => ({ ...c, age: event.target.value }))} />
-            <input className="w-full rounded-xl border border-white/20 bg-black px-4 py-3" placeholder="City" value={form.city} onChange={(event) => setForm((c) => ({ ...c, city: event.target.value }))} />
-            <textarea className="h-28 w-full rounded-xl border border-white/20 bg-black px-4 py-3" placeholder="Bio" value={form.bio} onChange={(event) => setForm((c) => ({ ...c, bio: event.target.value }))} />
-            <input className="w-full rounded-xl border border-white/20 bg-black px-4 py-3" placeholder="Intent tags (comma separated)" value={form.intentTags} onChange={(event) => setForm((c) => ({ ...c, intentTags: event.target.value }))} />
+            <input className="w-full rounded-2xl border border-white/15 bg-black/35 px-4 py-3" placeholder="Display name" value={form.displayName} onChange={(event) => setForm((c) => ({ ...c, displayName: event.target.value }))} />
+            <input className="w-full rounded-2xl border border-white/15 bg-black/35 px-4 py-3" placeholder="Age" type="number" value={form.age} onChange={(event) => setForm((c) => ({ ...c, age: event.target.value }))} />
+            <input className="w-full rounded-2xl border border-white/15 bg-black/35 px-4 py-3" placeholder="City" value={form.city} onChange={(event) => setForm((c) => ({ ...c, city: event.target.value }))} />
+            <textarea className="h-28 w-full rounded-2xl border border-white/15 bg-black/35 px-4 py-3" placeholder="Bio" value={form.bio} onChange={(event) => setForm((c) => ({ ...c, bio: event.target.value }))} />
+            <input className="w-full rounded-2xl border border-white/15 bg-black/35 px-4 py-3" placeholder="Intent tags (comma separated)" value={form.intentTags} onChange={(event) => setForm((c) => ({ ...c, intentTags: event.target.value }))} />
             <div className="grid grid-cols-2 gap-3">
-              <select className="rounded-xl border border-white/20 bg-black px-4 py-3" value={form.gender} onChange={(event) => setForm((c) => ({ ...c, gender: event.target.value as FormState["gender"] }))}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="prefer_not">Prefer not to say</option></select>
-              <select className="rounded-xl border border-white/20 bg-black px-4 py-3" value={form.lookingFor} onChange={(event) => setForm((c) => ({ ...c, lookingFor: event.target.value as FormState["lookingFor"] }))}><option value="any">Any</option><option value="male">Male</option><option value="female">Female</option></select>
+              <select className="rounded-2xl border border-white/15 bg-black/35 px-4 py-3" value={form.gender} onChange={(event) => setForm((c) => ({ ...c, gender: event.target.value as FormState["gender"] }))}><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="prefer_not">Prefer not to say</option></select>
+              <select className="rounded-2xl border border-white/15 bg-black/35 px-4 py-3" value={form.lookingFor} onChange={(event) => setForm((c) => ({ ...c, lookingFor: event.target.value as FormState["lookingFor"] }))}><option value="any">Any</option><option value="male">Male</option><option value="female">Female</option></select>
             </div>
-            <label className="block rounded-xl border border-dashed border-white/30 px-4 py-6 text-center text-sm text-white/70">
+            <label className="block rounded-2xl border border-dashed border-white/25 bg-black/35 px-4 py-6 text-center text-sm text-white/70">
               Upload profile image (gallery/files)
               <input type="file" accept="image/*" className="mt-3 block w-full text-xs" onChange={onUpload} />
             </label>
-            {previewUrl && <img src={previewUrl} alt="preview" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
+            {previewUrl && <img src={previewUrl} alt="preview" className="h-48 w-full rounded-2xl border border-white/10 object-cover" />}
             {error && <p className="text-sm text-white/70">{error}</p>}
-            <motion.button whileTap={{ scale: 0.97 }} className="bw-button" disabled={uploading || saving || !form.imageUrl} onClick={() => void submit()}>{saving ? "Saving..." : uploading ? "Uploading..." : "Save card"}</motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} className="inline-flex rounded-2xl border border-white/10 bg-white px-5 py-2.5 text-sm font-semibold text-black" disabled={uploading || saving || !form.imageUrl} onClick={() => void submit()}>{saving ? "Saving..." : uploading ? "Uploading..." : "Save card"}</motion.button>
           </>
         )}
       </section>

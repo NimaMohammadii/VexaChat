@@ -11,42 +11,43 @@ type MeetShellProps = {
 
 export function MeetShell({ eyebrow, title, subtitle, actions, children }: MeetShellProps) {
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
+    <main className="relative min-h-[100svh] overflow-hidden bg-[#060609] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 top-16 h-64 w-64 rounded-full bg-[#FF2E63]/20 blur-[110px]" />
-        <div className="absolute -right-16 top-1/3 h-72 w-72 rounded-full bg-white/10 blur-[130px]" />
-        <div className="absolute bottom-20 left-1/4 h-52 w-52 rounded-full bg-[#742338]/20 blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,46,99,0.2),_transparent_36%),radial-gradient(circle_at_72%_18%,_rgba(103,139,255,0.16),_transparent_35%),linear-gradient(to_bottom,_#11111a_0%,_#060609_55%)]" />
+        <div className="absolute inset-x-4 top-3 h-24 rounded-[28px] border border-white/10 bg-white/[0.02] blur-2xl" />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-xl flex-col px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
-        <header className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <p className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70">
-              {eyebrow}
-            </p>
-            <h1 className="text-[34px] font-semibold leading-[1.02] tracking-tight">{title}</h1>
-            <p className="max-w-xs text-sm text-white/60">{subtitle}</p>
-          </div>
-          <div className="relative z-[70] flex shrink-0 items-center gap-2">
-            {actions}
-            <HeaderMenuDrawer />
+      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-xl flex-col px-5 pb-[calc(1.1rem+env(safe-area-inset-bottom))] pt-[calc(0.9rem+env(safe-area-inset-top))]">
+        <header className="relative z-[120] rounded-[30px] border border-white/10 bg-black/35 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2.5">
+              <p className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70">
+                {eyebrow}
+              </p>
+              <h1 className="text-[32px] font-semibold leading-[1.05] tracking-tight text-white">{title}</h1>
+              <p className="max-w-[18rem] text-sm text-white/65">{subtitle}</p>
+            </div>
+            <div className="relative z-[140] flex shrink-0 items-center gap-2">
+              {actions}
+              <HeaderMenuDrawer />
+            </div>
           </div>
         </header>
 
-        {children}
+        <div className="relative z-10 mt-6 flex flex-1 flex-col">{children}</div>
       </section>
     </main>
   );
 }
 
 export const meetPanelClass =
-  "rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_14px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl";
+  "rounded-[30px] border border-white/12 bg-[#0b0c12]/90 shadow-[0_20px_70px_rgba(0,0,0,0.55)] backdrop-blur-xl";
 
 export const meetSecondaryPanelClass =
-  "rounded-2xl border border-white/10 bg-black/40";
+  "rounded-3xl border border-white/10 bg-white/[0.03]";
 
 export const meetPrimaryButtonClass =
-  "inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-white to-[#ffdce6] px-6 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_rgba(255,46,99,0.25)] transition duration-300 hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ffd7e2]/30 bg-gradient-to-r from-[#fff3f7] to-[#ffd7e3] px-6 py-3 text-sm font-semibold text-[#141218] shadow-[0_15px_40px_rgba(255,46,99,0.28)] transition duration-300 hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const meetGhostButtonClass =
-  "inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white/80 transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-white/85 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50";
