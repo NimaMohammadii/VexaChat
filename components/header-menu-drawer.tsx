@@ -174,6 +174,14 @@ export function HeaderMenuDrawer() {
     return () => window.clearTimeout(timer);
   }, [isOpen]);
 
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const handleSignOut = async () => {
     const supabase = createSupabaseClient();
     await supabase.auth.signOut();
@@ -205,7 +213,7 @@ export function HeaderMenuDrawer() {
             />
 
             <aside
-              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-all duration-300 ease-out will-change-transform ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-95"}`}
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-90"}`}
               aria-hidden={!isOpen}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -214,22 +222,24 @@ export function HeaderMenuDrawer() {
                 <div className="absolute bottom-[-10%] left-1/4 h-36 w-36 rounded-full bg-[#FF2E63]/16 blur-2xl" />
               </div>
 
-              <div className="relative z-10 mb-5 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3">
+              <div className={`relative z-10 mb-5 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3 transition-all duration-300 ease-out ${isOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
                 <p className="text-[11px] tracking-[0.3em] text-white/55">NAVIGATION</p>
                 <p className="mt-1 text-sm text-white/85">Choose your next vibe</p>
               </div>
 
               <nav className="relative z-10 space-y-2">
-                {items.map((item) => {
+                {items.map((item, index) => {
                   const isActive = item.match(pathname);
                   const Icon = item.Icon;
+                  const delay = isOpen ? 80 + index * 35 : (items.length - index) * 20;
 
                   return (
                     <div key={item.href}>
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition duration-300 ${isActive ? "border-[#FF2E63]/45 bg-gradient-to-r from-[#FF2E63]/25 via-white/[0.08] to-transparent text-white shadow-[0_0_24px_rgba(255,46,99,0.25)]" : "border-white/10 bg-white/[0.02] text-white/80 hover:border-[#FF2E63]/35 hover:bg-gradient-to-r hover:from-[#FF2E63]/15 hover:via-white/[0.06] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(255,46,99,0.18)]"}`}
+                        style={{ transitionDelay: `${delay}ms` }}
+                        className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-all duration-300 ease-out ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"} ${isActive ? "border-[#FF2E63]/45 bg-gradient-to-r from-[#FF2E63]/25 via-white/[0.08] to-transparent text-white shadow-[0_0_24px_rgba(255,46,99,0.25)]" : "border-white/10 bg-white/[0.02] text-white/80 hover:border-[#FF2E63]/35 hover:bg-gradient-to-r hover:from-[#FF2E63]/15 hover:via-white/[0.06] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(255,46,99,0.18)]"}`}
                       >
                         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${isActive ? "border-[#FF2E63]/45 bg-[#FF2E63]/20 text-white" : "border-white/15 bg-black/25 text-white/75 group-hover:border-[#FF2E63]/35 group-hover:text-white"}`}>
                           <Icon />
