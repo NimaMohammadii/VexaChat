@@ -24,26 +24,26 @@ export function MeetEntry() {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.main key={loading ? "loading" : card ? "ready" : "create"} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-[#060609] px-4 py-12 text-white">
+      <motion.main key={loading ? "loading" : card ? "ready" : "create"} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-black px-4 py-12 text-white">
         <p className="text-xs tracking-[0.2em] text-white/60">MEET</p>
-        <h1 className="text-4xl font-semibold tracking-tight">Premium request-based matching.</h1>
-        <p className="max-w-xl text-sm text-white/70">Every connection starts with explicit acceptance and a cleaner, more private flow.</p>
+        <h1 className="text-4xl font-semibold">Request-based matching.</h1>
+        <p className="max-w-xl text-sm text-white/70">Send requests. Wait for explicit acceptance. Matches are created only after approval.</p>
 
-        <section className="space-y-4 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.45)]">
-          {loading && <p className="text-white/60">Loading...</p>}
+        <section className="bw-card space-y-4 p-6">
+          {loading && <p className="text-white/60">Loading…</p>}
           {!loading && !card && (
             <div className="space-y-3">
               <p className="text-white/75">Create your card to join Meet.</p>
-              <Link href="/meet/create" className="inline-flex rounded-2xl border border-white/10 bg-white px-5 py-2.5 text-sm font-semibold text-black">Create card</Link>
+              <Link href="/meet/create" className="bw-button inline-flex">Create card</Link>
             </div>
           )}
           {!loading && card && (
             <div className="space-y-4">
-              <img src={card.imageUrl} alt={card.displayName} className="h-64 w-full rounded-3xl border border-white/10 object-cover" />
+              <img src={card.imageUrl} alt={card.displayName} className="h-56 w-full rounded-2xl border border-white/10 object-cover" />
               <div className="flex flex-wrap gap-3">
-                <Link href="/meet/browse" className="inline-flex rounded-2xl border border-white/10 bg-white px-5 py-2.5 text-sm font-semibold text-black">Browse</Link>
-                <Link href="/meet/inbox" className="inline-flex rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm">Inbox</Link>
-                <Link href="/meet/create" className="inline-flex rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-2.5 text-sm">Edit card</Link>
+                <Link href="/meet/browse" className="bw-button inline-flex">Browse</Link>
+                <Link href="/meet/inbox" className="bw-button-muted inline-flex">Inbox</Link>
+                <Link href="/meet/create" className="bw-button-muted inline-flex">Edit card</Link>
               </div>
             </div>
           )}

@@ -30,16 +30,27 @@ export function MeetInbox() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-[#060609] px-4 py-12 text-white">
-      <h1 className="text-3xl font-semibold tracking-tight">Inbox</h1>
-      <section className="space-y-3 rounded-[28px] border border-white/10 bg-white/[0.03] p-5">
-        <p className="text-xs uppercase tracking-[0.12em] text-white/55">Incoming requests</p>
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-black px-4 py-12 text-white">
+      <h1 className="text-3xl font-semibold">Inbox</h1>
+      <section className="bw-card space-y-3 p-5">
+        <p className="text-sm text-white/60">Incoming requests</p>
         {data?.incoming.length ? data.incoming.map((item, i) => (
-          <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-3">
+          <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="flex items-center justify-between rounded-xl border border-white/15 p-3">
             <span>{data.cardByUser[item.fromUserId]?.displayName ?? "Unknown"}</span>
-            <div className="flex gap-2"><button className="rounded-xl border border-white/10 bg-white px-3 py-1.5 text-xs font-semibold text-black" onClick={() => void act(item.id, "accept")}>Accept</button><button className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs" onClick={() => void act(item.id, "reject")}>Reject</button></div>
+            <div className="flex gap-2"><button className="bw-button" onClick={() => void act(item.id, "accept")}>Accept</button><button className="bw-button-muted" onClick={() => void act(item.id, "reject")}>Reject</button></div>
           </motion.div>
         )) : <p className="text-sm text-white/65">No pending requests.</p>}
+      </section>
+      <section className="bw-card space-y-3 p-5">
+        <p className="text-sm text-white/60">Outgoing</p>
+        {data?.outgoing.map((item) => <p key={item.id} className="text-sm">{data.cardByUser[item.toUserId]?.displayName ?? "Unknown"} — {item.status}</p>)}
+      </section>
+      <section className="bw-card space-y-3 p-5">
+        <p className="text-sm text-white/60">Matches</p>
+        {data?.matches.map((item) => {
+          const otherId = item.userLowId === data.currentUserId ? item.userHighId : item.userLowId;
+          return <p key={item.id} className="text-sm">{data.cardByUser[otherId]?.displayName ?? "Match"}</p>;
+        })}
       </section>
     </main>
   );
