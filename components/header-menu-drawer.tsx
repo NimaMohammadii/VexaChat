@@ -110,7 +110,6 @@ export function HeaderMenuDrawer() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasSession, setHasSession] = useState(false);
 
@@ -162,19 +161,6 @@ export function HeaderMenuDrawer() {
   }, [pathname]);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setIsVisible(false);
-    }, 280);
-
-    return () => window.clearTimeout(timer);
-  }, [isOpen]);
-
-  useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
 
     return () => {
@@ -201,7 +187,7 @@ export function HeaderMenuDrawer() {
         <MenuIcon open={isOpen} />
       </button>
 
-      {mounted && isVisible &&
+      {mounted &&
         createPortal(
           <>
             <button
@@ -213,7 +199,7 @@ export function HeaderMenuDrawer() {
             />
 
             <aside
-              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-[transform,opacity] duration-300 will-change-transform ${isOpen ? "translate-x-0 opacity-100 ease-out" : "-translate-x-full opacity-90 ease-in"}`}
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-[transform,opacity] duration-300 will-change-transform ${isOpen ? "pointer-events-auto translate-x-0 opacity-100 ease-out" : "pointer-events-none -translate-x-full opacity-90 ease-in"}`}
               aria-hidden={!isOpen}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
