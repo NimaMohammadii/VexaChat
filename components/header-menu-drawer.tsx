@@ -208,12 +208,12 @@ export function HeaderMenuDrawer() {
               type="button"
               aria-label="Close navigation menu"
               tabIndex={isOpen ? 0 : -1}
-              className={`fixed inset-0 z-[9998] bg-black/70 transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
+              className={`fixed inset-0 z-[9998] bg-black/70 transition-opacity duration-300 ${isOpen ? "pointer-events-auto opacity-100 ease-out" : "pointer-events-none opacity-0 ease-in"}`}
               onClick={() => setIsOpen(false)}
             />
 
             <aside
-              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-90"}`}
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-[transform,opacity] duration-300 will-change-transform ${isOpen ? "translate-x-0 opacity-100 ease-out" : "-translate-x-full opacity-90 ease-in"}`}
               aria-hidden={!isOpen}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
