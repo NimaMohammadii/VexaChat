@@ -11,22 +11,23 @@ type ConversationListProps = {
 
 export function ConversationList({ conversations, loading, onSelectConversation }: ConversationListProps) {
   return (
-    <section className="flex-1 pb-6">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/30">Inbox</p>
-          <p className="mt-1 text-sm text-white/52">Clean, focused, and ready to reply.</p>
-        </div>
+    <section className="flex-1 pb-8">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-[11px] font-medium uppercase tracking-[0.26em] text-white/32">Recent</p>
+        {!loading && conversations.length ? (
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/22">{conversations.length} threads</p>
+        ) : null}
       </div>
 
       {loading ? (
-        <div className="space-y-3">
+        <div>
+          <ConversationRowSkeleton />
           <ConversationRowSkeleton />
           <ConversationRowSkeleton />
           <ConversationRowSkeleton />
         </div>
       ) : conversations.length ? (
-        <div className="space-y-3">
+        <div>
           <AnimatePresence initial={false}>
             {conversations.map((conversation, index) => (
               <ConversationRow

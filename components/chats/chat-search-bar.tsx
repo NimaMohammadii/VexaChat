@@ -11,10 +11,10 @@ type ChatSearchBarProps = {
 };
 
 const avatarGradients = [
-  "linear-gradient(135deg,#1a0b0f,#4d1626)",
-  "linear-gradient(135deg,#0b1018,#1b2637)",
-  "linear-gradient(135deg,#110f08,#322512)",
-  "linear-gradient(135deg,#090f0c,#173027)",
+  "linear-gradient(135deg,#181112,#44212b)",
+  "linear-gradient(135deg,#111318,#243041)",
+  "linear-gradient(135deg,#181411,#3a2819)",
+  "linear-gradient(135deg,#121214,#302435)",
 ];
 
 function getAvatarBackground(seed: string) {
@@ -37,14 +37,14 @@ function SearchAvatar({ user }: { user: SearchUser }) {
         src={user.avatarUrl}
         alt={user.username}
         onError={() => setImageFailed(true)}
-        className="h-12 w-12 rounded-2xl border border-white/10 object-cover shadow-[0_8px_24px_rgba(0,0,0,0.28)]"
+        className="h-11 w-11 rounded-full object-cover"
       />
     );
   }
 
   return (
     <div
-      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 text-sm font-semibold text-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+      className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white/88"
       style={{ background: getAvatarBackground(user.id || user.username) }}
     >
       {initial}
@@ -54,13 +54,13 @@ function SearchAvatar({ user }: { user: SearchUser }) {
 
 function SearchResultSkeleton() {
   return (
-    <div className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-white/[0.04] px-3.5 py-3.5 backdrop-blur-2xl">
-      <div className="skeleton-shimmer h-12 w-12 rounded-2xl" />
+    <div className="flex items-center gap-3 py-3">
+      <div className="skeleton-shimmer h-11 w-11 rounded-full" />
       <div className="min-w-0 flex-1 space-y-2">
-        <div className="skeleton-shimmer h-3.5 w-32 rounded-full" />
+        <div className="skeleton-shimmer h-3.5 w-28 rounded-full" />
         <div className="skeleton-shimmer h-3 w-40 rounded-full" />
       </div>
-      <div className="skeleton-shimmer h-9 w-20 rounded-full" />
+      <div className="skeleton-shimmer h-3 w-12 rounded-full" />
     </div>
   );
 }
@@ -69,62 +69,59 @@ export function ChatSearchBar({ query, onQueryChange, searching, results, onOpen
   const showResults = query.trim().length >= 3;
 
   return (
-    <section className="relative z-20 mb-6">
-      <div className="rounded-[30px] border border-white/10 bg-white/[0.055] p-2 backdrop-blur-[28px] shadow-[0_20px_70px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)]">
-        <label className="flex items-center gap-3 rounded-[24px] border border-white/6 bg-black/20 px-4 py-3.5 transition duration-300 focus-within:border-[#8b2a42]/40 focus-within:bg-white/[0.045] focus-within:shadow-[0_0_0_1px_rgba(139,42,66,0.16),0_12px_32px_rgba(88,18,35,0.22)]">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.05] text-white/38">
-            <svg viewBox="0 0 20 20" className="h-4.5 w-4.5" fill="none" aria-hidden>
-              <circle cx="9" cy="9" r="5.25" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M13.2 13.2 16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[11px] uppercase tracking-[0.22em] text-white/30">Search users</p>
-            <input
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Search by username"
-              className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/26"
-              style={{ caretColor: "#9d314a" }}
-            />
-          </div>
-          <AnimatePresence initial={false}>
-            {query ? (
-              <motion.button
-                key="clear"
-                type="button"
-                initial={{ opacity: 0, scale: 0.86 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.86 }}
-                transition={{ duration: 0.16 }}
-                onClick={() => onQueryChange("")}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/52 transition hover:border-white/20 hover:text-white/74 active:scale-95"
-                aria-label="Clear search"
-              >
-                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" aria-hidden>
-                  <path d="M4 4l8 8M12 4 4 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </motion.button>
-            ) : null}
-          </AnimatePresence>
-        </label>
-      </div>
+    <section className="mb-8">
+      <label className="flex items-center gap-3 border-b border-white/10 pb-3 text-white/72 transition-colors focus-within:border-[#7a2438]/55 focus-within:text-white">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center text-white/34">
+          <svg viewBox="0 0 20 20" className="h-4.5 w-4.5" fill="none" aria-hidden>
+            <circle cx="9" cy="9" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M13.2 13.2 16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </span>
+
+        <input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder="Search by username"
+          className="min-w-0 flex-1 bg-transparent py-1 text-[15px] font-medium text-white outline-none placeholder:text-white/24"
+          style={{ caretColor: "#8b2a42" }}
+        />
+
+        <AnimatePresence initial={false}>
+          {query ? (
+            <motion.button
+              key="clear"
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.14 }}
+              onClick={() => onQueryChange("")}
+              className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/38 transition hover:text-white/64"
+              aria-label="Clear search"
+            >
+              Clear
+            </motion.button>
+          ) : null}
+        </AnimatePresence>
+      </label>
 
       <AnimatePresence>
         {showResults ? (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.985 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="mt-3 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.92),rgba(10,10,10,0.84))] p-2 shadow-[0_32px_90px_rgba(0,0,0,0.45)] backdrop-blur-[30px]"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="pt-5"
           >
-            <div className="mb-2 flex items-center justify-between px-2 py-1 text-[11px] uppercase tracking-[0.22em] text-white/34">
-              <span>Results</span>
-              <span>{searching ? "Searching" : `${results.length} found`}</span>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.26em] text-white/32">Search</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/28">
+                {searching ? "Searching" : `${results.length} found`}
+              </p>
             </div>
 
-            <div className="space-y-2">
+            <div>
               {searching ? (
                 <>
                   <SearchResultSkeleton />
@@ -136,29 +133,33 @@ export function ChatSearchBar({ query, onQueryChange, searching, results, onOpen
                     key={user.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.22, delay: index * 0.03, ease: "easeOut" }}
-                    className="group flex items-center gap-3 rounded-[24px] border border-white/8 bg-white/[0.04] px-3.5 py-3.5 backdrop-blur-2xl transition duration-300 hover:border-white/12 hover:bg-white/[0.06] active:scale-[0.992]"
+                    transition={{ duration: 0.18, delay: index * 0.03, ease: "easeOut" }}
+                    className="border-b border-white/6 last:border-b-0"
                   >
-                    <SearchAvatar user={user} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3 py-3.5">
+                      <SearchAvatar user={user} />
+
+                      <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-semibold tracking-[-0.02em] text-white">@{user.username}</p>
+                        <p className="mt-1 truncate text-[13px] text-white/42">
+                          {user.bio || "Start a private conversation."}
+                        </p>
                       </div>
-                      <p className="mt-1 truncate text-[13px] leading-5 text-white/46">{user.bio || "Start a private conversation."}</p>
+
+                      <button
+                        type="button"
+                        onClick={() => void onOpenConversation(user.id)}
+                        className="shrink-0 text-[11px] font-medium uppercase tracking-[0.18em] text-[#b26779] transition hover:text-[#d998a8]"
+                      >
+                        Message
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void onOpenConversation(user.id)}
-                      className="inline-flex shrink-0 items-center rounded-full border border-[#8b2a42]/30 bg-[linear-gradient(180deg,rgba(121,34,56,0.48),rgba(80,20,37,0.38))] px-4 py-2 text-[12px] font-semibold text-white/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_25px_rgba(70,14,29,0.28)] transition duration-300 hover:border-[#a23a56]/40 hover:text-white active:scale-95"
-                    >
-                      Message
-                    </button>
                   </motion.div>
                 ))
               ) : (
-                <div className="rounded-[24px] border border-dashed border-white/10 bg-white/[0.03] px-4 py-6 text-center">
-                  <p className="text-sm font-medium text-white/72">No matching usernames.</p>
-                  <p className="mt-1 text-[13px] text-white/40">Try a more exact handle to start a new conversation.</p>
+                <div className="py-6 text-center">
+                  <p className="text-sm font-medium text-white/68">No matching usernames.</p>
+                  <p className="mt-1 text-[13px] text-white/38">Try a more exact handle to begin a conversation.</p>
                 </div>
               )}
             </div>
