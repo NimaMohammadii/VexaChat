@@ -1,12 +1,121 @@
-import { HomeDashboard } from "@/components/home/home-dashboard";
-import { getHomeDashboardData } from "@/lib/home/dashboard";
+import { GoogleAuthControl } from "@/components/google-auth-control";
+import { HomePageRedesign } from "@/components/home-page-redesign";
+import { PublicHeader } from "@/components/public-header";
+import { ensureHomePageConfig } from "@/lib/homepage-config";
+import { prisma } from "@/lib/prisma";
+import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const user = await getAuthenticatedUser({ canSetCookies: false });
-  const data = await getHomeDashboardData(user);
+function parseList(value: string | undefined) {
+  if (!value) {
+    return [];
+  }
 
-  return <HomeDashboard data={data} />;
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export default async function HomePage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+  const city = searchParams.city?.trim() ?? "";
+  const min = Number(searchParams.min ?? "");
+  const max = Number(searchParams.max ?? "");
+  const languages = parseList(searchParams.languages);
+  const services = parseList(searchParams.services);
+  const sort = searchParams.sort ?? "newest";
+
+  const orderBy =
+    sort === "lowest" ? [{ price: "asc" as const }] :
+      sort === "highest" ? [{ price: "desc" as const }] :
+        sort === "verified" ? [{ verified: "desc" as const }, { createdAt: "desc" as const }] :
+          [{ createdAt: "desc" as const }];
+
+  const profiles = await (async () => {
+    try {
+      return await prisma.profile.findMany({
+        where: {
+          verified: true,
+          city: city ? { contains: city, mode: "insensitive" } : undefined,
+          price: {
+            gte: Number.isFinite(min) ? min : undefined,
+            lte: Number.isFinite(max) ? max : undefined
+          },
+          languages: languages.length ? { hasSome: languages } : undefined,
+          services: services.length ? { hasSome: services } : undefined
+        },
+        orderBy
+      });
+    } catch {
+      return [];
+    }
+  })();
+
+  const user = await getAuthenticatedUser({ canSetCookies: false });
+  const favorites = await (async () => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      return await prisma.favorite.findMany({ where: { userId: user.id }, select: { profileId: true } });
+    } catch {
+      return [];
+    }
+  })();
+
+  const favoriteProfileIds = favorites.map((item) => item.profileId);
+
+  const homeHeroConfig = await (async () => {
+    try {
+      return await ensureHomePageConfig();
+    } catch {
+      return null;
+    }
+  })();
+
+  const homeSections = await (async () => {
+    try {
+      const sections = await prisma.homeSection.findMany({
+        where: { isActive: true },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }]
+      });
+
+      return Promise.all(
+        sections.map(async (section) => ({
+          ...section,
+          imageUrl: await resolveStoredFileUrl(section.imageUrl)
+        }))
+      );
+    } catch {
+      return [];
+    }
+  })();
+
+  const homepageImages = await (async () => {
+    try {
+      const images = await prisma.homepageImage.findMany({
+        where: { slot: "homepage" },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        select: { id: true, order: true, storagePath: true }
+      });
+
+      return Promise.all(images.map(async (image) => ({
+        id: image.id,
+        order: image.order,
+        url: image.storagePath ? await resolveStoredFileUrl(image.storagePath) : ""
+      })));
+    } catch {
+      return [];
+    }
+  })();
+
+  return (
+    <>
+      <PublicHeader rightSlot={<GoogleAuthControl />} />
+      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homepageImages={homepageImages} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
+    </>
+  );
 }
