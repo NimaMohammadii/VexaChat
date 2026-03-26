@@ -14,6 +14,22 @@ enum VerificationStatus {
   rejected
 }
 
+enum PrivateRoomStatus {
+  active
+  ended
+}
+
+enum PrivateRoomParticipantRole {
+  owner
+  participant
+}
+
+enum PrivateRoomInviteStatus {
+  pending
+  accepted
+  declined
+}
+
 model Profile {
   id              String   @id @default(uuid())
   name            String
@@ -294,4 +310,49 @@ model NoirQueue {
   @@index([status])
   @@index([countryCode, status])
   @@index([sessionId, status])
+}
+
+model PrivateRoom {
+  id             String                   @id @default(cuid())
+  roomCode       String                   @unique
+  channelName    String                   @unique
+  ownerUserId    String
+  name           String?
+  enableTextChat Boolean                  @default(true)
+  status         PrivateRoomStatus        @default(active)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  participants   PrivateRoomParticipant[]
+  invites        PrivateRoomInvite[]
+
+  @@index([ownerUserId, status])
+}
+
+model PrivateRoomParticipant {
+  id       String                     @id @default(cuid())
+  roomId   String
+  userId   String
+  role     PrivateRoomParticipantRole @default(participant)
+  joinedAt DateTime                   @default(now())
+  leftAt   DateTime?
+  room     PrivateRoom                @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId, leftAt])
+  @@index([roomId, leftAt])
+}
+
+model PrivateRoomInvite {
+  id           String                  @id @default(cuid())
+  roomId        String
+  inviterUserId String
+  invitedUserId String
+  status        PrivateRoomInviteStatus @default(pending)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  room          PrivateRoom             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, invitedUserId])
+  @@index([invitedUserId, status])
+  @@index([inviterUserId])
 }
