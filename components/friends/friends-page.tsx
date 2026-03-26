@@ -295,7 +295,7 @@ export function FriendsPage() {
     <main className="min-h-screen bg-[#050505] px-4 pb-20 pt-5 text-white sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
         <header className="mb-8 flex items-center gap-4 border-b border-white/10 pb-4">
-          <HeaderMenuDrawer variant="minimal" />
+          <HeaderMenuDrawer />
           <h1 className="min-w-0 flex-1 text-[2rem] font-semibold tracking-[-0.05em]">Friends</h1>
           <p className="text-[11px] uppercase tracking-[0.2em] text-white/38">{incomingCount} requests</p>
         </header>
