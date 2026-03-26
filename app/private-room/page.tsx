@@ -4,7 +4,11 @@ import type { IAgoraRTCClient } from "agora-rtc-sdk-ng";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
+import { LiveRoomGrid } from "@/components/private-room/live-room-grid";
+import { LiveRoomHeader } from "@/components/private-room/live-room-header";
+import { RoomControls } from "@/components/private-room/room-controls";
 import { RoomCreateSheet } from "@/components/private-room/room-create-sheet";
+import { VexaPanel } from "@/components/private-room/vexa-panel";
 
 type LocalAudioTrack = {
   close: () => void;
@@ -30,6 +34,7 @@ type Participant = {
   userId: string;
   role: "owner" | "participant";
   username: string;
+  avatarUrl: string;
 };
 
 type RoomDetails = {
@@ -40,11 +45,17 @@ type RoomDetails = {
   participants: Participant[];
 };
 
-async function loadAgora() {
-  if (typeof window === "undefined") {
-    return null;
+function stableUidFromUserId(userId: string) {
+  let hash = 0;
+  for (let index = 0; index < userId.length; index += 1) {
+    hash = (hash << 5) - hash + userId.charCodeAt(index);
+    hash |= 0;
   }
+  return Math.abs(hash) % 1_000_000_000;
+}
 
+async function loadAgora() {
+  if (typeof window === "undefined") return null;
   const mod = await import("agora-rtc-sdk-ng");
   return mod.default;
 }
@@ -57,19 +68,20 @@ export default function PrivateRoomPage() {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomDetails | null>(null);
+  const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
+  const [vexaOpen, setVexaOpen] = useState(false);
   const [joinedAudio, setJoinedAudio] = useState(false);
   const [joiningAudio, setJoiningAudio] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [speakingUids, setSpeakingUids] = useState<number[]>([]);
-  const [vexaPrompt, setVexaPrompt] = useState("");
   const [vexaResponse, setVexaResponse] = useState("");
   const [vexaLoading, setVexaLoading] = useState(false);
+  const [vexaError, setVexaError] = useState<string | null>(null);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
-  const uidRef = useRef<number | null>(null);
 
   const closeLocalTracks = useCallback(() => {
     localAudioTrackRef.current?.close();
@@ -88,10 +100,7 @@ export default function PrivateRoomPage() {
 
   const ensureClient = useCallback(async () => {
     const AgoraRTC = await loadAgora();
-
-    if (!AgoraRTC) {
-      throw new Error("Agora SDK unavailable");
-    }
+    if (!AgoraRTC) throw new Error("Agora SDK unavailable");
 
     if (clientRef.current) {
       return { AgoraRTC, client: clientRef.current };
@@ -119,17 +128,9 @@ export default function PrivateRoomPage() {
 
   const fetchRoomDetails = useCallback(async (roomId: string) => {
     const response = await fetch(`/api/private-room/${roomId}`);
-
-    if (!response.ok) {
-      throw new Error("Unable to load room details");
-    }
-
+    if (!response.ok) throw new Error("Unable to load room details");
     const data = (await response.json()) as { room?: RoomDetails };
-
-    if (!data.room) {
-      throw new Error("Invalid room details response");
-    }
-
+    if (!data.room) throw new Error("Invalid room details response");
     setRoom(data.room);
   }, []);
 
@@ -138,22 +139,25 @@ export default function PrivateRoomPage() {
     setError(null);
 
     try {
-      const [friendsResponse, invitesResponse, activeRoomResponse] = await Promise.all([
+      const [friendsResponse, invitesResponse, activeRoomResponse, meResponse] = await Promise.all([
         fetch("/api/friends/list"),
         fetch("/api/private-room/invites"),
-        fetch("/api/private-room/active")
+        fetch("/api/private-room/active"),
+        fetch("/api/me")
       ]);
 
-      if (!friendsResponse.ok || !invitesResponse.ok || !activeRoomResponse.ok) {
+      if (!friendsResponse.ok || !invitesResponse.ok || !activeRoomResponse.ok || !meResponse.ok) {
         throw new Error("Unable to load private room data");
       }
 
       const friendsData = (await friendsResponse.json()) as { friends: Friend[] };
       const invitesData = (await invitesResponse.json()) as { invites: Invite[] };
       const activeRoomData = (await activeRoomResponse.json()) as { room: { id: string } | null };
+      const meData = (await meResponse.json()) as { user?: { id?: string } };
 
       setFriends(friendsData.friends ?? []);
       setInvites(invitesData.invites ?? []);
+      setLocalUserId(meData.user?.id ?? null);
 
       if (activeRoomData.room?.id) {
         setCurrentRoomId(activeRoomData.room.id);
@@ -171,14 +175,8 @@ export default function PrivateRoomPage() {
   }, [loadDashboard]);
 
   useEffect(() => {
-    if (!currentRoomId) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      void fetchRoomDetails(currentRoomId);
-    }, 5000);
-
+    if (!currentRoomId) return;
+    const interval = setInterval(() => void fetchRoomDetails(currentRoomId), 5000);
     return () => clearInterval(interval);
   }, [currentRoomId, fetchRoomDetails]);
 
@@ -191,9 +189,7 @@ export default function PrivateRoomPage() {
   const joinRoom = useCallback(
     async (roomId: string) => {
       const response = await fetch(`/api/private-room/${roomId}/join`, { method: "POST" });
-      if (!response.ok) {
-        throw new Error("Unable to join room");
-      }
+      if (!response.ok) throw new Error("Unable to join room");
 
       setCurrentRoomId(roomId);
       await fetchRoomDetails(roomId);
@@ -203,28 +199,19 @@ export default function PrivateRoomPage() {
   );
 
   const joinAudio = useCallback(async () => {
-    if (!room || !appId || joiningAudio || joinedAudio) {
-      return;
-    }
+    if (!room || !appId || joiningAudio || joinedAudio || !localUserId) return;
 
     setJoiningAudio(true);
+    setError(null);
 
     try {
       const { AgoraRTC, client } = await ensureClient();
-      const uid = Math.floor(Math.random() * 1_000_000_000);
-      uidRef.current = uid;
+      const uid = stableUidFromUserId(localUserId);
 
       const tokenResponse = await fetch(`/api/agora/token?channel=${encodeURIComponent(room.channelName)}&uid=${uid}`);
-
-      if (!tokenResponse.ok) {
-        throw new Error("Unable to fetch Agora token");
-      }
-
+      if (!tokenResponse.ok) throw new Error("Unable to fetch Agora token");
       const tokenData = (await tokenResponse.json()) as { token?: string };
-
-      if (!tokenData.token) {
-        throw new Error("Invalid Agora token response");
-      }
+      if (!tokenData.token) throw new Error("Invalid Agora token response");
 
       await client.join(appId, room.channelName, tokenData.token, uid);
       const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
@@ -233,98 +220,101 @@ export default function PrivateRoomPage() {
       await client.publish([audioTrack]);
       setJoinedAudio(true);
     } catch (joinError) {
-      console.error(joinError);
       await leaveAgora();
       setError(joinError instanceof Error ? joinError.message : "Unable to join audio");
     } finally {
       setJoiningAudio(false);
     }
-  }, [appId, ensureClient, joinedAudio, joiningAudio, leaveAgora, room]);
+  }, [appId, ensureClient, joinedAudio, joiningAudio, leaveAgora, localUserId, room]);
 
   const leaveRoom = useCallback(async () => {
-    if (!currentRoomId) {
-      return;
-    }
-
+    if (!currentRoomId) return;
     await fetch(`/api/private-room/${currentRoomId}/leave`, { method: "POST" });
     await leaveAgora();
     setCurrentRoomId(null);
     setRoom(null);
+    setVexaError(null);
     setVexaResponse("");
     await loadDashboard();
   }, [currentRoomId, leaveAgora, loadDashboard]);
 
   const toggleMic = useCallback(async () => {
-    if (!localAudioTrackRef.current) {
-      return;
-    }
-
+    if (!localAudioTrackRef.current) return;
     const nextMuted = !micMuted;
     await localAudioTrackRef.current.setEnabled(!nextMuted);
     setMicMuted(nextMuted);
   }, [micMuted]);
 
-  const askVexa = useCallback(async () => {
-    if (!room || !vexaPrompt.trim()) {
-      return;
-    }
+  const askVexa = useCallback(
+    async (prompt: string) => {
+      if (!room) return;
+      setVexaLoading(true);
+      setVexaError(null);
 
-    setVexaLoading(true);
-    setVexaResponse("");
+      try {
+        const response = await fetch("/api/private-room/vexa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roomId: room.id, prompt })
+        });
 
-    try {
-      const response = await fetch("/api/private-room/vexa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roomId: room.id, prompt: vexaPrompt.trim() })
-      });
+        const data = (await response.json().catch(() => ({}))) as { response?: string; error?: string };
 
-      if (!response.ok) {
-        throw new Error("Unable to ask Vexa");
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to ask Vexa right now");
+        }
+
+        setVexaResponse(data.response ?? "");
+      } catch (vexaRequestError) {
+        setVexaError(vexaRequestError instanceof Error ? vexaRequestError.message : "Vexa is temporarily unavailable.");
+      } finally {
+        setVexaLoading(false);
       }
+    },
+    [room]
+  );
 
-      const data = (await response.json()) as { response?: string };
-      setVexaResponse(data.response ?? "");
-    } catch (vexaError) {
-      setVexaResponse(vexaError instanceof Error ? vexaError.message : "Vexa is unavailable right now.");
-    } finally {
-      setVexaLoading(false);
-    }
-  }, [room, vexaPrompt]);
+  const speakingParticipantIds = useMemo(() => {
+    if (!room) return new Set<string>();
+    const activeUids = new Set(speakingUids);
 
-  const speakingSet = useMemo(() => new Set(speakingUids), [speakingUids]);
-  const isLocalSpeaking = uidRef.current ? speakingSet.has(uidRef.current) : false;
+    return new Set(
+      room.participants
+        .filter((participant) => activeUids.has(stableUidFromUserId(participant.userId)))
+        .map((participant) => participant.id)
+    );
+  }, [room, speakingUids]);
 
   return (
-    <main className="relative flex min-h-[100svh] overflow-hidden bg-black text-white">
+    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#070708] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-14 h-56 w-56 rounded-full bg-[#FF2E63]/15 blur-[90px]" />
-        <div className="absolute -right-20 bottom-20 h-64 w-64 rounded-full bg-white/10 blur-[110px]" />
+        <div className="absolute -left-16 top-10 h-60 w-60 rounded-full bg-[#7d233f]/20 blur-[100px]" />
+        <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-col px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
+      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-4 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))]">
         <header className="flex items-start justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70">Secure • Invite-only</div>
+            <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70">Private audio</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Private Room</h1>
           </div>
           <HeaderMenuDrawer />
         </header>
 
-        {loading ? <p className="mt-8 text-sm text-white/70">Loading private rooms...</p> : null}
-        {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
+        {loading ? <p className="text-sm text-white/70">Loading private rooms...</p> : null}
+        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
         {!loading && !currentRoomId ? (
           <>
-            <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/55">Ready to host</p>
-              <h2 className="mt-2 text-xl font-medium">Create a real private audio room and invite friends.</h2>
-              <button type="button" onClick={() => setSheetOpen(true)} className="mt-5 inline-flex rounded-full bg-gradient-to-r from-white to-[#ffdce6] px-6 py-3 text-sm font-semibold text-black">
+            <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/55">Start your room</p>
+              <h2 className="mt-2 text-xl font-medium">Create a premium private voice room and invite your people.</h2>
+              <button type="button" onClick={() => setSheetOpen(true)} className="mt-5 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-6 py-3 text-sm font-semibold text-black">
                 Create Space
               </button>
             </motion.article>
 
-            <div className="mt-5 space-y-3">
+            <div className="space-y-3">
               <h3 className="text-sm font-medium text-white/85">Incoming invites</h3>
               {invites.length === 0 ? <p className="text-sm text-white/55">No pending invites.</p> : null}
               {invites.map((invite) => (
@@ -341,55 +331,34 @@ export default function PrivateRoomPage() {
         ) : null}
 
         {room ? (
-          <section className="mt-6 space-y-4">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Live room</p>
-              <h2 className="mt-2 text-xl font-semibold">{room.name || "Private Space"}</h2>
-              <p className="mt-1 text-sm text-[#ff9fb7]">Code: {room.roomCode}</p>
+          <>
+            <LiveRoomHeader
+              title={room.name || "Private Space"}
+              roomCode={room.roomCode}
+              participantCount={room.participants.length}
+              onInvite={() => setInviteSheetOpen(true)}
+            />
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {!joinedAudio ? (
-                  <button type="button" onClick={() => void joinAudio()} disabled={joiningAudio} className="rounded-full bg-gradient-to-r from-white to-[#ffe3eb] px-4 py-2 text-xs font-semibold text-black disabled:opacity-50">
-                    {joiningAudio ? "Joining audio..." : "Join audio"}
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => void toggleMic()} className={`rounded-full px-4 py-2 text-xs ${micMuted ? "border border-rose-400/50 text-rose-200" : "border border-emerald-300/40 text-emerald-200"}`}>
-                    {micMuted ? "Mic Off" : "Mic On"}
-                  </button>
-                )}
-                <button type="button" onClick={() => setInviteSheetOpen(true)} className="rounded-full border border-white/20 px-4 py-2 text-xs">Invite more</button>
-                <button type="button" onClick={() => void leaveRoom()} className="rounded-full border border-white/20 px-4 py-2 text-xs">Leave room</button>
-              </div>
-            </div>
+            <LiveRoomGrid
+              participants={room.participants}
+              localUserId={localUserId}
+              speakingParticipantIds={speakingParticipantIds}
+              onOpenVexa={() => setVexaOpen(true)}
+            />
 
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-sm font-medium">Participants</p>
-              <div className="mt-3 space-y-2">
-                {room.participants.map((participant) => (
-                  <div key={participant.id} className="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-sm">
-                    <span>@{participant.username}</span>
-                    <span className="text-xs text-white/60">
-                      {participant.role === "owner" ? "Host" : "Member"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {joinedAudio ? <p className="mt-2 text-xs text-white/55">You are {isLocalSpeaking ? "speaking" : "connected"}.</p> : null}
-            </div>
+            <p className="text-xs text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Not in audio yet"}</p>
 
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Vexa AI</p>
-                <span className="rounded-full border border-[#FF2E63]/35 bg-[#FF2E63]/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#ff8aa7]">Live beta</span>
-              </div>
-              <p className="mt-2 text-xs text-white/60">Text-response MVP in-room. Voice playback can be added next.</p>
-              <textarea value={vexaPrompt} onChange={(event) => setVexaPrompt(event.target.value)} placeholder="Ask Vexa anything..." className="mt-3 h-20 w-full rounded-2xl border border-white/10 bg-black/40 p-3 text-sm outline-none focus:border-white/35" />
-              <button type="button" onClick={() => void askVexa()} disabled={vexaLoading || !vexaPrompt.trim()} className="mt-3 rounded-full border border-white/20 px-4 py-2 text-xs disabled:opacity-50">
-                {vexaLoading ? "Vexa is thinking..." : "Ask Vexa"}
-              </button>
-              {vexaResponse ? <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-white/85">{vexaResponse}</p> : null}
-            </div>
-          </section>
+            <RoomControls
+              joinedAudio={joinedAudio}
+              joiningAudio={joiningAudio}
+              micMuted={micMuted}
+              onJoinAudio={() => void joinAudio()}
+              onToggleMic={() => void toggleMic()}
+              onInvite={() => setInviteSheetOpen(true)}
+              onOpenVexa={() => setVexaOpen(true)}
+              onLeave={() => void leaveRoom()}
+            />
+          </>
         ) : null}
       </section>
 
@@ -401,10 +370,17 @@ export default function PrivateRoomPage() {
         mode="invite"
         roomId={room?.id}
         onInvited={() => {
-          if (room?.id) {
-            void fetchRoomDetails(room.id);
-          }
+          if (room?.id) void fetchRoomDetails(room.id);
         }}
+      />
+
+      <VexaPanel
+        open={vexaOpen}
+        onClose={() => setVexaOpen(false)}
+        loading={vexaLoading}
+        response={vexaResponse}
+        error={vexaError}
+        onSubmit={askVexa}
       />
     </main>
   );
