@@ -153,12 +153,16 @@ async function createOpenAiRealtimeCall(apiKey: string, offerSdp: string, roomCo
     }
   };
 
+  const sessionJson = JSON.stringify(session);
   const formData = new FormData();
-  const sdpBlob = new Blob([offerSdp], { type: "application/sdp" });
-  const sessionBlob = new Blob([JSON.stringify(session)], { type: "application/json" });
+  // OpenAI's /v1/realtime/calls multipart parser expects `sdp` as a text field.
+  // Sending it as a file/blob part can cause `field "sdp" is required` errors.
+  formData.set("sdp", offerSdp);
+  formData.set("session", sessionJson);
 
-  formData.set("sdp", sdpBlob, "offer.sdp");
-  formData.set("session", sessionBlob, "session.json");
+  const outboundSdpValue = formData.get("sdp");
+  const outboundSdpLength = typeof outboundSdpValue === "string" ? outboundSdpValue.length : null;
+  const formDataHasSdp = formData.has("sdp");
 
   console.info("Vexa realtime setup: forwarding offer to OpenAI", {
     stage: "openai_session_create",
@@ -166,9 +170,10 @@ async function createOpenAiRealtimeCall(apiKey: string, offerSdp: string, roomCo
     voice: attempt.voice,
     attempt: attempt.reason,
     offerSdpLength: offerSdp.length,
-    payloadStrategy: "multipart_form_data_blob_parts",
-    sdpPartType: sdpBlob.type,
-    sessionPartType: sessionBlob.type
+    outboundSdpLength,
+    formDataHasSdp,
+    sessionJsonLength: sessionJson.length,
+    payloadStrategy: "multipart_form_data_text_fields"
   });
 
   const response = await fetch("https://api.openai.com/v1/realtime/calls", {
