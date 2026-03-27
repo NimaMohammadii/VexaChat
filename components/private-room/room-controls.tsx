@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { AudioWaveIcon, BrainSparkIcon, ChatBubbleIcon, ExitIcon, MicIcon, MicOffIcon, UserPlusIcon } from "@/components/private-room/room-icons";
+import { AudioWaveIcon, BrainSparkIcon, ExitIcon, MicIcon, MicOffIcon, UserPlusIcon } from "@/components/private-room/room-icons";
 
 type RoomControlsProps = {
   joinedAudio: boolean;
@@ -65,6 +66,7 @@ export function RoomControls({
   return (
     <div className="fixed bottom-[calc(12px+env(safe-area-inset-bottom))] left-1/2 z-30 w-[calc(100%-1.4rem)] max-w-xl -translate-x-1/2 rounded-[24px] border border-white/10 bg-black/70 px-3 py-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
       <div className="flex items-center justify-between gap-2 overflow-x-auto">
+      <div className="flex items-center justify-between gap-2">
         {!joinedAudio ? (
           <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} icon={<AudioWaveIcon className="h-4 w-4" />} emphasis />
         ) : (
