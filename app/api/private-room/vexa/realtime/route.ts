@@ -154,8 +154,22 @@ async function createOpenAiRealtimeCall(apiKey: string, offerSdp: string, roomCo
   };
 
   const formData = new FormData();
-  formData.set("sdp", offerSdp);
-  formData.set("session", JSON.stringify(session));
+  const sdpBlob = new Blob([offerSdp], { type: "application/sdp" });
+  const sessionBlob = new Blob([JSON.stringify(session)], { type: "application/json" });
+
+  formData.set("sdp", sdpBlob, "offer.sdp");
+  formData.set("session", sessionBlob, "session.json");
+
+  console.info("Vexa realtime setup: forwarding offer to OpenAI", {
+    stage: "openai_session_create",
+    model: attempt.model,
+    voice: attempt.voice,
+    attempt: attempt.reason,
+    offerSdpLength: offerSdp.length,
+    payloadStrategy: "multipart_form_data_blob_parts",
+    sdpPartType: sdpBlob.type,
+    sessionPartType: sessionBlob.type
+  });
 
   const response = await fetch("https://api.openai.com/v1/realtime/calls", {
     method: "POST",
@@ -176,6 +190,17 @@ async function createOpenAiRealtimeCall(apiKey: string, offerSdp: string, roomCo
       requestId,
       contentType
     };
+
+    console.error("Vexa realtime setup: raw OpenAI error response", {
+      stage: "openai_session_create",
+      model: attempt.model,
+      voice: attempt.voice,
+      attempt: attempt.reason,
+      status: response.status,
+      requestId,
+      contentType,
+      rawBody: body
+    });
 
     return { ok: false as const, failure };
   }
