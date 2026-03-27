@@ -8,6 +8,7 @@ import { LiveRoomGrid } from "@/components/private-room/live-room-grid";
 import { LiveRoomHeader } from "@/components/private-room/live-room-header";
 import { RoomControls } from "@/components/private-room/room-controls";
 import { RoomCreateSheet } from "@/components/private-room/room-create-sheet";
+import { RoomBackdropShape } from "@/components/private-room/room-icons";
 import { VexaVoicePanel } from "@/components/private-room/vexa-voice-panel";
 
 type LocalAudioTrack = {
@@ -88,6 +89,8 @@ export default function PrivateRoomPage() {
   const [inviteActionLoading, setInviteActionLoading] = useState(false);
   const [inviteCardError, setInviteCardError] = useState<string | null>(null);
   const [declineToast, setDeclineToast] = useState<DeclineUpdate | null>(null);
+  const [peek, setPeek] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(780);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
@@ -186,6 +189,13 @@ export default function PrivateRoomPage() {
   }, [loadDashboard]);
 
   useEffect(() => {
+    const updateViewport = () => setViewportHeight(window.innerHeight);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => void loadDashboard(), 6500);
     return () => clearInterval(interval);
   }, [loadDashboard]);
@@ -236,6 +246,7 @@ export default function PrivateRoomPage() {
       if (!response.ok) throw new Error("Unable to join room");
 
       setCurrentRoomId(roomId);
+      setPeek(false);
       await fetchRoomDetails(roomId);
       await loadDashboard();
     },
@@ -311,6 +322,7 @@ export default function PrivateRoomPage() {
     setCurrentRoomId(null);
     setRoom(null);
     setVexaState("idle");
+    setPeek(false);
     await loadDashboard();
   }, [currentRoomId, leaveAgora, loadDashboard]);
 
@@ -325,20 +337,16 @@ export default function PrivateRoomPage() {
     if (!room) return new Set<string>();
     const activeUids = new Set(speakingUids);
 
-    return new Set(
-      room.participants
-        .filter((participant) => activeUids.has(stableUidFromUserId(participant.userId)))
-        .map((participant) => participant.id)
-    );
+    return new Set(room.participants.filter((participant) => activeUids.has(stableUidFromUserId(participant.userId))).map((participant) => participant.id));
   }, [room, speakingUids]);
 
   const topInvite = invites[0] ?? null;
+  const peekOffset = Math.max(280, Math.round(viewportHeight * 0.58));
 
   return (
-    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#070708] text-white">
+    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#06070a] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-10 h-60 w-60 rounded-full bg-[#7d233f]/20 blur-[100px]" />
-        <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
+        <RoomBackdropShape />
       </div>
 
       <section className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-3 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-[calc(0.8rem+env(safe-area-inset-top))]">
@@ -346,6 +354,7 @@ export default function PrivateRoomPage() {
           <div>
             <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70">Private audio</div>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight">Private Room</h1>
+            <p className="mt-1 text-xs text-white/60">Create, host, and collaborate in a premium private space.</p>
           </div>
           <HeaderMenuDrawer />
         </header>
@@ -357,8 +366,9 @@ export default function PrivateRoomPage() {
           <>
             <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
               <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Start your room</p>
-              <h2 className="mt-2 text-lg font-medium">Create a private live room and invite your circle.</h2>
-              <button type="button" onClick={() => setSheetOpen(true)} className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black">
+              <h2 className="mt-2 text-lg font-medium">Create a private live room and invite your inner circle.</h2>
+              <p className="mt-1 text-xs text-white/55">A guided 3-step setup with room basics, people selection, and final review.</p>
+              <button type="button" onClick={() => setSheetOpen(true)} className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black transition active:scale-[0.99]">
                 Create Space
               </button>
             </motion.article>
@@ -383,39 +393,79 @@ export default function PrivateRoomPage() {
             </div>
           </>
         ) : null}
-
-        {room ? (
-          <>
-            <LiveRoomHeader
-              title={room.name || "Private Space"}
-              roomCode={room.roomCode}
-              participantCount={room.participants.length}
-              onInvite={() => setInviteSheetOpen(true)}
-            />
-
-            <LiveRoomGrid
-              participants={room.participants}
-              localUserId={localUserId}
-              speakingParticipantIds={speakingParticipantIds}
-              onOpenVexa={() => setVexaOpen(true)}
-              vexaState={vexaState}
-            />
-
-            <p className="px-1 text-[11px] text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Tap Join Audio to talk live"}</p>
-
-            <RoomControls
-              joinedAudio={joinedAudio}
-              joiningAudio={joiningAudio}
-              micMuted={micMuted}
-              onJoinAudio={() => void joinAudio()}
-              onToggleMic={() => void toggleMic()}
-              onInvite={() => setInviteSheetOpen(true)}
-              onOpenVexa={() => setVexaOpen(true)}
-              onLeave={() => void leaveRoom()}
-            />
-          </>
-        ) : null}
       </section>
+
+      <AnimatePresence>
+        {room ? (
+          <motion.section
+            key={room.id}
+            className="fixed inset-x-0 bottom-0 z-30 mx-auto flex h-[100svh] w-full max-w-xl flex-col rounded-t-[32px] border border-white/10 bg-[#090b11]/95 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-[calc(0.6rem+env(safe-area-inset-top))] shadow-[0_-24px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            initial={{ y: "100%" }}
+            animate={{ y: peek ? peekOffset : 0 }}
+            exit={{ y: "100%" }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: peekOffset }}
+            dragElastic={0.12}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 90 || info.velocity.y > 500) {
+                setPeek(true);
+              } else if (info.offset.y < -70 || info.velocity.y < -500) {
+                setPeek(false);
+              }
+            }}
+            transition={{ type: "spring", stiffness: 280, damping: 32 }}
+          >
+            <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/25" aria-hidden />
+            <div className="relative flex-1 overflow-hidden">
+              {!peek ? (
+                <motion.div initial={{ opacity: 0.6, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex h-full flex-col gap-3 overflow-y-auto pb-2">
+                  <LiveRoomHeader
+                    title={room.name || "Private Space"}
+                    roomCode={room.roomCode}
+                    participantCount={room.participants.length}
+                    onInvite={() => setInviteSheetOpen(true)}
+                  />
+
+                  <LiveRoomGrid
+                    participants={room.participants}
+                    localUserId={localUserId}
+                    speakingParticipantIds={speakingParticipantIds}
+                    onOpenVexa={() => setVexaOpen(true)}
+                    vexaState={vexaState}
+                  />
+
+                  <p className="px-1 text-[11px] text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Tap Join Audio to talk live"}</p>
+
+                  <RoomControls
+                    joinedAudio={joinedAudio}
+                    joiningAudio={joiningAudio}
+                    micMuted={micMuted}
+                    onJoinAudio={() => void joinAudio()}
+                    onToggleMic={() => void toggleMic()}
+                    onInvite={() => setInviteSheetOpen(true)}
+                    onOpenVexa={() => setVexaOpen(true)}
+                    onLeave={() => void leaveRoom()}
+                  />
+                </motion.div>
+              ) : (
+                <motion.button
+                  type="button"
+                  onClick={() => setPeek(false)}
+                  className="w-full rounded-2xl border border-white/15 bg-white/[0.03] p-4 text-left"
+                  initial={{ opacity: 0.6, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.99 }}
+                  aria-label="Expand room"
+                >
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Private room • Peek mode</p>
+                  <h3 className="mt-1 text-base font-semibold text-white/95">{room.name || "Private Space"}</h3>
+                  <p className="mt-1 text-xs text-white/65">{room.participants.length} in room • Swipe up to expand</p>
+                </motion.button>
+              )}
+            </div>
+          </motion.section>
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {topInvite ? (
@@ -476,12 +526,7 @@ export default function PrivateRoomPage() {
         }}
       />
 
-      <VexaVoicePanel
-        open={vexaOpen}
-        onClose={() => setVexaOpen(false)}
-        roomId={room?.id ?? null}
-        onStatusChange={setVexaState}
-      />
+      <VexaVoicePanel open={vexaOpen} onClose={() => setVexaOpen(false)} roomId={room?.id ?? null} onStatusChange={setVexaState} />
     </main>
   );
 }

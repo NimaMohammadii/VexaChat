@@ -1,6 +1,7 @@
 "use client";
 
 import { ParticipantBubble } from "@/components/private-room/participant-bubble";
+import { AudioWaveIcon, BrainSparkIcon } from "@/components/private-room/room-icons";
 
 type Participant = {
   id: string;
@@ -26,28 +27,26 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
   const allPeople = [...speakers, ...listeners];
 
   return (
-    <section className="rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-white/50">In this room</p>
+    <section className="rounded-[26px] border border-white/12 bg-[#0f1016]/80 px-4 py-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-white/50">Stage</p>
+          <p className="mt-0.5 text-xs text-white/70">{allPeople.length} active participants</p>
+        </div>
         <button
           type="button"
           onClick={onOpenVexa}
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
+          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1.5 text-[10px] uppercase tracking-[0.12em] text-white/80"
+          aria-label="Open Vexa assistant"
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${vexaState === "listening" || vexaState === "speaking" ? "animate-pulse bg-[#d57e96]" : "bg-[#d57e96]"}`} />
-          Vexa
+          <BrainSparkIcon className="h-3.5 w-3.5" />
+          {vexaState === "idle" ? "Vexa" : vexaState}
         </button>
       </div>
 
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
-        <button type="button" onClick={onOpenVexa} className="flex flex-col items-center gap-1.5 text-center">
-          <ParticipantBubble
-            username="Vexa"
-            subtitle={vexaState === "idle" ? "AI" : vexaState}
-            vexa
-            isSpeaking={vexaState === "speaking" || vexaState === "listening"}
-            size="md"
-          />
+        <button type="button" onClick={onOpenVexa} className="flex flex-col items-center gap-1.5 text-center" aria-label="Open Vexa assistant panel">
+          <ParticipantBubble username="Vexa" subtitle={vexaState === "idle" ? "AI companion" : vexaState} vexa isSpeaking={vexaState === "speaking" || vexaState === "listening"} size="md" />
         </button>
 
         {allPeople.map((participant) => (
@@ -64,7 +63,8 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
       </div>
 
       {listeners.length > 0 ? (
-        <p className="mt-2 text-[10px] text-white/40">
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] text-white/55">
+          <AudioWaveIcon className="h-3.5 w-3.5" />
           {speakers.length} host{speakers.length === 1 ? "" : "s"} • {listeners.length} listener{listeners.length === 1 ? "" : "s"}
         </p>
       ) : null}
