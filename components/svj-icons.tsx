@@ -47,3 +47,7 @@ export function SvjCameraIcon(props: IconProps) {
 export function SvjUploadIcon(props: IconProps) {
   return <BaseIcon {...props}><path d="M12 16V5m0 0 4 4m-4-4-4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></BaseIcon>;
 }
+
+export function SvjLockIcon(props: IconProps) {
+  return <BaseIcon {...props}><rect x="5" y="10" width="14" height="10" rx="2.5" /><path d="M8 10V7.8a4 4 0 0 1 8 0V10" /><circle cx="12" cy="14.8" r="1.2" fill="currentColor" stroke="none" /></BaseIcon>;
+}

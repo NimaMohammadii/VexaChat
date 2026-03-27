@@ -359,3 +359,9 @@ model PrivateRoomInvite {
   @@index([invitedUserId, status])
   @@index([inviterUserId])
 }
+
+model MenuAccessConfig {
+  id         String   @id @default(cuid())
+  lockedKeys String[] @default([])
+  updatedAt  DateTime @updatedAt
+}
