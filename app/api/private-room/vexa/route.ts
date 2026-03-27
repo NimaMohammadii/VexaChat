@@ -24,8 +24,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "roomId and prompt are required" }, { status: 400 });
     }
 
-    if (prompt.length > 1200) {
-      return NextResponse.json({ error: "Prompt is too long. Keep it under 1200 characters." }, { status: 400 });
+    if (prompt.length < 2) {
+      return NextResponse.json({ error: "Prompt is too short." }, { status: 400 });
+    }
+
+    if (prompt.length > 1400) {
+      return NextResponse.json({ error: "Prompt is too long. Keep it under 1400 characters." }, { status: 400 });
     }
 
     const access = await canAccessPrivateRoom(roomId, user.id);
@@ -37,6 +41,7 @@ export async function POST(request: NextRequest) {
     const room = await prisma.privateRoom.findUnique({
       where: { id: roomId },
       select: {
+        id: true,
         name: true,
         participants: {
           where: { leftAt: null },
@@ -45,10 +50,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    if (!room) {
+      return NextResponse.json({ error: "Room not found" }, { status: 404 });
+    }
+
     const vexa = await generateVexaResponse(prompt, {
       roomContext: {
-        roomName: room?.name,
-        participantCount: room?.participants.length ?? 0
+        roomName: room.name,
+        participantCount: room.participants.length
       }
     });
 
@@ -62,7 +71,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       response: vexa.response,
-      fallback: Boolean(vexa.providerError)
+      fallback: Boolean(vexa.providerError),
+      model: vexa.model,
+      latencyMs: vexa.latencyMs
     });
   } catch (error) {
     console.error("Failed to generate Vexa response", error);

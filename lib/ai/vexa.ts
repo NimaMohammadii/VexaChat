@@ -1,5 +1,5 @@
 const VEXA_SYSTEM_PROMPT =
-  "You are Vexa, an in-room AI companion inside a private live voice room. Reply with concise, spoken-style help. Usually keep answers to 1-3 short sentences unless the user asks for depth.";
+  "You are Vexa, a live AI voice-room companion. Sound natural, social, and spoken. Keep replies concise (1-3 short sentences), avoid markdown/bullets unless asked, and be useful immediately.";
 
 type GenerateVexaOptions = {
   roomContext?: {
@@ -8,7 +8,7 @@ type GenerateVexaOptions = {
   };
 };
 
-const VEXA_FALLBACK_RESPONSE = "I’m here with you in the room. Could you rephrase that in one short sentence?";
+const VEXA_FALLBACK_RESPONSE = "I’m with you live. Give me one short line and I’ll answer quickly.";
 
 export async function generateVexaResponse(prompt: string, options: GenerateVexaOptions = {}) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -16,16 +16,21 @@ export async function generateVexaResponse(prompt: string, options: GenerateVexa
   if (!apiKey) {
     return {
       response: "Vexa is not configured yet. Please add OPENAI_API_KEY on the server.",
-      providerError: "OPENAI_API_KEY missing"
+      providerError: "OPENAI_API_KEY missing",
+      model: null,
+      latencyMs: 0
     };
   }
 
+  const cleanPrompt = prompt.trim().slice(0, 1400);
   const roomLine = options.roomContext?.roomName
-    ? `Room context: ${options.roomContext.roomName} with ${options.roomContext.participantCount ?? 0} participants.`
-    : "";
+    ? `Room: ${options.roomContext.roomName}. Members live now: ${options.roomContext.participantCount ?? 0}.`
+    : `Members live now: ${options.roomContext?.participantCount ?? 0}.`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+  const start = Date.now();
+  const timeout = setTimeout(() => controller.abort(), 14000);
+  const model = process.env.OPENAI_VEXA_MODEL || "gpt-4o-mini";
 
   try {
     const apiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -36,18 +41,19 @@ export async function generateVexaResponse(prompt: string, options: GenerateVexa
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         input: [
           {
             role: "system",
-            content: [{ type: "input_text", text: `${VEXA_SYSTEM_PROMPT}\n${roomLine}`.trim() }]
+            content: [{ type: "input_text", text: `${VEXA_SYSTEM_PROMPT}\n${roomLine}` }]
           },
           {
             role: "user",
-            content: [{ type: "input_text", text: prompt }]
+            content: [{ type: "input_text", text: cleanPrompt }]
           }
         ],
-        max_output_tokens: 220
+        temperature: 0.7,
+        max_output_tokens: 160
       })
     });
 
@@ -55,7 +61,9 @@ export async function generateVexaResponse(prompt: string, options: GenerateVexa
       const errorText = await apiResponse.text();
       return {
         response: VEXA_FALLBACK_RESPONSE,
-        providerError: `OpenAI request failed (${apiResponse.status}): ${errorText.slice(0, 200)}`
+        providerError: `OpenAI request failed (${apiResponse.status}): ${errorText.slice(0, 220)}`,
+        model,
+        latencyMs: Date.now() - start
       };
     }
 
@@ -71,13 +79,17 @@ export async function generateVexaResponse(prompt: string, options: GenerateVexa
 
     return {
       response: outputText || VEXA_FALLBACK_RESPONSE,
-      providerError: null
+      providerError: null,
+      model,
+      latencyMs: Date.now() - start
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     return {
       response: VEXA_FALLBACK_RESPONSE,
-      providerError: `Vexa provider error: ${message}`
+      providerError: `Vexa provider error: ${message}`,
+      model,
+      latencyMs: Date.now() - start
     };
   } finally {
     clearTimeout(timeout);
