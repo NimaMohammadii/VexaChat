@@ -301,10 +301,10 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
                     <SvjLockIcon className="h-8 w-8" />
                   </div>
                   <h3 className="relative text-xl font-semibold text-white">Access Locked</h3>
-                  <p className="relative mt-2 text-sm leading-6 text-white/75">
-                    بخش <span className="font-semibold text-white">{lockedMenuModal.label}</span> فعلاً غیرفعاله و دسترسی بهش بسته شده.
+                  <p className="relative mt-2 text-xs leading-5 text-white/70">
+                    <span className="font-semibold text-white">{lockedMenuModal.label}</span> is currently unavailable.
                   </p>
-                  <p className="relative mt-1 text-xs tracking-wide text-white/45">Please contact the admin to unlock this section.</p>
+                  <p className="relative mt-1 text-[11px] tracking-wide text-white/45">Contact admin to unlock.</p>
 
                   <button
                     type="button"
