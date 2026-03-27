@@ -11,6 +11,9 @@ type VoiceApiResponse = {
   audioBase64?: string | null;
   audioMimeType?: string;
   error?: string;
+  code?: string;
+  stage?: string;
+  debug?: Record<string, unknown>;
 };
 
 type VexaVoicePanelProps = {
@@ -49,6 +52,8 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
   const chunksRef = useRef<BlobPart[]>([]);
   const recordStartAtRef = useRef<number>(0);
   const activePressRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
+  const isStoppingRef = useRef(false);
   const thinkingTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
@@ -130,7 +135,16 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     } catch (captureError) {
       stopTracks();
       const message = captureError instanceof Error ? captureError.message : "Microphone unavailable.";
-      setError(message.includes("denied") ? "Microphone permission is blocked. Enable mic access and try again." : "Unable to start your microphone right now.");
+      const lower = message.toLowerCase();
+      const permissionBlocked =
+        (captureError instanceof DOMException && captureError.name === "NotAllowedError") ||
+        lower.includes("permission") ||
+        lower.includes("denied");
+      setError(
+        permissionBlocked
+          ? "Microphone permission is blocked. Enable mic access and try again."
+          : "Unable to start your microphone right now."
+      );
       setVoiceStatus("error");
       activePressRef.current = false;
     }
@@ -151,7 +165,7 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
 
       audio.onerror = () => {
         setError("I replied, but playback failed. You can still read the response below.");
-        setVoiceStatus("error");
+        setVoiceStatus("idle");
       };
 
       setVoiceStatus("speaking");
@@ -168,8 +182,8 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
         return;
       }
 
-      if (durationMs < 450 || blob.size < 2500) {
-        setError("Too short. Press and hold while you speak.");
+      if (durationMs < 550 || blob.size < 2500) {
+        setError("That was too short. Hold to talk for a moment longer, then release.");
         setVoiceStatus("error");
         return;
       }
@@ -201,6 +215,27 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
         const data = (await response.json().catch(() => ({}))) as VoiceApiResponse;
 
         if (!response.ok) {
+          if (data.code === "RECORDING_TOO_SHORT") {
+            throw new Error("I couldn't hear enough audio. Hold to talk a little longer and retry.");
+          }
+          if (data.code === "TRANSCRIPTION_TIMEOUT") {
+            throw new Error("Transcription timed out. Please try again.");
+          }
+          if (data.code === "OPENAI_CONFIG") {
+            throw new Error("Voice transcription is not configured yet. Please contact support.");
+          }
+          if (data.code === "OPENAI_AUTH") {
+            throw new Error("Voice transcription auth failed on the server. Please contact support.");
+          }
+          if (data.code === "UNSUPPORTED_AUDIO_FORMAT") {
+            throw new Error("Your browser recorded an unsupported format. Try the latest Safari or Chrome.");
+          }
+          if (data.code === "NETWORK") {
+            throw new Error("Network issue while transcribing. Check your connection and retry.");
+          }
+          if (data.code === "PROVIDER_UNAVAILABLE") {
+            throw new Error("Transcription provider is temporarily unavailable. Please retry.");
+          }
           throw new Error(data.error || "Voice request failed.");
         }
 
@@ -212,7 +247,7 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
 
         if (!data.audioBase64) {
           setError("Vexa replied in text, but voice generation is unavailable right now.");
-          setVoiceStatus("error");
+          setVoiceStatus("idle");
           return;
         }
 
@@ -235,8 +270,9 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
   );
 
   const stopRecording = useCallback(async () => {
-    if (!activePressRef.current || !recorderRef.current) return;
+    if (!activePressRef.current || !recorderRef.current || isStoppingRef.current) return;
 
+    isStoppingRef.current = true;
     activePressRef.current = false;
 
     const recorder = recorderRef.current;
@@ -255,7 +291,12 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     chunksRef.current = [];
 
     const durationMs = Date.now() - recordStartAtRef.current;
-    await processRecording(recordedBlob, durationMs);
+    try {
+      await processRecording(recordedBlob, durationMs);
+    } finally {
+      isStoppingRef.current = false;
+      activePointerIdRef.current = null;
+    }
   }, [processRecording, stopTracks]);
 
   useEffect(() => {
@@ -270,6 +311,8 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       setTranscript("");
       setResponseText("");
       setVoiceStatus("idle");
+      activePointerIdRef.current = null;
+      isStoppingRef.current = false;
     }
   }, [clearAudio, open, resetThinkingTimer, setVoiceStatus, stopTracks]);
 
@@ -327,15 +370,25 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
                 disabled={isPressDisabled}
                 onPointerDown={(event) => {
                   event.preventDefault();
+                  activePointerIdRef.current = event.pointerId;
+                  event.currentTarget.setPointerCapture(event.pointerId);
                   void startRecording();
                 }}
                 onPointerUp={(event) => {
                   event.preventDefault();
-                  void stopRecording();
+                  if (activePointerIdRef.current === null || event.pointerId === activePointerIdRef.current) {
+                    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                      event.currentTarget.releasePointerCapture(event.pointerId);
+                    }
+                    void stopRecording();
+                  }
                 }}
                 onPointerCancel={() => void stopRecording()}
-                onPointerLeave={() => {
-                  if (activePressRef.current) void stopRecording();
+                onPointerLeave={() => undefined}
+                onLostPointerCapture={() => {
+                  if (activePressRef.current) {
+                    void stopRecording();
+                  }
                 }}
                 className={`relative h-24 w-24 touch-none rounded-full border text-xs font-semibold transition ${
                   status === "listening"
