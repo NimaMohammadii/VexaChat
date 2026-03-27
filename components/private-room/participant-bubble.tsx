@@ -15,8 +15,8 @@ type ParticipantBubbleProps = {
 
 const sizeClassMap: Record<NonNullable<ParticipantBubbleProps["size"]>, string> = {
   lg: "h-16 w-16",
-  md: "h-14 w-14",
-  sm: "h-12 w-12"
+  md: "h-16 w-16",
+  sm: "h-16 w-16"
 };
 
 function initials(name: string) {

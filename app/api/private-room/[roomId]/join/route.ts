@@ -15,6 +15,7 @@ export async function POST(_request: NextRequest, { params }: { params: { roomId
       id: true,
       status: true,
       ownerUserId: true,
+      isPublic: true,
       roomCode: true,
       channelName: true,
       name: true
@@ -27,7 +28,7 @@ export async function POST(_request: NextRequest, { params }: { params: { roomId
 
   const isOwner = room.ownerUserId === user.id;
 
-  if (!isOwner) {
+  if (!isOwner && !room.isPublic) {
     const invite = await prisma.privateRoomInvite.findFirst({
       where: {
         roomId: room.id,

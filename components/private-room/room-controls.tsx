@@ -34,8 +34,9 @@ function DockButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      whileTap={{ scale: 0.96 }}
-      className={`inline-flex min-w-[66px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] transition disabled:opacity-55 ${
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -1 }}
+      className={`inline-flex min-w-[72px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] transition disabled:opacity-55 ${
         danger
           ? "border border-rose-400/40 bg-rose-500/10 text-rose-100"
           : emphasis
@@ -51,10 +52,14 @@ function DockButton({
 }
 
 export function RoomControls({ joinedAudio, joiningAudio, micMuted, onJoinAudio, onToggleMic, onInvite, onOpenVexa, onLeave }: RoomControlsProps) {
-  const micLabel = !joinedAudio ? (joiningAudio ? "Joining" : "Join audio") : micMuted ? "Unmute" : "Mute";
+  const micLabel = !joinedAudio ? (joiningAudio ? "Joining" : "Join") : micMuted ? "Unmute" : "Mute";
 
   return (
-    <div className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-[24px] border border-white/15 bg-[#0b0b10]/85 p-2.5 shadow-[0_18px_55px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-[24px] border border-white/15 bg-[#090a10]/85 p-2.5 shadow-[0_18px_55px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+    >
       <div className="flex flex-wrap items-center justify-center gap-2">
         <DockButton
           label={micLabel}
@@ -67,6 +72,6 @@ export function RoomControls({ joinedAudio, joiningAudio, micMuted, onJoinAudio,
         <DockButton label="Vexa" onClick={onOpenVexa} icon={<BrainSparkIcon className="h-4 w-4" />} />
         <DockButton label="Leave" onClick={onLeave} danger icon={<ExitIcon className="h-4 w-4" />} />
       </div>
-    </div>
+    </motion.div>
   );
 }

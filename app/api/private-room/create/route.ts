@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
 
     const payload = (await request.json().catch(() => ({}))) as {
       name?: string;
+      vibe?: string;
+      visibility?: "private" | "public";
       enableTextChat?: boolean;
       invitedUserIds?: string[];
     };
@@ -38,6 +40,8 @@ export async function POST(request: NextRequest) {
         channelName: buildChannelName(),
         ownerUserId: user.id,
         name: payload.name?.trim() || null,
+        vibe: payload.vibe?.trim() || null,
+        isPublic: payload.visibility === "public",
         enableTextChat: Boolean(payload.enableTextChat),
         status: "active",
         participants: {
@@ -61,6 +65,8 @@ export async function POST(request: NextRequest) {
         roomCode: true,
         channelName: true,
         name: true,
+        vibe: true,
+        isPublic: true,
         enableTextChat: true
       }
     });

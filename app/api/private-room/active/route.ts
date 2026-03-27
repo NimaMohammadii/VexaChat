@@ -25,7 +25,9 @@ export async function GET() {
           id: true,
           roomCode: true,
           name: true,
-          channelName: true
+          channelName: true,
+          vibe: true,
+          isPublic: true
         }
       }
     }
