@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { synthesizeVexaSpeech } from "@/lib/ai/elevenlabs";
+import { synthesizeOpenAiSpeech } from "@/lib/ai/openai-tts";
 import { generateVexaResponse } from "@/lib/ai/vexa";
 import { canAccessPrivateRoom } from "@/lib/private-room/access";
 import { prisma } from "@/lib/prisma";
@@ -57,18 +57,8 @@ type TranscriptionResult = {
 };
 
 const TTS_WARNING_MESSAGE_MAP: Record<string, string> = {
-  TTS_CONFIG: "Voice generation is not configured on this server.",
-  TTS_AUTH: "Voice generation authentication failed.",
-  TTS_INVALID_VOICE: "Configured ElevenLabs voice is invalid or unavailable.",
-  TTS_INVALID_MODEL: "Configured ElevenLabs model is not available for this request.",
-  TTS_INVALID_OUTPUT_FORMAT: "Configured ElevenLabs audio format is not supported.",
-  TTS_UNSUPPORTED_REQUEST: "Voice generation request was rejected by ElevenLabs.",
-  TTS_TIMEOUT: "Voice generation timed out.",
-  TTS_NETWORK: "Network error while generating voice.",
-  TTS_EMPTY_AUDIO: "Voice generation returned empty audio.",
-  TTS_BAD_CONTENT_TYPE: "Voice generation returned an invalid content type.",
-  TTS_PROVIDER_UNAVAILABLE: "Voice generation provider is temporarily unavailable.",
-  TTS_FAILED: "Voice generation failed."
+  OPENAI_TTS_CONFIG: "OpenAI TTS is not configured on this server.",
+  OPENAI_TTS_FAILED: "OpenAI TTS failed."
 };
 
 function devDebugMeta(stage: VoiceFailure["stage"], debug: Record<string, unknown> | undefined) {
@@ -370,7 +360,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const ttsResult = await synthesizeVexaSpeech(vexa.response);
+    const ttsResult = await synthesizeOpenAiSpeech(vexa.response);
 
     if (ttsResult.providerError) {
       console.error("Vexa tts provider issue", {
@@ -379,13 +369,10 @@ export async function POST(request: NextRequest) {
         providerError: ttsResult.providerError,
         providerStatus: ttsResult.providerStatus,
         providerBodySnippet: ttsResult.providerBodySnippet,
-        providerContentType: ttsResult.providerContentType,
-        errorCode: ttsResult.errorCode,
+        warningCode: ttsResult.warningCode,
         timeout: ttsResult.timeout,
-        outputFormat: ttsResult.outputFormat,
-        voiceId: ttsResult.voiceId,
-        modelId: ttsResult.modelId,
-        attemptedModelIds: ttsResult.attemptedModelIds,
+        voice: ttsResult.voice,
+        model: ttsResult.model,
         latencyMs: ttsResult.latencyMs
       });
     }
@@ -393,23 +380,17 @@ export async function POST(request: NextRequest) {
     const ttsWarning = ttsResult.providerError
       ? {
           category: "tts",
-          code: ttsResult.errorCode || "TTS_FAILED",
-          message: TTS_WARNING_MESSAGE_MAP[ttsResult.errorCode || "TTS_FAILED"] || "Voice generation failed.",
-          retriable: Boolean(ttsResult.timeout || ttsResult.errorCode === "TTS_NETWORK" || ttsResult.errorCode === "TTS_PROVIDER_UNAVAILABLE")
+          code: ttsResult.warningCode || "OPENAI_TTS_FAILED",
+          message:
+            TTS_WARNING_MESSAGE_MAP[ttsResult.warningCode || "OPENAI_TTS_FAILED"] || "OpenAI voice generation failed.",
+          retriable: Boolean(ttsResult.timeout || ttsResult.warningCode === "OPENAI_TTS_FAILED")
         }
-      : ttsResult.fallbackUsed
-        ? {
-            category: "tts",
-            code: "TTS_PRIMARY_MODEL_FALLBACK",
-            message: "Primary ElevenLabs model was rejected; fallback model audio was used.",
-            retriable: false
-          }
-        : null;
+      : null;
 
     return NextResponse.json({
       transcript: transcriptResult.transcript,
       response: vexa.response,
-      audioBase64: ttsResult.audioBuffer ? ttsResult.audioBuffer.toString("base64") : null,
+      audioBase64: ttsResult.audioBase64,
       audioMimeType: ttsResult.mimeType,
       playback: {
         scope: "local",
@@ -418,9 +399,8 @@ export async function POST(request: NextRequest) {
       model: {
         transcribe: transcriptResult.model,
         chat: vexa.model,
-        tts: ttsResult.modelId,
-        ttsAttempted: ttsResult.attemptedModelIds,
-        voiceId: ttsResult.voiceId
+        tts: ttsResult.model,
+        voiceId: ttsResult.voice
       },
       latencyMs: {
         transcribe: transcriptResult.latencyMs,
@@ -433,9 +413,8 @@ export async function POST(request: NextRequest) {
         tts: ttsWarning
       },
       tts: {
-        ready: Boolean(ttsResult.audioBuffer),
-        code: ttsWarning?.code || null,
-        fallbackUsed: ttsResult.fallbackUsed
+        ready: Boolean(ttsResult.audioBase64),
+        code: ttsWarning?.code || null
       }
     });
   } catch (error) {
