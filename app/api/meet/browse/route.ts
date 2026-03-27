@@ -31,19 +31,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [sentRequests, incomingRequests, passes, blocksFromMe, blocksToMe] = await Promise.all([
-    prisma.meetLikeRequest.findMany({ where: { fromUserId: user.id }, select: { toUserId: true } }),
-    prisma.meetLikeRequest.findMany({ where: { toUserId: user.id }, select: { fromUserId: true } }),
-    prisma.meetPass.findMany({ where: { fromUserId: user.id }, select: { toUserId: true } }),
+  const [blocksFromMe, blocksToMe] = await Promise.all([
     prisma.meetBlock.findMany({ where: { blockerUserId: user.id }, select: { blockedUserId: true } }),
     prisma.meetBlock.findMany({ where: { blockedUserId: user.id }, select: { blockerUserId: true } })
   ]);
 
   const excludedUserIds = [
     user.id,
-    ...sentRequests.map((item) => item.toUserId),
-    ...incomingRequests.map((item) => item.fromUserId),
-    ...passes.map((item) => item.toUserId),
     ...blocksFromMe.map((item) => item.blockedUserId),
     ...blocksToMe.map((item) => item.blockerUserId)
   ];
@@ -52,7 +46,7 @@ export async function GET() {
     SELECT *
     FROM "MeetCard"
     WHERE "isActive" = true
-      AND "isAdultConfirmed" = true
+      AND "imageUrl" IS NOT NULL
       AND "imageUrl" <> ''
       AND NOT ("userId" = ANY(ARRAY[${Prisma.join(excludedUserIds)}]::text[]))
     ORDER BY random()
