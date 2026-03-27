@@ -12,9 +12,9 @@ type ParticipantBubbleProps = {
 };
 
 const sizeClassMap: Record<NonNullable<ParticipantBubbleProps["size"]>, string> = {
-  lg: "h-16 w-16",
+  lg: "h-14 w-14",
   md: "h-14 w-14",
-  sm: "h-12 w-12"
+  sm: "h-14 w-14"
 };
 
 function initials(name: string) {
@@ -38,17 +38,23 @@ export function ParticipantBubble({
   vexa
 }: ParticipantBubbleProps) {
   const ringClass = isSpeaking
-    ? "ring-1 ring-[#d57e96]/70 shadow-[0_0_18px_rgba(213,126,150,0.45)]"
-    : "ring-1 ring-white/15";
+    ? "ring-1 ring-[#d57e96]/80 shadow-[0_0_24px_rgba(213,126,150,0.45)]"
+    : "ring-1 ring-white/20";
 
   return (
     <div className="flex flex-col items-center gap-1.5 text-center">
       <div className={`relative rounded-full p-[3px] transition-all ${ringClass}`}>
-        <div className={`relative overflow-hidden rounded-full border border-white/15 bg-[#1c1c1f] ${sizeClassMap[size]}`}>
+        <div className={`relative overflow-hidden rounded-full border border-white/20 bg-[#1c1c1f] ${sizeClassMap[size]}`}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-white/90">{vexa ? "VX" : initials(username)}</div>
+            <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a2a30] via-[#1f1f24] to-[#151519]">
+              <svg viewBox="0 0 64 64" className="h-7 w-7 text-white/80" aria-hidden>
+                <circle cx="32" cy="24" r="11" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+                <path d="M14 52c2.8-8.4 10-13 18-13s15.2 4.6 18 13" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+              </svg>
+              <span className="absolute bottom-1 text-[8px] font-semibold tracking-[0.12em] text-white/80">{vexa ? "VX" : initials(username)}</span>
+            </div>
           )}
         </div>
         {role === "owner" ? (

@@ -1,5 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { AudioWaveIcon, BrainSparkIcon, ExitIcon, MicIcon, MicOffIcon, UserPlusIcon } from "@/components/private-room/room-icons";
+
 type RoomControlsProps = {
   joinedAudio: boolean;
   joiningAudio: boolean;
@@ -11,15 +14,37 @@ type RoomControlsProps = {
   onLeave: () => void;
 };
 
-function ControlButton({ label, onClick, emphasis, danger }: { label: string; onClick: () => void; emphasis?: boolean; danger?: boolean }) {
+function ControlButton({
+  label,
+  onClick,
+  icon,
+  emphasis,
+  danger
+}: {
+  label: string;
+  onClick: () => void;
+  icon: React.ReactNode;
+  emphasis?: boolean;
+  danger?: boolean;
+}) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-[11px] font-medium transition ${danger ? "border border-rose-400/45 text-rose-200" : emphasis ? "bg-white text-black" : "border border-white/20 text-white/90"}`}
+      whileTap={{ scale: 0.96 }}
+      whileHover={{ y: -1.5 }}
+      transition={{ type: "spring", stiffness: 420, damping: 20 }}
+      className={`group flex min-w-[70px] flex-col items-center gap-1 rounded-2xl border px-3 py-2 text-[10px] font-medium tracking-[0.04em] transition ${
+        danger
+          ? "border-rose-400/45 bg-rose-500/10 text-rose-100 hover:bg-rose-500/15"
+          : emphasis
+            ? "border-white/35 bg-white text-black"
+            : "border-white/15 bg-white/[0.04] text-white/90 hover:border-white/25 hover:bg-white/[0.07]"
+      }`}
     >
-      {label}
-    </button>
+      <span className="text-current">{icon}</span>
+      <span>{label}</span>
+    </motion.button>
   );
 }
 
@@ -34,16 +59,16 @@ export function RoomControls({
   onLeave
 }: RoomControlsProps) {
   return (
-    <div className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-full border border-white/10 bg-black/75 p-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-      <div className="flex flex-wrap items-center justify-center gap-2">
+    <div className="fixed bottom-[calc(12px+env(safe-area-inset-bottom))] left-1/2 z-30 w-[calc(100%-1.4rem)] max-w-xl -translate-x-1/2 rounded-[24px] border border-white/10 bg-black/70 px-3 py-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex items-center justify-between gap-2">
         {!joinedAudio ? (
-          <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} emphasis />
+          <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} icon={<AudioWaveIcon className="h-4 w-4" />} emphasis />
         ) : (
-          <ControlButton label={micMuted ? "Mic Off" : "Mic On"} onClick={onToggleMic} />
+          <ControlButton label={micMuted ? "Mic Off" : "Mic On"} onClick={onToggleMic} icon={micMuted ? <MicOffIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />} />
         )}
-        <ControlButton label="Invite" onClick={onInvite} />
-        <ControlButton label="Vexa" onClick={onOpenVexa} />
-        <ControlButton label="Leave" onClick={onLeave} danger />
+        <ControlButton label="Invite" onClick={onInvite} icon={<UserPlusIcon className="h-4 w-4" />} />
+        <ControlButton label="Vexa" onClick={onOpenVexa} icon={<BrainSparkIcon className="h-4 w-4" />} />
+        <ControlButton label="Leave" onClick={onLeave} icon={<ExitIcon className="h-4 w-4" />} danger />
       </div>
     </div>
   );

@@ -341,7 +341,7 @@ export default function PrivateRoomPage() {
         <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-3 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-[calc(0.8rem+env(safe-area-inset-top))]">
+      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col gap-3 px-4 pb-[calc(6.8rem+env(safe-area-inset-bottom))] pt-[calc(0.8rem+env(safe-area-inset-top))]">
         <header className="flex items-start justify-between">
           <div>
             <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70">Private audio</div>
@@ -402,7 +402,7 @@ export default function PrivateRoomPage() {
         ) : null}
 
         {room ? (
-          <>
+          <div className="flex flex-1 flex-col gap-3">
             <LiveRoomHeader
               title={room.name || "Private Space"}
               roomCode={room.roomCode}
@@ -430,7 +430,7 @@ export default function PrivateRoomPage() {
               onOpenVexa={() => setVexaOpen(true)}
               onLeave={() => void leaveRoom()}
             />
-          </>
+          </div>
         ) : null}
       </section>
 
