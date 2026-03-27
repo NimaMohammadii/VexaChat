@@ -246,14 +246,18 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
         code?: string;
         stage?: string;
         openaiStatus?: number;
+        openaiRequestId?: string;
+        openaiError?: string;
       };
 
       const serverMessage = payload.error || "Failed to start realtime voice session.";
       const openaiStatusText = payload.openaiStatus ? ` (OpenAI status ${payload.openaiStatus})` : "";
+      const openaiRequestText = payload.openaiRequestId ? ` Request ID: ${payload.openaiRequestId}.` : "";
+      const openaiErrorText = payload.openaiError ? ` Details: ${payload.openaiError}` : "";
 
       if (payload.code === "openai_session_creation_failed") {
         throw new RealtimeStartError(
-          `OpenAI realtime session creation failed${openaiStatusText}. Check API key/model/voice configuration.`,
+          `OpenAI realtime session creation failed${openaiStatusText}.${openaiRequestText} Check API key/model/voice configuration.${openaiErrorText}`.trim(),
           "openai_auth_or_config_issue"
         );
       }
