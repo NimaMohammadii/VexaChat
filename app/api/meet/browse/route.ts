@@ -47,15 +47,29 @@ export async function GET() {
     FROM "MeetCard"
     WHERE "isActive" = true
       AND "imageUrl" IS NOT NULL
-      AND "imageUrl" <> ''
+      AND btrim("imageUrl") <> ''
       AND NOT ("userId" = ANY(ARRAY[${Prisma.join(excludedUserIds)}]::text[]))
     ORDER BY random()
     LIMIT ${TAKE_COUNT}
   `);
 
   const cardsWithUrls = await Promise.all(
-    cards.map(async (card) => ({ ...card, imageUrl: await resolveStoredFileUrl(card.imageUrl) }))
+    cards.map(async (card) => {
+      try {
+        const imageUrl = await resolveStoredFileUrl(card.imageUrl);
+        if (!imageUrl) return null;
+
+        return { ...card, imageUrl };
+      } catch (error) {
+        console.warn("Skipping browse card with invalid imageUrl", {
+          cardId: card.id,
+          userId: card.userId,
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
+        return null;
+      }
+    })
   );
 
-  return NextResponse.json({ cards: cardsWithUrls });
+  return NextResponse.json({ cards: cardsWithUrls.filter((card): card is BrowseCardRow => card !== null) });
 }

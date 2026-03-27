@@ -57,6 +57,10 @@ export async function deleteObjectByKey(key: string) {
 }
 
 export async function resolveStoredFileUrl(value: string) {
-  if (!value) return "";
-  return getSignedReadUrl(assertStorageKey(value));
+  const normalizedValue = value?.trim();
+
+  if (!normalizedValue) return "";
+  if (isLegacyUrl(normalizedValue)) return normalizedValue;
+
+  return getSignedReadUrl(assertStorageKey(normalizedValue));
 }
