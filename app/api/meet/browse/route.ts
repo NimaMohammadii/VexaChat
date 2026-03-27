@@ -31,8 +31,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [ownCard, sentRequests, incomingRequests, passes, blocksFromMe, blocksToMe] = await Promise.all([
-    prisma.meetCard.findUnique({ where: { userId: user.id } }),
+  const [sentRequests, incomingRequests, passes, blocksFromMe, blocksToMe] = await Promise.all([
     prisma.meetLikeRequest.findMany({ where: { fromUserId: user.id }, select: { toUserId: true } }),
     prisma.meetLikeRequest.findMany({ where: { toUserId: user.id }, select: { fromUserId: true } }),
     prisma.meetPass.findMany({ where: { fromUserId: user.id }, select: { toUserId: true } }),
@@ -49,21 +48,12 @@ export async function GET() {
     ...blocksToMe.map((item) => item.blockerUserId)
   ];
 
-  const countryFilter = ownCard?.countryCode
-    ? Prisma.sql`AND "countryCode" = ${ownCard.countryCode}`
-    : Prisma.empty;
-
-  const lookingForFilter = ownCard?.lookingFor && ownCard.lookingFor !== "any"
-    ? Prisma.sql`AND gender = ${ownCard.lookingFor}`
-    : Prisma.empty;
-
   const cards = await prisma.$queryRaw<BrowseCardRow[]>(Prisma.sql`
     SELECT *
     FROM "MeetCard"
     WHERE "isActive" = true
       AND "isAdultConfirmed" = true
-      ${countryFilter}
-      ${lookingForFilter}
+      AND "imageUrl" <> ''
       AND NOT ("userId" = ANY(ARRAY[${Prisma.join(excludedUserIds)}]::text[]))
     ORDER BY random()
     LIMIT ${TAKE_COUNT}
