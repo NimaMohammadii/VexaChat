@@ -59,26 +59,26 @@ function createSdpPreview(sdp: string, edgeLength = 80) {
 }
 
 function validateLocalSdpOffer(offerSdp: string) {
-  const normalized = offerSdp.replace(/\r\n/g, "\n");
-  const trimmed = normalized.trim();
+  const probe = offerSdp.replace(/\r\n/g, "\n");
+  const trimmedProbe = probe.trim();
 
-  if (!trimmed) {
+  if (!trimmedProbe) {
     throw new RealtimeStartError("Failed to generate a WebRTC SDP offer.", "sdp_offer_generation_failed");
   }
 
-  if (!trimmed.startsWith("v=0")) {
+  if (!trimmedProbe.startsWith("v=0")) {
     throw new RealtimeStartError("Generated SDP offer is malformed (missing v=0).", "invalid_local_sdp_offer");
   }
 
-  if (!trimmed.includes("\nm=audio")) {
+  if (!probe.includes("\nm=audio")) {
     throw new RealtimeStartError("Generated SDP offer is malformed (missing audio media section).", "invalid_local_sdp_offer");
   }
 
-  if (trimmed.length < 120) {
+  if (offerSdp.length < 120) {
     throw new RealtimeStartError("Generated SDP offer appears truncated.", "invalid_local_sdp_offer");
   }
 
-  return trimmed;
+  return offerSdp;
 }
 
 async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, timeoutMs = 8000) {

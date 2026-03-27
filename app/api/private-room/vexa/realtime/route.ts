@@ -46,18 +46,26 @@ function createSdpPreview(sdp: string, edgeLength = 80) {
   return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
 }
 
+function createSdpByteEdgePreview(sdp: string, edgeLength = 24) {
+  return {
+    firstBytes: Buffer.from(sdp.slice(0, edgeLength), "utf8").toString("hex"),
+    lastBytes: Buffer.from(sdp.slice(-edgeLength), "utf8").toString("hex")
+  };
+}
+
 function validateInboundOfferSdp(offerSdp: string) {
-  const normalized = offerSdp.replace(/\r\n/g, "\n");
-  const trimmed = normalized.trim();
+  const probe = offerSdp.replace(/\r\n/g, "\n");
+  const trimmedProbe = probe.trim();
 
   const diagnostics = {
-    offerSdpLength: offerSdp.length,
-    trimmedLength: trimmed.length,
-    startsWithV0: trimmed.startsWith("v=0"),
-    hasAudioSection: trimmed.includes("\nm=audio")
+    rawOfferSdpLength: offerSdp.length,
+    probeLength: probe.length,
+    trimmedProbeLength: trimmedProbe.length,
+    startsWithV0: trimmedProbe.startsWith("v=0"),
+    hasAudioSection: probe.includes("\nm=audio")
   };
 
-  if (!trimmed) {
+  if (!trimmedProbe) {
     return {
       ok: false as const,
       reason: "SDP offer is required",
@@ -65,7 +73,7 @@ function validateInboundOfferSdp(offerSdp: string) {
     };
   }
 
-  if (!trimmed.startsWith("v=0")) {
+  if (!trimmedProbe.startsWith("v=0")) {
     return {
       ok: false as const,
       reason: "SDP offer is malformed (missing v=0)",
@@ -73,7 +81,7 @@ function validateInboundOfferSdp(offerSdp: string) {
     };
   }
 
-  if (!trimmed.includes("\nm=audio")) {
+  if (!probe.includes("\nm=audio")) {
     return {
       ok: false as const,
       reason: "SDP offer is malformed (missing audio media section)",
@@ -81,7 +89,7 @@ function validateInboundOfferSdp(offerSdp: string) {
     };
   }
 
-  if (trimmed.length < 120) {
+  if (offerSdp.length < 120) {
     return {
       ok: false as const,
       reason: "SDP offer appears truncated",
@@ -91,7 +99,7 @@ function validateInboundOfferSdp(offerSdp: string) {
 
   return {
     ok: true as const,
-    offerSdp: trimmed,
+    offerSdp,
     diagnostics
   };
 }
@@ -169,9 +177,10 @@ async function createOpenAiRealtimeCall(apiKey: string, offerSdp: string, roomCo
     model: attempt.model,
     voice: attempt.voice,
     attempt: attempt.reason,
-    offerSdpLength: offerSdp.length,
     outboundSdpLength,
     formDataHasSdp,
+    offerPreview: createSdpPreview(offerSdp),
+    outboundSdpByteEdges: createSdpByteEdgePreview(offerSdp),
     sessionJsonLength: sessionJson.length,
     payloadStrategy: "multipart_form_data_text_fields"
   });
@@ -258,10 +267,12 @@ export async function POST(request: NextRequest) {
       stage: "validate_offer",
       userId: user.id,
       roomId,
-      contentType: inboundOffer.contentType || null,
+      inboundContentType: inboundOffer.contentType || null,
       source: inboundOffer.source,
+      rawInboundSdpLength: inboundOffer.sdp.length,
+      rawInboundSdpPreview: inboundOffer.sdp ? createSdpPreview(inboundOffer.sdp) : null,
+      rawInboundSdpByteEdges: inboundOffer.sdp ? createSdpByteEdgePreview(inboundOffer.sdp) : null,
       ...offerValidation.diagnostics,
-      offerPreview: inboundOffer.sdp ? createSdpPreview(inboundOffer.sdp) : null
     });
 
     if (!offerValidation.ok) {
