@@ -4,6 +4,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export type VoiceStatus = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
+type StartFailureCategory =
+  | "unsupported_browser"
+  | "microphone_stream_failure"
+  | "backend_session_creation_failed"
+  | "invalid_sdp_response"
+  | "webrtc_peer_connection_failed"
+  | "openai_auth_or_config_issue";
+
+class RealtimeStartError extends Error {
+  constructor(
+    message: string,
+    readonly category: StartFailureCategory
+  ) {
+    super(message);
+    this.name = "RealtimeStartError";
+  }
+}
 
 type VexaVoicePanelProps = {
   open: boolean;
@@ -78,6 +95,26 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     channel.send(JSON.stringify(event));
   }, []);
 
+  const toFriendlyRealtimeError = useCallback((cause: unknown) => {
+    if (cause instanceof RealtimeStartError) {
+      return cause.message;
+    }
+
+    if (cause instanceof Error && cause.name === "NotAllowedError") {
+      return "Microphone permission was denied. Please allow mic access and try again.";
+    }
+
+    if (cause instanceof Error && cause.name === "NotFoundError") {
+      return "No microphone was found on this device.";
+    }
+
+    if (cause instanceof Error && cause.message) {
+      return cause.message;
+    }
+
+    return "Unable to start realtime voice right now.";
+  }, []);
+
   const ensureRealtimeSession = useCallback(async () => {
     if (!roomId) {
       throw new Error("Join a room first to talk to Vexa.");
@@ -88,6 +125,13 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     }
 
     setVoiceStatus("connecting");
+
+    if (typeof window === "undefined" || !window.RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
+      throw new RealtimeStartError(
+        "This browser does not support realtime voice (WebRTC/microphone APIs unavailable).",
+        "unsupported_browser"
+      );
+    }
 
     const microphone = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -100,7 +144,7 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     const track = microphone.getAudioTracks()[0];
     if (!track) {
       microphone.getTracks().forEach((streamTrack) => streamTrack.stop());
-      throw new Error("No microphone track was captured.");
+      throw new RealtimeStartError("No microphone track was captured.", "microphone_stream_failure");
     }
 
     track.enabled = false;
@@ -172,10 +216,21 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       }
     };
 
+    peerConnection.onconnectionstatechange = () => {
+      if (peerConnection.connectionState === "failed" || peerConnection.connectionState === "disconnected") {
+        setError("WebRTC connection dropped. Please try again.");
+        setVoiceStatus("error");
+      }
+    };
+
     peerConnection.addTrack(track, microphone);
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
+
+    if (!offer.sdp) {
+      throw new RealtimeStartError("WebRTC offer was created without SDP.", "webrtc_peer_connection_failed");
+    }
 
     const sdpResponse = await fetch(`/api/private-room/vexa/realtime?roomId=${encodeURIComponent(roomId)}`, {
       method: "POST",
@@ -186,11 +241,38 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     });
 
     if (!sdpResponse.ok) {
-      const payload = (await sdpResponse.json().catch(() => ({}))) as { error?: string };
-      throw new Error(payload.error || "Failed to start realtime voice session.");
+      const payload = (await sdpResponse.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        stage?: string;
+        openaiStatus?: number;
+      };
+
+      const serverMessage = payload.error || "Failed to start realtime voice session.";
+      const openaiStatusText = payload.openaiStatus ? ` (OpenAI status ${payload.openaiStatus})` : "";
+
+      if (payload.code === "openai_session_creation_failed") {
+        throw new RealtimeStartError(
+          `OpenAI realtime session creation failed${openaiStatusText}. Check API key/model/voice configuration.`,
+          "openai_auth_or_config_issue"
+        );
+      }
+
+      if (payload.code === "openai_invalid_sdp_answer") {
+        throw new RealtimeStartError("Realtime backend received an invalid SDP answer.", "invalid_sdp_response");
+      }
+
+      throw new RealtimeStartError(
+        `${serverMessage}${payload.stage ? ` (stage: ${payload.stage})` : ""}`,
+        "backend_session_creation_failed"
+      );
     }
 
     const answerSdp = await sdpResponse.text();
+    if (!answerSdp || !answerSdp.includes("m=audio")) {
+      throw new RealtimeStartError("Backend returned an invalid SDP answer payload.", "invalid_sdp_response");
+    }
+
     await peerConnection.setRemoteDescription({ type: "answer", sdp: answerSdp });
 
     peerConnectionRef.current = peerConnection;
@@ -220,10 +302,10 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       setVoiceStatus("listening");
     } catch (startError) {
       cleanupRealtimeSession();
-      setError(startError instanceof Error ? startError.message : "Unable to start voice capture.");
+      setError(toFriendlyRealtimeError(startError));
       setVoiceStatus("error");
     }
-  }, [cleanupRealtimeSession, ensureRealtimeSession, sendRealtimeEvent, setVoiceStatus, status]);
+  }, [cleanupRealtimeSession, ensureRealtimeSession, sendRealtimeEvent, setVoiceStatus, status, toFriendlyRealtimeError]);
 
   const stopTalking = useCallback(() => {
     if (!isPointerDownRef.current) return;
