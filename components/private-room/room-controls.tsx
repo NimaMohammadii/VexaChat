@@ -11,60 +11,39 @@ type RoomControlsProps = {
   onLeave: () => void;
 };
 
-function ActionButton({
-  label,
-  icon,
-  onClick,
-  danger,
-  active
-}: {
-  label: string;
-  icon: string;
-  onClick: () => void;
-  danger?: boolean;
-  active?: boolean;
-}) {
+function ControlButton({ label, onClick, emphasis, danger }: { label: string; onClick: () => void; emphasis?: boolean; danger?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-w-[58px] flex-col items-center gap-1.5 rounded-2xl px-2 py-2 transition active:scale-95 ${
-        danger
-          ? "text-[#f2b7c8]"
-          : active
-            ? "text-white"
-            : "text-white/80"
-      }`}
+      className={`rounded-full px-4 py-2 text-[11px] font-medium transition ${danger ? "border border-rose-400/45 text-rose-200" : emphasis ? "bg-white text-black" : "border border-white/20 text-white/90"}`}
     >
-      <span
-        className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm ${
-          danger
-            ? "border-[#9f425f]/50 bg-[#1c0f14]"
-            : active
-              ? "border-white/35 bg-white/14"
-              : "border-white/15 bg-white/[0.04]"
-        }`}
-      >
-        {icon}
-      </span>
-      <span className="text-[10px] font-medium">{label}</span>
+      {label}
     </button>
   );
 }
 
-export function RoomControls({ joinedAudio, joiningAudio, micMuted, onJoinAudio, onToggleMic, onInvite, onOpenVexa, onLeave }: RoomControlsProps) {
-  const micLabel = !joinedAudio ? (joiningAudio ? "Joining" : "Join") : micMuted ? "Unmute" : "Mute";
-  const micIcon = !joinedAudio ? "🎙" : micMuted ? "🔇" : "🎤";
-
+export function RoomControls({
+  joinedAudio,
+  joiningAudio,
+  micMuted,
+  onJoinAudio,
+  onToggleMic,
+  onInvite,
+  onOpenVexa,
+  onLeave
+}: RoomControlsProps) {
   return (
-    <div className="sticky bottom-[calc(8px+env(safe-area-inset-bottom))] z-20 mx-auto w-full max-w-md">
-      <div className="rounded-[26px] border border-white/10 bg-black/72 px-2 py-2 shadow-[0_18px_45px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-        <div className="flex items-center justify-between">
-          <ActionButton label={micLabel} icon={micIcon} onClick={joinedAudio ? onToggleMic : onJoinAudio} active={joinedAudio && !micMuted} />
-          <ActionButton label="Invite" icon="＋" onClick={onInvite} />
-          <ActionButton label="Vexa" icon="✦" onClick={onOpenVexa} />
-          <ActionButton label="Leave" icon="⏻" onClick={onLeave} danger />
-        </div>
+    <div className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-full border border-white/10 bg-black/75 p-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {!joinedAudio ? (
+          <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} emphasis />
+        ) : (
+          <ControlButton label={micMuted ? "Mic Off" : "Mic On"} onClick={onToggleMic} />
+        )}
+        <ControlButton label="Invite" onClick={onInvite} />
+        <ControlButton label="Vexa" onClick={onOpenVexa} />
+        <ControlButton label="Leave" onClick={onLeave} danger />
       </div>
     </div>
   );
