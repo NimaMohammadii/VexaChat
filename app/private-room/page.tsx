@@ -8,7 +8,7 @@ import { LiveRoomGrid } from "@/components/private-room/live-room-grid";
 import { LiveRoomHeader } from "@/components/private-room/live-room-header";
 import { RoomControls } from "@/components/private-room/room-controls";
 import { RoomCreateSheet } from "@/components/private-room/room-create-sheet";
-import { VexaPanel } from "@/components/private-room/vexa-panel";
+import { VexaVoicePanel } from "@/components/private-room/vexa-voice-panel";
 
 type LocalAudioTrack = {
   close: () => void;
@@ -80,13 +80,11 @@ export default function PrivateRoomPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [vexaOpen, setVexaOpen] = useState(false);
+  const [vexaState, setVexaState] = useState<"idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error">("idle");
   const [joinedAudio, setJoinedAudio] = useState(false);
   const [joiningAudio, setJoiningAudio] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [speakingUids, setSpeakingUids] = useState<number[]>([]);
-  const [vexaResponse, setVexaResponse] = useState("");
-  const [vexaLoading, setVexaLoading] = useState(false);
-  const [vexaError, setVexaError] = useState<string | null>(null);
   const [inviteActionLoading, setInviteActionLoading] = useState(false);
   const [inviteCardError, setInviteCardError] = useState<string | null>(null);
   const [declineToast, setDeclineToast] = useState<DeclineUpdate | null>(null);
@@ -312,8 +310,7 @@ export default function PrivateRoomPage() {
     await leaveAgora();
     setCurrentRoomId(null);
     setRoom(null);
-    setVexaError(null);
-    setVexaResponse("");
+    setVexaState("idle");
     await loadDashboard();
   }, [currentRoomId, leaveAgora, loadDashboard]);
 
@@ -323,35 +320,6 @@ export default function PrivateRoomPage() {
     await localAudioTrackRef.current.setEnabled(!nextMuted);
     setMicMuted(nextMuted);
   }, [micMuted]);
-
-  const askVexa = useCallback(
-    async (prompt: string) => {
-      if (!room) return;
-      setVexaLoading(true);
-      setVexaError(null);
-
-      try {
-        const response = await fetch("/api/private-room/vexa", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roomId: room.id, prompt })
-        });
-
-        const data = (await response.json().catch(() => ({}))) as { response?: string; error?: string };
-
-        if (!response.ok) {
-          throw new Error(data.error || "Unable to ask Vexa right now");
-        }
-
-        setVexaResponse(data.response ?? "");
-      } catch (vexaRequestError) {
-        setVexaError(vexaRequestError instanceof Error ? vexaRequestError.message : "Vexa is temporarily unavailable.");
-      } finally {
-        setVexaLoading(false);
-      }
-    },
-    [room]
-  );
 
   const speakingParticipantIds = useMemo(() => {
     if (!room) return new Set<string>();
@@ -430,6 +398,7 @@ export default function PrivateRoomPage() {
               localUserId={localUserId}
               speakingParticipantIds={speakingParticipantIds}
               onOpenVexa={() => setVexaOpen(true)}
+              vexaState={vexaState}
             />
 
             <p className="px-1 text-[11px] text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Tap Join Audio to talk live"}</p>
@@ -507,13 +476,11 @@ export default function PrivateRoomPage() {
         }}
       />
 
-      <VexaPanel
+      <VexaVoicePanel
         open={vexaOpen}
         onClose={() => setVexaOpen(false)}
-        loading={vexaLoading}
-        response={vexaResponse}
-        error={vexaError}
-        onSubmit={askVexa}
+        roomId={room?.id ?? null}
+        onStatusChange={setVexaState}
       />
     </main>
   );

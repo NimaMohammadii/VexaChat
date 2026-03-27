@@ -1,5 +1,5 @@
 const VEXA_SYSTEM_PROMPT =
-  "You are Vexa, a live AI voice-room companion. Sound natural, social, and spoken. Keep replies concise (1-3 short sentences), avoid markdown/bullets unless asked, and be useful immediately.";
+  "You are Vexa, a live AI companion inside a private voice room. Respond naturally as if your answer will be spoken aloud. Keep it concise, clear, social, and easy to listen to. Usually answer in 1 to 3 short sentences unless asked for more detail.";
 
 type GenerateVexaOptions = {
   roomContext?: {
@@ -52,8 +52,8 @@ export async function generateVexaResponse(prompt: string, options: GenerateVexa
             content: [{ type: "input_text", text: cleanPrompt }]
           }
         ],
-        temperature: 0.7,
-        max_output_tokens: 160
+        temperature: 0.6,
+        max_output_tokens: 170
       })
     });
 
