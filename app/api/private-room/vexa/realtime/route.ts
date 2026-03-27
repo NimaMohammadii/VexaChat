@@ -32,6 +32,14 @@ type OpenAiRealtimeFailure = {
   contentType: string | null;
 };
 
+function createSdpPreview(sdp: string, edgeLength = 80) {
+  const compact = sdp.replace(/\r?\n/g, "\\n");
+  if (compact.length <= edgeLength * 2) {
+    return compact;
+  }
+  return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
+}
+
 function fail(status: number, code: RealtimeFailureCode, message: string, stage: string, details?: Record<string, unknown>) {
   return NextResponse.json(
     {
@@ -132,7 +140,34 @@ export async function POST(request: NextRequest) {
       return fail(404, "backend_room_access", "Room not found", "room_lookup");
     }
 
-    const offerSdp = (await request.text()).trim();
+    const contentType = request.headers.get("content-type")?.toLowerCase() || "";
+    let offerSdp = "";
+
+    if (contentType.includes("application/sdp") || contentType.includes("text/plain")) {
+      offerSdp = (await request.text()).trim();
+    } else if (contentType.includes("application/json")) {
+      const payload = (await request.json().catch(() => ({}))) as { sdp?: unknown; offerSdp?: unknown };
+      const sdpCandidate = typeof payload.sdp === "string" ? payload.sdp : typeof payload.offerSdp === "string" ? payload.offerSdp : "";
+      offerSdp = sdpCandidate.trim();
+    } else if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+      const form = await request.formData();
+      const sdpValue = form.get("sdp");
+      offerSdp = typeof sdpValue === "string" ? sdpValue.trim() : "";
+    } else {
+      offerSdp = (await request.text()).trim();
+    }
+
+    console.info("Vexa realtime setup: inbound SDP diagnostics", {
+      stage: "validate_offer",
+      userId: user.id,
+      roomId,
+      contentType: contentType || null,
+      offerSdpLength: offerSdp.length,
+      hasV0: offerSdp.includes("v=0"),
+      hasAudioSection: offerSdp.includes("m=audio"),
+      offerPreview: offerSdp ? createSdpPreview(offerSdp) : null
+    });
+
     if (!offerSdp) {
       return fail(400, "backend_invalid_request", "SDP offer is required", "validate_offer");
     }
@@ -181,6 +216,7 @@ export async function POST(request: NextRequest) {
       configuredModel: primaryAttempt.model,
       configuredVoice: primaryAttempt.voice,
       offerSdpLength: offerSdp.length,
+      offerPreview: createSdpPreview(offerSdp),
       userAgent: request.headers.get("user-agent")?.slice(0, 120) ?? null
     });
 
