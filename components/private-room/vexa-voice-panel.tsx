@@ -49,6 +49,9 @@ const ttsWarningMessageMap: Record<string, string> = {
   OPENAI_TTS_FAILED: "OpenAI voice generation failed. Showing text response instead."
 };
 
+const SILENT_AUDIO_DATA_URI =
+  "data:audio/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAGbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAm10cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAQAAAAEAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAEAAABAAAAAAGDbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAyAAAAMgBVxAAAAAAALWhkbHIAAAAAAAAAAHNvdW4AAAAAAAAAAAAAAFNvdW5kSGFuZGxlcgAAAg5taW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAAHOc3RibAAAAG5zdHNkAAAAAAAAAAEAAABebXA0YQAAAAAAAAABAAAAAQAAAAAAAABAAAAAACQAAAAyAAAAAABzc3RzAAAAAAAAAAEAAAABAAAAAQAAABRidHJsAAAAAAAAAAEAAAAxAAABG21wNGEAAAAAAAAAIHN0dHMAAAAAAAAAAQAAAAEAAAAQAAAAFHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAABAAAAABAAAAFHN0Y28AAAAAAAAAAQAAAEQAAAAQbWRhdAAAAAE=";
+
 function preferredMimeType() {
   if (typeof window === "undefined" || typeof MediaRecorder === "undefined") {
     return undefined;
@@ -74,6 +77,7 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
   const thinkingTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const audioUnlockedRef = useRef(false);
 
   const setVoiceStatus = useCallback(
     (next: VoiceStatus) => {
@@ -91,8 +95,8 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
   const clearAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current = null;
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
     }
 
     if (audioUrlRef.current) {
@@ -100,6 +104,50 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       audioUrlRef.current = null;
     }
   }, []);
+
+  const getAudioElement = useCallback(() => {
+    if (audioRef.current) {
+      return audioRef.current;
+    }
+
+    const audio = document.createElement("audio");
+    audio.preload = "auto";
+    audio.setAttribute("playsinline", "true");
+    audioRef.current = audio;
+    return audio;
+  }, []);
+
+  const unlockAudioPlayback = useCallback(async () => {
+    if (audioUnlockedRef.current) {
+      return true;
+    }
+
+    const audio = getAudioElement();
+    const previousMuted = audio.muted;
+    const previousVolume = audio.volume;
+
+    try {
+      audio.muted = true;
+      audio.volume = 0;
+      audio.src = SILENT_AUDIO_DATA_URI;
+      audio.load();
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.removeAttribute("src");
+      audio.load();
+      audio.muted = previousMuted;
+      audio.volume = previousVolume;
+      audioUnlockedRef.current = true;
+      return true;
+    } catch {
+      audio.muted = previousMuted;
+      audio.volume = previousVolume;
+      audio.removeAttribute("src");
+      audio.load();
+      return false;
+    }
+  }, [getAudioElement]);
 
   const resetThinkingTimer = useCallback(() => {
     if (thinkingTimerRef.current) {
@@ -174,12 +222,8 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       const playableBlob = audioBlob.type === normalizedMimeType ? audioBlob : new Blob([audioBlob], { type: normalizedMimeType });
       const url = URL.createObjectURL(playableBlob);
       audioUrlRef.current = url;
-
-      const audio = document.createElement("audio");
-      audio.preload = "auto";
-      audio.setAttribute("playsinline", "true");
+      const audio = getAudioElement();
       audio.src = url;
-      audioRef.current = audio;
 
       audio.onended = () => {
         setVoiceStatus("idle");
@@ -200,13 +244,13 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
         const isGestureIssue = message.includes("gesture") || message.includes("user") || message.includes("notallowed");
         setError(
           isGestureIssue
-            ? "Playback was blocked by the browser. Tap and hold to speak again, then allow audio playback."
+            ? "Playback is still blocked by Safari. Press and hold to talk again to re-enable audio."
             : "I replied, but playback failed. You can still read the response below."
         );
         setVoiceStatus("idle");
       }
     },
-    [clearAudio, setVoiceStatus]
+    [clearAudio, getAudioElement, setVoiceStatus]
   );
 
   const processRecording = useCallback(
@@ -418,10 +462,11 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
               <button
                 type="button"
                 disabled={isPressDisabled}
-                onPointerDown={(event) => {
+                onPointerDown={async (event) => {
                   event.preventDefault();
                   activePointerIdRef.current = event.pointerId;
                   event.currentTarget.setPointerCapture(event.pointerId);
+                  await unlockAudioPlayback();
                   void startRecording();
                 }}
                 onPointerUp={(event) => {
