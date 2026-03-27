@@ -10,14 +10,17 @@ type Participant = {
   avatarUrl?: string;
 };
 
+type VexaVisualState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
+
 type LiveRoomGridProps = {
   participants: Participant[];
   localUserId: string | null;
   speakingParticipantIds: Set<string>;
   onOpenVexa: () => void;
+  vexaState?: VexaVisualState;
 };
 
-export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds, onOpenVexa }: LiveRoomGridProps) {
+export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds, onOpenVexa, vexaState = "idle" }: LiveRoomGridProps) {
   const speakers = participants.filter((participant) => participant.role === "owner");
   const listeners = participants.filter((participant) => participant.role !== "owner");
   const allPeople = [...speakers, ...listeners];
@@ -31,14 +34,20 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
           onClick={onOpenVexa}
           className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-[#d57e96]" />
-          Ask Vexa
+          <span className={`h-1.5 w-1.5 rounded-full ${vexaState === "listening" || vexaState === "speaking" ? "animate-pulse bg-[#d57e96]" : "bg-[#d57e96]"}`} />
+          Vexa
         </button>
       </div>
 
       <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
         <button type="button" onClick={onOpenVexa} className="flex flex-col items-center gap-1.5 text-center">
-          <ParticipantBubble username="Vexa" subtitle="AI" vexa isSpeaking={false} size="md" />
+          <ParticipantBubble
+            username="Vexa"
+            subtitle={vexaState === "idle" ? "AI" : vexaState}
+            vexa
+            isSpeaking={vexaState === "speaking" || vexaState === "listening"}
+            size="md"
+          />
         </button>
 
         {allPeople.map((participant) => (
