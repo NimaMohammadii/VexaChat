@@ -355,10 +355,27 @@ export default function PrivateRoomPage() {
 
         {!loading && !currentRoomId ? (
           <>
-            <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
+            <motion.article
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent p-4"
+            >
+              <div className="pointer-events-none absolute -right-14 -top-10 h-32 w-32 rounded-full bg-[#ff4b84]/25 blur-3xl" />
               <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Start your room</p>
-              <h2 className="mt-2 text-lg font-medium">Create a private live room and invite your circle.</h2>
-              <button type="button" onClick={() => setSheetOpen(true)} className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black">
+              <h2 className="mt-2 text-lg font-medium">Build a pro-level private room in 3 quick steps.</h2>
+              <p className="mt-2 text-sm text-white/65">Set room style, choose your vibe, invite friends, and go live instantly.</p>
+
+              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-white/75">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">1. Setup</div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">2. Vibe</div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">3. Invite</div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black shadow-[0_8px_28px_rgba(255,120,170,0.35)]"
+              >
                 Create Space
               </button>
             </motion.article>
