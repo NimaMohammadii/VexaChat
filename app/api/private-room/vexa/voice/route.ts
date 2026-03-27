@@ -379,10 +379,14 @@ export async function POST(request: NextRequest) {
         providerError: ttsResult.providerError,
         providerStatus: ttsResult.providerStatus,
         providerBodySnippet: ttsResult.providerBodySnippet,
+        providerContentType: ttsResult.providerContentType,
         errorCode: ttsResult.errorCode,
         timeout: ttsResult.timeout,
         outputFormat: ttsResult.outputFormat,
-        mimeType: ttsResult.mimeType
+        voiceId: ttsResult.voiceId,
+        modelId: ttsResult.modelId,
+        attemptedModelIds: ttsResult.attemptedModelIds,
+        latencyMs: ttsResult.latencyMs
       });
     }
 
@@ -393,7 +397,14 @@ export async function POST(request: NextRequest) {
           message: TTS_WARNING_MESSAGE_MAP[ttsResult.errorCode || "TTS_FAILED"] || "Voice generation failed.",
           retriable: Boolean(ttsResult.timeout || ttsResult.errorCode === "TTS_NETWORK" || ttsResult.errorCode === "TTS_PROVIDER_UNAVAILABLE")
         }
-      : null;
+      : ttsResult.fallbackUsed
+        ? {
+            category: "tts",
+            code: "TTS_PRIMARY_MODEL_FALLBACK",
+            message: "Primary ElevenLabs model was rejected; fallback model audio was used.",
+            retriable: false
+          }
+        : null;
 
     return NextResponse.json({
       transcript: transcriptResult.transcript,
@@ -408,6 +419,7 @@ export async function POST(request: NextRequest) {
         transcribe: transcriptResult.model,
         chat: vexa.model,
         tts: ttsResult.modelId,
+        ttsAttempted: ttsResult.attemptedModelIds,
         voiceId: ttsResult.voiceId
       },
       latencyMs: {
@@ -422,7 +434,8 @@ export async function POST(request: NextRequest) {
       },
       tts: {
         ready: Boolean(ttsResult.audioBuffer),
-        code: ttsWarning?.code || null
+        code: ttsWarning?.code || null,
+        fallbackUsed: ttsResult.fallbackUsed
       }
     });
   } catch (error) {
