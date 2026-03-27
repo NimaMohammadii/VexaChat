@@ -26,7 +26,7 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
   const allPeople = [...speakers, ...listeners];
 
   return (
-    <section className="rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3">
+    <section className="flex min-h-[52svh] flex-1 flex-col rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3 pb-5">
       <div className="flex items-center justify-between">
         <p className="text-[10px] uppercase tracking-[0.16em] text-white/50">In this room</p>
         <button
@@ -39,7 +39,7 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
+      <div className="mt-3 grid flex-1 content-start grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
         <button type="button" onClick={onOpenVexa} className="flex flex-col items-center gap-1.5 text-center">
           <ParticipantBubble
             username="Vexa"
@@ -58,7 +58,7 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
             role={participant.role}
             isLocal={participant.userId === localUserId}
             isSpeaking={speakingParticipantIds.has(participant.id)}
-            size={participant.role === "owner" ? "md" : "sm"}
+            size="md"
           />
         ))}
       </div>

@@ -97,6 +97,16 @@ export function SparklesIcon(props: IconProps) {
   );
 }
 
+export function ChatBubbleIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M6 18.5A3.5 3.5 0 0 1 2.5 15V8A3.5 3.5 0 0 1 6 4.5h12A3.5 3.5 0 0 1 21.5 8v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.5 3v-3Z" />
+      <path d="M8 9.5h8" />
+      <path d="M8 13h5" />
+    </BaseIcon>
+  );
+}
+
 export function RoomBackdropShape() {
   return (
     <svg aria-hidden viewBox="0 0 500 500" className="absolute inset-0 h-full w-full">
