@@ -56,7 +56,8 @@ const ttsWarningMessageMap: Record<string, string> = {
   TTS_EMPTY_AUDIO: "Voice generation returned empty audio.",
   TTS_BAD_CONTENT_TYPE: "Voice generation returned an unexpected response.",
   TTS_PROVIDER_UNAVAILABLE: "Voice generation service is temporarily unavailable.",
-  TTS_FAILED: "Voice generation is unavailable right now."
+  TTS_FAILED: "Voice generation is unavailable right now.",
+  TTS_PRIMARY_MODEL_FALLBACK: "Voice generated using fallback model."
 };
 
 function preferredMimeType() {
@@ -178,12 +179,17 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
   }, [clearAudio, setVoiceStatus, status, stopTracks]);
 
   const playAudio = useCallback(
-    async (audioBlob: Blob) => {
+    async (audioBlob: Blob, mimeType: string) => {
       clearAudio();
-      const url = URL.createObjectURL(audioBlob);
+      const normalizedMimeType = mimeType || "audio/mpeg";
+      const playableBlob = audioBlob.type === normalizedMimeType ? audioBlob : new Blob([audioBlob], { type: normalizedMimeType });
+      const url = URL.createObjectURL(playableBlob);
       audioUrlRef.current = url;
 
-      const audio = new Audio(url);
+      const audio = document.createElement("audio");
+      audio.preload = "auto";
+      audio.setAttribute("playsinline", "true");
+      audio.src = url;
       audioRef.current = audio;
 
       audio.onended = () => {
@@ -196,7 +202,20 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       };
 
       setVoiceStatus("speaking");
-      await audio.play();
+      audio.load();
+
+      try {
+        await audio.play();
+      } catch (playbackError) {
+        const message = playbackError instanceof Error ? playbackError.message.toLowerCase() : "";
+        const isGestureIssue = message.includes("gesture") || message.includes("user") || message.includes("notallowed");
+        setError(
+          isGestureIssue
+            ? "Playback was blocked by the browser. Tap and hold to speak again, then allow audio playback."
+            : "I replied, but playback failed. You can still read the response below."
+        );
+        setVoiceStatus("idle");
+      }
     },
     [clearAudio, setVoiceStatus]
   );
@@ -283,14 +302,24 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
           return;
         }
 
-        const binary = atob(data.audioBase64);
-        const bytes = new Uint8Array(binary.length);
-        for (let index = 0; index < binary.length; index += 1) {
-          bytes[index] = binary.charCodeAt(index);
+        let bytes: Uint8Array;
+        try {
+          const binary = atob(data.audioBase64);
+          bytes = new Uint8Array(binary.length);
+          for (let index = 0; index < binary.length; index += 1) {
+            bytes[index] = binary.charCodeAt(index);
+          }
+        } catch {
+          throw new Error("Received invalid voice audio data.");
         }
 
-        const audioBlob = new Blob([bytes], { type: data.audioMimeType || "audio/mpeg" });
-        await playAudio(audioBlob);
+        if (!bytes.length) {
+          throw new Error("Received empty voice audio.");
+        }
+
+        const audioMimeType = data.audioMimeType || "audio/mpeg";
+        const audioBlob = new Blob([bytes], { type: audioMimeType });
+        await playAudio(audioBlob, audioMimeType);
       } catch (requestError) {
         setError(requestError instanceof Error ? requestError.message : "Unable to process voice right now.");
         setVoiceStatus("error");
