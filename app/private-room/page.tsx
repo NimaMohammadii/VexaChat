@@ -98,6 +98,7 @@ export default function PrivateRoomPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<RoomChatMessage[]>([]);
+  const [roomHidden, setRoomHidden] = useState(false);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
@@ -199,6 +200,12 @@ export default function PrivateRoomPage() {
     const interval = setInterval(() => void loadDashboard(), 6500);
     return () => clearInterval(interval);
   }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!room) {
+      setRoomHidden(false);
+    }
+  }, [room]);
 
   useEffect(() => {
     if (!currentRoomId) return;
@@ -427,37 +434,54 @@ export default function PrivateRoomPage() {
           </>
         ) : null}
 
-        {room ? (
-          <div className="flex flex-1 flex-col gap-3">
-            <LiveRoomHeader
-              title={room.name || "Private Space"}
-              roomCode={room.roomCode}
-              participantCount={room.participants.length}
-              onInvite={() => setInviteSheetOpen(true)}
-            />
+        <AnimatePresence initial={false}>
+          {room && !roomHidden ? (
+            <motion.div
+              key="room-panel"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              drag="y"
+              dragElastic={0.08}
+              dragConstraints={{ top: 0, bottom: 260 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 120 || info.velocity.y > 650) {
+                  setRoomHidden(true);
+                  setChatOpen(false);
+                }
+              }}
+              className="flex flex-1 flex-col gap-3"
+            >
+              <LiveRoomHeader
+                title={room.name || "Private Space"}
+                roomCode={room.roomCode}
+                participantCount={room.participants.length}
+                onInvite={() => setInviteSheetOpen(true)}
+              />
 
-            <LiveRoomGrid
-              participants={room.participants}
-              localUserId={localUserId}
-              speakingParticipantIds={speakingParticipantIds}
-              onOpenVexa={() => setVexaOpen(true)}
-              vexaState={vexaState}
-            />
+              <LiveRoomGrid
+                participants={room.participants}
+                localUserId={localUserId}
+                speakingParticipantIds={speakingParticipantIds}
+                onOpenVexa={() => setVexaOpen(true)}
+                vexaState={vexaState}
+              />
 
-            <RoomControls
-              joinedAudio={joinedAudio}
-              joiningAudio={joiningAudio}
-              micMuted={micMuted}
-              onJoinAudio={() => void joinAudio()}
-              onToggleMic={() => void toggleMic()}
-              onInvite={() => setInviteSheetOpen(true)}
-              onOpenVexa={() => setVexaOpen(true)}
-              onToggleChat={() => setChatOpen((current) => !current)}
-              chatOpen={chatOpen}
-              onLeave={() => void leaveRoom()}
-            />
-          </div>
-        ) : null}
+              <RoomControls
+                joinedAudio={joinedAudio}
+                joiningAudio={joiningAudio}
+                micMuted={micMuted}
+                onJoinAudio={() => void joinAudio()}
+                onToggleMic={() => void toggleMic()}
+                onInvite={() => setInviteSheetOpen(true)}
+                onOpenVexa={() => setVexaOpen(true)}
+                onToggleChat={() => setChatOpen((current) => !current)}
+                chatOpen={chatOpen}
+                onLeave={() => void leaveRoom()}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </section>
 
       <AnimatePresence>
@@ -474,7 +498,7 @@ export default function PrivateRoomPage() {
                 setChatOpen(false);
               }
             }}
-            className="fixed bottom-[calc(108px+env(safe-area-inset-bottom))] left-1/2 z-40 flex h-[48svh] w-[calc(100%-1.4rem)] max-w-xl -translate-x-1/2 flex-col rounded-[24px] border border-white/15 bg-[#0f1014]/95 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+            className="fixed bottom-[calc(108px+env(safe-area-inset-bottom))] left-0 right-0 z-40 mx-auto flex h-[48svh] w-[calc(100%-1.4rem)] max-w-xl flex-col rounded-[24px] border border-white/15 bg-[#0f1014]/95 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
           >
             <div className="mx-auto mb-2 h-1.5 w-16 rounded-full bg-white/20" />
             <div className="mb-2 flex items-center justify-between">
@@ -486,7 +510,7 @@ export default function PrivateRoomPage() {
 
             <div className="flex-1 space-y-2 overflow-y-auto pr-1">
               {chatMessages.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-white/15 px-3 py-2 text-xs text-white/55">هنوز پیامی نیست. اولین پیام رو بفرست ✨</p>
+                <p className="rounded-xl border border-dashed border-white/15 px-3 py-2 text-xs text-white/55">No messages yet. Be the first to send one ✨</p>
               ) : null}
               {chatMessages.map((message) => (
                 <div key={message.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
@@ -506,7 +530,7 @@ export default function PrivateRoomPage() {
                     sendChatMessage();
                   }
                 }}
-                placeholder="پیام بنویس..."
+                placeholder="Write a message..."
                 className="h-10 flex-1 rounded-xl border border-white/15 bg-white/[0.03] px-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/30"
               />
               <button
@@ -518,6 +542,22 @@ export default function PrivateRoomPage() {
               </button>
             </div>
           </motion.aside>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {room && roomHidden ? (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            onClick={() => setRoomHidden(false)}
+            className="fixed bottom-[calc(104px+env(safe-area-inset-bottom))] right-4 z-50 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#0f1016]/95 px-3 py-2 text-[11px] font-medium tracking-[0.08em] text-white/85 shadow-[0_14px_34px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+            IN ROOM
+          </motion.button>
         ) : null}
       </AnimatePresence>
 
