@@ -3,30 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type VoiceStatus = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
-
-type VoiceApiResponse = {
-  transcript?: string;
-  response?: string;
-  audioBase64?: string | null;
-  audioMimeType?: string;
-  error?: string;
-  code?: string;
-  stage?: string;
-  debug?: Record<string, unknown>;
-  warnings?: {
-    tts?: {
-      category?: string;
-      code?: string;
-      message?: string;
-      retriable?: boolean;
-    } | null;
-  };
-  tts?: {
-    ready?: boolean;
-    code?: string | null;
-  };
-};
+export type VoiceStatus = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
 type VexaVoicePanelProps = {
   open: boolean;
@@ -37,47 +14,32 @@ type VexaVoicePanelProps = {
 
 const statusLabelMap: Record<VoiceStatus, string> = {
   idle: "Hold to talk",
+  connecting: "Connecting...",
   listening: "Listening...",
-  transcribing: "Transcribing...",
   thinking: "Thinking...",
   speaking: "Speaking...",
   error: "Try again"
 };
 
-const ttsWarningMessageMap: Record<string, string> = {
-  OPENAI_TTS_CONFIG: "OpenAI voice generation is not configured on the server.",
-  OPENAI_TTS_FAILED: "OpenAI voice generation failed. Showing text response instead."
-};
-
-const SILENT_AUDIO_DATA_URI =
-  "data:audio/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAGbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAm10cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAQAAAAEAAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAEAAABAAAAAAGDbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAyAAAAMgBVxAAAAAAALWhkbHIAAAAAAAAAAHNvdW4AAAAAAAAAAAAAAFNvdW5kSGFuZGxlcgAAAg5taW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAAHOc3RibAAAAG5zdHNkAAAAAAAAAAEAAABebXA0YQAAAAAAAAABAAAAAQAAAAAAAABAAAAAACQAAAAyAAAAAABzc3RzAAAAAAAAAAEAAAABAAAAAQAAABRidHJsAAAAAAAAAAEAAAAxAAABG21wNGEAAAAAAAAAIHN0dHMAAAAAAAAAAQAAAAEAAAAQAAAAFHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAABAAAAABAAAAFHN0Y28AAAAAAAAAAQAAAEQAAAAQbWRhdAAAAAE=";
-
-function preferredMimeType() {
-  if (typeof window === "undefined" || typeof MediaRecorder === "undefined") {
-    return undefined;
-  }
-
-  const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-  return mimeTypes.find((value) => MediaRecorder.isTypeSupported(value));
+function buildRealtimeEvent(type: string, extra: Record<string, unknown> = {}) {
+  return {
+    event_id: crypto.randomUUID(),
+    type,
+    ...extra
+  };
 }
 
 export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVoicePanelProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState("");
-  const [responseText, setResponseText] = useState("");
 
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const recordStartAtRef = useRef<number>(0);
-  const activePressRef = useRef(false);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const microphoneRef = useRef<MediaStream | null>(null);
+  const microphoneTrackRef = useRef<MediaStreamTrack | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isPointerDownRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
-  const isStoppingRef = useRef(false);
-  const thinkingTimerRef = useRef<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
-  const audioUnlockedRef = useRef(false);
 
   const setVoiceStatus = useCallback(
     (next: VoiceStatus) => {
@@ -87,339 +49,213 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
     [onStatusChange]
   );
 
-  const stopTracks = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+  const cleanupRealtimeSession = useCallback(() => {
+    dataChannelRef.current?.close();
+    dataChannelRef.current = null;
+
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
+
+    microphoneTrackRef.current?.stop();
+    microphoneTrackRef.current = null;
+
+    microphoneRef.current?.getTracks().forEach((track) => track.stop());
+    microphoneRef.current = null;
+
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.pause();
+      remoteAudioRef.current.srcObject = null;
+      remoteAudioRef.current = null;
+    }
+
+    isPointerDownRef.current = false;
+    activePointerIdRef.current = null;
   }, []);
 
-  const clearAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.removeAttribute("src");
-      audioRef.current.load();
-    }
-
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
+  const sendRealtimeEvent = useCallback((event: Record<string, unknown>) => {
+    const channel = dataChannelRef.current;
+    if (!channel || channel.readyState !== "open") return;
+    channel.send(JSON.stringify(event));
   }, []);
 
-  const getAudioElement = useCallback(() => {
-    if (audioRef.current) {
-      return audioRef.current;
+  const ensureRealtimeSession = useCallback(async () => {
+    if (!roomId) {
+      throw new Error("Join a room first to talk to Vexa.");
     }
 
+    if (peerConnectionRef.current && dataChannelRef.current?.readyState === "open") {
+      return;
+    }
+
+    setVoiceStatus("connecting");
+
+    const microphone = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+    const track = microphone.getAudioTracks()[0];
+    if (!track) {
+      microphone.getTracks().forEach((streamTrack) => streamTrack.stop());
+      throw new Error("No microphone track was captured.");
+    }
+
+    track.enabled = false;
+
+    const peerConnection = new RTCPeerConnection();
     const audio = document.createElement("audio");
+    audio.autoplay = true;
     audio.preload = "auto";
     audio.setAttribute("playsinline", "true");
-    audioRef.current = audio;
-    return audio;
-  }, []);
 
-  const unlockAudioPlayback = useCallback(async () => {
-    if (audioUnlockedRef.current) {
-      return true;
-    }
+    audio.onplaying = () => {
+      if (!isPointerDownRef.current) {
+        setVoiceStatus("speaking");
+      }
+    };
 
-    const audio = getAudioElement();
-    const previousMuted = audio.muted;
-    const previousVolume = audio.volume;
+    audio.onended = () => {
+      if (!isPointerDownRef.current) {
+        setVoiceStatus("idle");
+      }
+    };
 
-    try {
-      audio.muted = true;
-      audio.volume = 0;
-      audio.src = SILENT_AUDIO_DATA_URI;
-      audio.load();
-      await audio.play();
-      audio.pause();
-      audio.currentTime = 0;
-      audio.removeAttribute("src");
-      audio.load();
-      audio.muted = previousMuted;
-      audio.volume = previousVolume;
-      audioUnlockedRef.current = true;
-      return true;
-    } catch {
-      audio.muted = previousMuted;
-      audio.volume = previousVolume;
-      audio.removeAttribute("src");
-      audio.load();
-      return false;
-    }
-  }, [getAudioElement]);
-
-  const resetThinkingTimer = useCallback(() => {
-    if (thinkingTimerRef.current) {
-      window.clearTimeout(thinkingTimerRef.current);
-      thinkingTimerRef.current = null;
-    }
-  }, []);
-
-  const startRecording = useCallback(async () => {
-    if (status === "transcribing" || status === "thinking" || status === "speaking" || activePressRef.current) {
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError("Voice recording is not supported in this browser.");
-      setVoiceStatus("error");
-      return;
-    }
-
-    try {
-      setError(null);
-      setTranscript("");
-      setResponseText("");
-      clearAudio();
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
+    peerConnection.ontrack = (event) => {
+      audio.srcObject = event.streams[0];
+      void audio.play().catch(() => {
+        // Browser autoplay policy may require user gesture; pointer down gesture retries this naturally.
       });
+    };
 
-      const recorder = new MediaRecorder(stream, preferredMimeType() ? { mimeType: preferredMimeType() } : undefined);
-
-      chunksRef.current = [];
-      recorderRef.current = recorder;
-      streamRef.current = stream;
-      activePressRef.current = true;
-      recordStartAtRef.current = Date.now();
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.start(180);
-      setVoiceStatus("listening");
-    } catch (captureError) {
-      stopTracks();
-      const message = captureError instanceof Error ? captureError.message : "Microphone unavailable.";
-      const lower = message.toLowerCase();
-      const permissionBlocked =
-        (captureError instanceof DOMException && captureError.name === "NotAllowedError") ||
-        lower.includes("permission") ||
-        lower.includes("denied");
-      setError(
-        permissionBlocked
-          ? "Microphone permission is blocked. Enable mic access and try again."
-          : "Unable to start your microphone right now."
-      );
-      setVoiceStatus("error");
-      activePressRef.current = false;
-    }
-  }, [clearAudio, setVoiceStatus, status, stopTracks]);
-
-  const playAudio = useCallback(
-    async (audioBlob: Blob, mimeType: string) => {
-      clearAudio();
-      const normalizedMimeType = mimeType || "audio/mpeg";
-      const playableBlob = audioBlob.type === normalizedMimeType ? audioBlob : new Blob([audioBlob], { type: normalizedMimeType });
-      const url = URL.createObjectURL(playableBlob);
-      audioUrlRef.current = url;
-      const audio = getAudioElement();
-      audio.src = url;
-
-      audio.onended = () => {
-        setVoiceStatus("idle");
-      };
-
-      audio.onerror = () => {
-        setError("I replied, but playback failed. You can still read the response below.");
-        setVoiceStatus("idle");
-      };
-
-      setVoiceStatus("speaking");
-      audio.load();
-
+    const dataChannel = peerConnection.createDataChannel("oai-events");
+    dataChannel.onmessage = (event) => {
       try {
-        await audio.play();
-      } catch (playbackError) {
-        const message = playbackError instanceof Error ? playbackError.message.toLowerCase() : "";
-        const isGestureIssue = message.includes("gesture") || message.includes("user") || message.includes("notallowed");
-        setError(
-          isGestureIssue
-            ? "Playback is still blocked by Safari. Press and hold to talk again to re-enable audio."
-            : "I replied, but playback failed. You can still read the response below."
-        );
-        setVoiceStatus("idle");
-      }
-    },
-    [clearAudio, getAudioElement, setVoiceStatus]
-  );
+        const payload = JSON.parse(event.data) as { type?: string; error?: { message?: string } };
+        const type = payload.type || "";
 
-  const processRecording = useCallback(
-    async (blob: Blob, durationMs: number) => {
-      if (!roomId) {
-        setError("Join a room first to talk to Vexa.");
-        setVoiceStatus("error");
-        return;
-      }
-
-      if (durationMs < 550 || blob.size < 2500) {
-        setError("That was too short. Hold to talk for a moment longer, then release.");
-        setVoiceStatus("error");
-        return;
-      }
-
-      setVoiceStatus("transcribing");
-      resetThinkingTimer();
-      thinkingTimerRef.current = window.setTimeout(() => {
-        setStatus((current) => {
-          if (current === "transcribing") {
-            onStatusChange?.("thinking");
-            return "thinking";
+        if (type === "response.created" || type === "response.in_progress") {
+          if (!isPointerDownRef.current) {
+            setVoiceStatus("thinking");
           }
-          return current;
-        });
-      }, 1000);
-
-      try {
-        const form = new FormData();
-        const mimeType = blob.type || "audio/webm";
-        const fileExtension = mimeType.includes("mp4") ? "m4a" : "webm";
-        form.append("roomId", roomId);
-        form.append("audio", new File([blob], `vexa-ptt.${fileExtension}`, { type: mimeType }));
-
-        const response = await fetch("/api/private-room/vexa/voice", {
-          method: "POST",
-          body: form
-        });
-
-        const data = (await response.json().catch(() => ({}))) as VoiceApiResponse;
-
-        if (!response.ok) {
-          if (data.code === "RECORDING_TOO_SHORT") {
-            throw new Error("I couldn't hear enough audio. Hold to talk a little longer and retry.");
-          }
-          if (data.code === "TRANSCRIPTION_TIMEOUT") {
-            throw new Error("Transcription timed out. Please try again.");
-          }
-          if (data.code === "OPENAI_CONFIG") {
-            throw new Error("Voice transcription is not configured yet. Please contact support.");
-          }
-          if (data.code === "OPENAI_AUTH") {
-            throw new Error("Voice transcription auth failed on the server. Please contact support.");
-          }
-          if (data.code === "UNSUPPORTED_AUDIO_FORMAT") {
-            throw new Error("Your browser recorded an unsupported format. Try the latest Safari or Chrome.");
-          }
-          if (data.code === "NETWORK") {
-            throw new Error("Network issue while transcribing. Check your connection and retry.");
-          }
-          if (data.code === "PROVIDER_UNAVAILABLE") {
-            throw new Error("Transcription provider is temporarily unavailable. Please retry.");
-          }
-          throw new Error(data.error || "Voice request failed.");
-        }
-
-        const transcriptText = data.transcript?.trim() || "";
-        const responseValue = data.response?.trim() || "";
-
-        setTranscript(transcriptText);
-        setResponseText(responseValue);
-
-        if (!data.audioBase64) {
-          const ttsCode = data.warnings?.tts?.code || data.tts?.code || "";
-          const fallbackMessage =
-            data.warnings?.tts?.message ||
-            ttsWarningMessageMap[ttsCode] ||
-            "Vexa replied in text, but voice generation is unavailable right now.";
-          setError(fallbackMessage);
-          setVoiceStatus("idle");
           return;
         }
 
-        let bytes: Uint8Array;
-        try {
-          const binary = atob(data.audioBase64);
-          bytes = new Uint8Array(binary.length);
-          for (let index = 0; index < binary.length; index += 1) {
-            bytes[index] = binary.charCodeAt(index);
+        if (type.includes("output_audio") || type === "response.output_item.added") {
+          if (!isPointerDownRef.current) {
+            setVoiceStatus("speaking");
           }
-        } catch {
-          throw new Error("Received invalid voice audio data.");
+          return;
         }
 
-        if (!bytes.length) {
-          throw new Error("Received empty voice audio.");
+        if (type === "response.done" || type === "output_audio_buffer.stopped") {
+          if (!isPointerDownRef.current) {
+            setVoiceStatus("idle");
+          }
+          return;
         }
 
-        const audioMimeType = data.audioMimeType || "audio/mpeg";
-        const audioBlob = new Blob([bytes], { type: audioMimeType });
-        await playAudio(audioBlob, audioMimeType);
-      } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Unable to process voice right now.");
-        setVoiceStatus("error");
-      } finally {
-        resetThinkingTimer();
+        if (type === "error") {
+          setError(payload.error?.message || "Realtime voice session returned an error.");
+          setVoiceStatus("error");
+        }
+      } catch {
+        // Non-JSON events can be safely ignored.
       }
-    },
-    [onStatusChange, playAudio, resetThinkingTimer, roomId, setVoiceStatus]
-  );
+    };
 
-  const stopRecording = useCallback(async () => {
-    if (!activePressRef.current || !recorderRef.current || isStoppingRef.current) return;
+    dataChannel.onclose = () => {
+      if (open) {
+        setVoiceStatus("idle");
+      }
+    };
 
-    isStoppingRef.current = true;
-    activePressRef.current = false;
+    peerConnection.addTrack(track, microphone);
 
-    const recorder = recorderRef.current;
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
 
-    await new Promise<void>((resolve) => {
-      recorder.onstop = () => {
-        resolve();
-      };
-      recorder.stop();
+    const sdpResponse = await fetch(`/api/private-room/vexa/realtime?roomId=${encodeURIComponent(roomId)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/sdp"
+      },
+      body: offer.sdp
     });
 
-    recorderRef.current = null;
-    stopTracks();
-
-    const recordedBlob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-    chunksRef.current = [];
-
-    const durationMs = Date.now() - recordStartAtRef.current;
-    try {
-      await processRecording(recordedBlob, durationMs);
-    } finally {
-      isStoppingRef.current = false;
-      activePointerIdRef.current = null;
+    if (!sdpResponse.ok) {
+      const payload = (await sdpResponse.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "Failed to start realtime voice session.");
     }
-  }, [processRecording, stopTracks]);
+
+    const answerSdp = await sdpResponse.text();
+    await peerConnection.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+    peerConnectionRef.current = peerConnection;
+    dataChannelRef.current = dataChannel;
+    microphoneRef.current = microphone;
+    microphoneTrackRef.current = track;
+    remoteAudioRef.current = audio;
+
+    setVoiceStatus("idle");
+  }, [open, roomId, setVoiceStatus]);
+
+  const startTalking = useCallback(async () => {
+    if (status === "connecting") return;
+
+    try {
+      setError(null);
+      await ensureRealtimeSession();
+
+      const microphoneTrack = microphoneTrackRef.current;
+      if (!microphoneTrack) {
+        throw new Error("Microphone is unavailable.");
+      }
+
+      sendRealtimeEvent(buildRealtimeEvent("response.cancel"));
+      microphoneTrack.enabled = true;
+      isPointerDownRef.current = true;
+      setVoiceStatus("listening");
+    } catch (startError) {
+      cleanupRealtimeSession();
+      setError(startError instanceof Error ? startError.message : "Unable to start voice capture.");
+      setVoiceStatus("error");
+    }
+  }, [cleanupRealtimeSession, ensureRealtimeSession, sendRealtimeEvent, setVoiceStatus, status]);
+
+  const stopTalking = useCallback(() => {
+    if (!isPointerDownRef.current) return;
+
+    isPointerDownRef.current = false;
+
+    const microphoneTrack = microphoneTrackRef.current;
+    if (microphoneTrack) {
+      microphoneTrack.enabled = false;
+    }
+
+    sendRealtimeEvent(buildRealtimeEvent("input_audio_buffer.commit"));
+    sendRealtimeEvent(buildRealtimeEvent("response.create"));
+    setVoiceStatus("thinking");
+  }, [sendRealtimeEvent, setVoiceStatus]);
 
   useEffect(() => {
     if (!open) {
-      activePressRef.current = false;
-      recorderRef.current?.stop();
-      recorderRef.current = null;
-      stopTracks();
-      clearAudio();
-      resetThinkingTimer();
+      cleanupRealtimeSession();
       setError(null);
-      setTranscript("");
-      setResponseText("");
       setVoiceStatus("idle");
-      activePointerIdRef.current = null;
-      isStoppingRef.current = false;
     }
-  }, [clearAudio, open, resetThinkingTimer, setVoiceStatus, stopTracks]);
+  }, [cleanupRealtimeSession, open, setVoiceStatus]);
 
   useEffect(() => {
     return () => {
-      stopTracks();
-      clearAudio();
-      resetThinkingTimer();
+      cleanupRealtimeSession();
     };
-  }, [clearAudio, resetThinkingTimer, stopTracks]);
+  }, [cleanupRealtimeSession]);
 
   const statusLabel = useMemo(() => statusLabelMap[status], [status]);
-  const isPressDisabled = status === "transcribing" || status === "thinking";
+  const isPressDisabled = status === "connecting";
 
   return (
     <AnimatePresence>
@@ -452,7 +288,9 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
                       ? "animate-pulse bg-[#d58aa0]"
                       : status === "error"
                         ? "bg-rose-300"
-                        : "bg-white/40"
+                        : status === "connecting"
+                          ? "animate-pulse bg-sky-300"
+                          : "bg-white/40"
                 }`}
               />
               {statusLabel}
@@ -462,12 +300,11 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
               <button
                 type="button"
                 disabled={isPressDisabled}
-                onPointerDown={async (event) => {
+                onPointerDown={(event) => {
                   event.preventDefault();
                   activePointerIdRef.current = event.pointerId;
                   event.currentTarget.setPointerCapture(event.pointerId);
-                  await unlockAudioPlayback();
-                  void startRecording();
+                  void startTalking();
                 }}
                 onPointerUp={(event) => {
                   event.preventDefault();
@@ -475,15 +312,17 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
                     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
                       event.currentTarget.releasePointerCapture(event.pointerId);
                     }
-                    void stopRecording();
+                    stopTalking();
+                    activePointerIdRef.current = null;
                   }
                 }}
-                onPointerCancel={() => void stopRecording()}
-                onPointerLeave={() => undefined}
+                onPointerCancel={() => {
+                  stopTalking();
+                  activePointerIdRef.current = null;
+                }}
                 onLostPointerCapture={() => {
-                  if (activePressRef.current) {
-                    void stopRecording();
-                  }
+                  stopTalking();
+                  activePointerIdRef.current = null;
                 }}
                 className={`relative h-24 w-24 touch-none rounded-full border text-xs font-semibold transition ${
                   status === "listening"
@@ -497,23 +336,6 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
             </div>
 
             {error ? <p className="mt-3 text-center text-xs text-rose-300">{error}</p> : null}
-
-            {(transcript || responseText) && (
-              <div className="mt-4 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                {transcript ? (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/45">You said</p>
-                    <p className="mt-1 text-sm text-white/90">{transcript}</p>
-                  </div>
-                ) : null}
-                {responseText ? (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#d58aa0]/90">Vexa</p>
-                    <p className="mt-1 text-sm text-white/90">{responseText}</p>
-                  </div>
-                ) : null}
-              </div>
-            )}
           </motion.div>
         </>
       ) : null}

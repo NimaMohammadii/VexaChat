@@ -10,7 +10,7 @@ type Participant = {
   avatarUrl?: string;
 };
 
-type VexaVisualState = "idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
+type VexaVisualState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
 type LiveRoomGridProps = {
   participants: Participant[];

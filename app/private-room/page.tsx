@@ -80,7 +80,7 @@ export default function PrivateRoomPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
   const [vexaOpen, setVexaOpen] = useState(false);
-  const [vexaState, setVexaState] = useState<"idle" | "listening" | "transcribing" | "thinking" | "speaking" | "error">("idle");
+  const [vexaState, setVexaState] = useState<"idle" | "connecting" | "listening" | "thinking" | "speaking" | "error">("idle");
   const [joinedAudio, setJoinedAudio] = useState(false);
   const [joiningAudio, setJoiningAudio] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
