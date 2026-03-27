@@ -7,7 +7,11 @@ export type VoiceStatus = "idle" | "connecting" | "listening" | "thinking" | "sp
 type StartFailureCategory =
   | "unsupported_browser"
   | "microphone_stream_failure"
+  | "sdp_offer_generation_failed"
+  | "local_description_failed"
+  | "invalid_local_sdp_offer"
   | "backend_session_creation_failed"
+  | "server_rejected_invalid_sdp_offer"
   | "invalid_sdp_response"
   | "webrtc_peer_connection_failed"
   | "openai_auth_or_config_issue";
@@ -54,25 +58,64 @@ function createSdpPreview(sdp: string, edgeLength = 80) {
   return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
 }
 
-async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, timeoutMs = 1200) {
-  if (peerConnection.iceGatheringState === "complete") {
-    return;
+function validateLocalSdpOffer(offerSdp: string) {
+  const normalized = offerSdp.replace(/\r\n/g, "\n");
+  const trimmed = normalized.trim();
+
+  if (!trimmed) {
+    throw new RealtimeStartError("Failed to generate a WebRTC SDP offer.", "sdp_offer_generation_failed");
   }
 
-  await Promise.race([
-    new Promise<void>((resolve) => {
-      const onStateChange = () => {
-        if (peerConnection.iceGatheringState === "complete") {
-          peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
-          resolve();
-        }
-      };
-      peerConnection.addEventListener("icegatheringstatechange", onStateChange);
-    }),
-    new Promise<void>((resolve) => {
-      window.setTimeout(resolve, timeoutMs);
-    })
-  ]);
+  if (!trimmed.startsWith("v=0")) {
+    throw new RealtimeStartError("Generated SDP offer is malformed (missing v=0).", "invalid_local_sdp_offer");
+  }
+
+  if (!trimmed.includes("\nm=audio")) {
+    throw new RealtimeStartError("Generated SDP offer is malformed (missing audio media section).", "invalid_local_sdp_offer");
+  }
+
+  if (trimmed.length < 120) {
+    throw new RealtimeStartError("Generated SDP offer appears truncated.", "invalid_local_sdp_offer");
+  }
+
+  return trimmed;
+}
+
+async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, timeoutMs = 8000) {
+  if (peerConnection.iceGatheringState === "complete") return;
+
+  await new Promise<void>((resolve) => {
+    let resolved = false;
+    const resolveOnce = () => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      resolve();
+    };
+
+    const onStateChange = () => {
+      if (peerConnection.iceGatheringState === "complete") {
+        resolveOnce();
+      }
+    };
+
+    const onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
+      if (!event.candidate) {
+        resolveOnce();
+      }
+    };
+
+    const timeout = window.setTimeout(resolveOnce, timeoutMs);
+
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
+      peerConnection.removeEventListener("icecandidate", onIceCandidate);
+    };
+
+    peerConnection.addEventListener("icegatheringstatechange", onStateChange);
+    peerConnection.addEventListener("icecandidate", onIceCandidate);
+  });
 }
 
 export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVoicePanelProps) {
@@ -254,12 +297,25 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
 
     peerConnection.addTrack(track, microphone);
 
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
+    const offer = await peerConnection.createOffer({
+      offerToReceiveAudio: true
+    });
+    if (!offer.sdp?.trim()) {
+      throw new RealtimeStartError("WebRTC failed to generate an SDP offer.", "sdp_offer_generation_failed");
+    }
+
+    await peerConnection.setLocalDescription(offer).catch(() => {
+      throw new RealtimeStartError("Failed to complete local WebRTC description.", "local_description_failed");
+    });
+
+    if (!peerConnection.localDescription || peerConnection.localDescription.type !== "offer") {
+      throw new RealtimeStartError("Failed to set local WebRTC offer description.", "local_description_failed");
+    }
+
     await waitForIceGatheringComplete(peerConnection);
 
     const localDescription = peerConnection.localDescription;
-    const offerSdp = localDescription?.sdp?.trim() || "";
+    const offerSdp = validateLocalSdpOffer(localDescription?.sdp || "");
 
     console.info("Vexa voice: local SDP offer diagnostics", {
       offerType: offer.type,
@@ -270,10 +326,6 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       offerPreview: offer.sdp ? createSdpPreview(offer.sdp) : null,
       localDescriptionPreview: localDescription?.sdp ? createSdpPreview(localDescription.sdp) : null
     });
-
-    if (!offerSdp || offerSdp.length < 80 || !offerSdp.includes("v=0")) {
-      throw new RealtimeStartError("WebRTC local SDP offer is empty or malformed.", "webrtc_peer_connection_failed");
-    }
 
     const sdpResponse = await fetch(`/api/private-room/vexa/realtime?roomId=${encodeURIComponent(roomId)}`, {
       method: "POST",
@@ -299,9 +351,10 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       const openaiErrorText = payload.openaiError ? ` Details: ${payload.openaiError}` : "";
 
       if (payload.code === "openai_session_creation_failed") {
+        const maybeInvalidOffer = payload.openaiError?.toLowerCase().includes("invalid_offer");
         throw new RealtimeStartError(
-          `OpenAI realtime session creation failed${openaiStatusText}.${openaiRequestText} Check API key/model/voice configuration.${openaiErrorText}`.trim(),
-          "openai_auth_or_config_issue"
+          `OpenAI realtime session creation failed${openaiStatusText}.${openaiRequestText}${openaiErrorText}`.trim(),
+          maybeInvalidOffer ? "server_rejected_invalid_sdp_offer" : "openai_auth_or_config_issue"
         );
       }
 

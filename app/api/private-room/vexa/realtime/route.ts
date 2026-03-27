@@ -32,12 +32,93 @@ type OpenAiRealtimeFailure = {
   contentType: string | null;
 };
 
+type ParsedInboundOffer = {
+  sdp: string;
+  contentType: string;
+  source: "raw_text" | "json" | "form_data";
+};
+
 function createSdpPreview(sdp: string, edgeLength = 80) {
   const compact = sdp.replace(/\r?\n/g, "\\n");
   if (compact.length <= edgeLength * 2) {
     return compact;
   }
   return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
+}
+
+function validateInboundOfferSdp(offerSdp: string) {
+  const normalized = offerSdp.replace(/\r\n/g, "\n");
+  const trimmed = normalized.trim();
+
+  const diagnostics = {
+    offerSdpLength: offerSdp.length,
+    trimmedLength: trimmed.length,
+    startsWithV0: trimmed.startsWith("v=0"),
+    hasAudioSection: trimmed.includes("\nm=audio")
+  };
+
+  if (!trimmed) {
+    return {
+      ok: false as const,
+      reason: "SDP offer is required",
+      diagnostics
+    };
+  }
+
+  if (!trimmed.startsWith("v=0")) {
+    return {
+      ok: false as const,
+      reason: "SDP offer is malformed (missing v=0)",
+      diagnostics
+    };
+  }
+
+  if (!trimmed.includes("\nm=audio")) {
+    return {
+      ok: false as const,
+      reason: "SDP offer is malformed (missing audio media section)",
+      diagnostics
+    };
+  }
+
+  if (trimmed.length < 120) {
+    return {
+      ok: false as const,
+      reason: "SDP offer appears truncated",
+      diagnostics
+    };
+  }
+
+  return {
+    ok: true as const,
+    offerSdp: trimmed,
+    diagnostics
+  };
+}
+
+async function parseInboundOfferSdp(request: NextRequest): Promise<ParsedInboundOffer> {
+  const contentType = request.headers.get("content-type")?.toLowerCase() || "";
+
+  if (contentType.includes("application/json")) {
+    const payload = (await request.json().catch(() => ({}))) as { sdp?: unknown; offerSdp?: unknown };
+    const sdpCandidate = typeof payload.sdp === "string" ? payload.sdp : typeof payload.offerSdp === "string" ? payload.offerSdp : "";
+    return { sdp: sdpCandidate, contentType, source: "json" };
+  }
+
+  if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+    const form = await request.formData();
+    const sdpValue = form.get("sdp");
+    const offerSdpValue = form.get("offerSdp");
+    const sdpCandidate =
+      typeof sdpValue === "string" ? sdpValue : typeof offerSdpValue === "string" ? offerSdpValue : "";
+    return { sdp: sdpCandidate, contentType, source: "form_data" };
+  }
+
+  return {
+    sdp: await request.text(),
+    contentType,
+    source: "raw_text"
+  };
 }
 
 function fail(status: number, code: RealtimeFailureCode, message: string, stage: string, details?: Record<string, unknown>) {
@@ -140,37 +221,24 @@ export async function POST(request: NextRequest) {
       return fail(404, "backend_room_access", "Room not found", "room_lookup");
     }
 
-    const contentType = request.headers.get("content-type")?.toLowerCase() || "";
-    let offerSdp = "";
-
-    if (contentType.includes("application/sdp") || contentType.includes("text/plain")) {
-      offerSdp = (await request.text()).trim();
-    } else if (contentType.includes("application/json")) {
-      const payload = (await request.json().catch(() => ({}))) as { sdp?: unknown; offerSdp?: unknown };
-      const sdpCandidate = typeof payload.sdp === "string" ? payload.sdp : typeof payload.offerSdp === "string" ? payload.offerSdp : "";
-      offerSdp = sdpCandidate.trim();
-    } else if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
-      const form = await request.formData();
-      const sdpValue = form.get("sdp");
-      offerSdp = typeof sdpValue === "string" ? sdpValue.trim() : "";
-    } else {
-      offerSdp = (await request.text()).trim();
-    }
+    const inboundOffer = await parseInboundOfferSdp(request);
+    const offerValidation = validateInboundOfferSdp(inboundOffer.sdp);
 
     console.info("Vexa realtime setup: inbound SDP diagnostics", {
       stage: "validate_offer",
       userId: user.id,
       roomId,
-      contentType: contentType || null,
-      offerSdpLength: offerSdp.length,
-      hasV0: offerSdp.includes("v=0"),
-      hasAudioSection: offerSdp.includes("m=audio"),
-      offerPreview: offerSdp ? createSdpPreview(offerSdp) : null
+      contentType: inboundOffer.contentType || null,
+      source: inboundOffer.source,
+      ...offerValidation.diagnostics,
+      offerPreview: inboundOffer.sdp ? createSdpPreview(inboundOffer.sdp) : null
     });
 
-    if (!offerSdp) {
-      return fail(400, "backend_invalid_request", "SDP offer is required", "validate_offer");
+    if (!offerValidation.ok) {
+      return fail(400, "backend_invalid_request", offerValidation.reason, "validate_offer");
     }
+
+    const offerSdp = offerValidation.offerSdp;
 
     const apiKey = readEnvTrimmed("OPENAI_API_KEY");
     if (!apiKey) {
@@ -216,6 +284,7 @@ export async function POST(request: NextRequest) {
       configuredModel: primaryAttempt.model,
       configuredVoice: primaryAttempt.voice,
       offerSdpLength: offerSdp.length,
+      offerSdpStartsWithV0: offerSdp.startsWith("v=0"),
       offerPreview: createSdpPreview(offerSdp),
       userAgent: request.headers.get("user-agent")?.slice(0, 120) ?? null
     });
