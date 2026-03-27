@@ -46,6 +46,35 @@ function buildRealtimeEvent(type: string, extra: Record<string, unknown> = {}) {
   };
 }
 
+function createSdpPreview(sdp: string, edgeLength = 80) {
+  const compact = sdp.replace(/\r?\n/g, "\\n");
+  if (compact.length <= edgeLength * 2) {
+    return compact;
+  }
+  return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
+}
+
+async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, timeoutMs = 1200) {
+  if (peerConnection.iceGatheringState === "complete") {
+    return;
+  }
+
+  await Promise.race([
+    new Promise<void>((resolve) => {
+      const onStateChange = () => {
+        if (peerConnection.iceGatheringState === "complete") {
+          peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
+          resolve();
+        }
+      };
+      peerConnection.addEventListener("icegatheringstatechange", onStateChange);
+    }),
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, timeoutMs);
+    })
+  ]);
+}
+
 export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVoicePanelProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -227,9 +256,23 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
+    await waitForIceGatheringComplete(peerConnection);
 
-    if (!offer.sdp) {
-      throw new RealtimeStartError("WebRTC offer was created without SDP.", "webrtc_peer_connection_failed");
+    const localDescription = peerConnection.localDescription;
+    const offerSdp = localDescription?.sdp?.trim() || "";
+
+    console.info("Vexa voice: local SDP offer diagnostics", {
+      offerType: offer.type,
+      offerSdpLength: offer.sdp?.length ?? 0,
+      localDescriptionType: localDescription?.type ?? null,
+      localDescriptionSdpLength: localDescription?.sdp?.length ?? 0,
+      iceGatheringState: peerConnection.iceGatheringState,
+      offerPreview: offer.sdp ? createSdpPreview(offer.sdp) : null,
+      localDescriptionPreview: localDescription?.sdp ? createSdpPreview(localDescription.sdp) : null
+    });
+
+    if (!offerSdp || offerSdp.length < 80 || !offerSdp.includes("v=0")) {
+      throw new RealtimeStartError("WebRTC local SDP offer is empty or malformed.", "webrtc_peer_connection_failed");
     }
 
     const sdpResponse = await fetch(`/api/private-room/vexa/realtime?roomId=${encodeURIComponent(roomId)}`, {
@@ -237,7 +280,7 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
       headers: {
         "Content-Type": "application/sdp"
       },
-      body: offer.sdp
+      body: offerSdp
     });
 
     if (!sdpResponse.ok) {
