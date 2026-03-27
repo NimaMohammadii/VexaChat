@@ -26,6 +26,7 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
   const allPeople = [...speakers, ...listeners];
 
   return (
+    <section className="flex min-h-[52svh] flex-1 flex-col rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3 pb-5">
     <section className="flex flex-1 flex-col rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3 pb-5">
       <div className="flex items-center justify-between">
         <p className="text-[10px] uppercase tracking-[0.16em] text-white/50">In this room</p>

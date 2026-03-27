@@ -53,6 +53,13 @@ type RoomDetails = {
   participants: Participant[];
 };
 
+type RoomChatMessage = {
+  id: string;
+  sender: string;
+  text: string;
+  createdAt: string;
+};
+
 function stableUidFromUserId(userId: string) {
   let hash = 0;
   for (let index = 0; index < userId.length; index += 1) {
@@ -88,6 +95,9 @@ export default function PrivateRoomPage() {
   const [inviteActionLoading, setInviteActionLoading] = useState(false);
   const [inviteCardError, setInviteCardError] = useState<string | null>(null);
   const [declineToast, setDeclineToast] = useState<DeclineUpdate | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<RoomChatMessage[]>([]);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioTrackRef = useRef<LocalAudioTrack | null>(null);
@@ -333,6 +343,23 @@ export default function PrivateRoomPage() {
   }, [room, speakingUids]);
 
   const topInvite = invites[0] ?? null;
+  const localUsername = room?.participants.find((participant) => participant.userId === localUserId)?.username ?? "You";
+
+  const sendChatMessage = useCallback(() => {
+    const value = chatInput.trim();
+    if (!value) return;
+
+    setChatMessages((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sender: localUsername,
+        text: value,
+        createdAt: new Date().toISOString()
+      }
+    ]);
+    setChatInput("");
+  }, [chatInput, localUsername]);
 
   return (
     <main className="relative flex min-h-[100svh] overflow-hidden bg-[#070708] text-white">
@@ -350,7 +377,6 @@ export default function PrivateRoomPage() {
           <HeaderMenuDrawer />
         </header>
 
-        {loading ? <p className="text-sm text-white/70">Loading private rooms...</p> : null}
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
         {!loading && !currentRoomId ? (
@@ -418,8 +444,6 @@ export default function PrivateRoomPage() {
               vexaState={vexaState}
             />
 
-            <p className="px-1 text-[11px] text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Tap Join Audio to talk live"}</p>
-
             <RoomControls
               joinedAudio={joinedAudio}
               joiningAudio={joiningAudio}
@@ -428,11 +452,74 @@ export default function PrivateRoomPage() {
               onToggleMic={() => void toggleMic()}
               onInvite={() => setInviteSheetOpen(true)}
               onOpenVexa={() => setVexaOpen(true)}
+              onToggleChat={() => setChatOpen((current) => !current)}
+              chatOpen={chatOpen}
               onLeave={() => void leaveRoom()}
             />
           </div>
         ) : null}
       </section>
+
+      <AnimatePresence>
+        {chatOpen && room ? (
+          <motion.aside
+            initial={{ y: 340, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 340, opacity: 0 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 380 }}
+            dragElastic={0.1}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 110 || info.velocity.y > 500) {
+                setChatOpen(false);
+              }
+            }}
+            className="fixed bottom-[calc(108px+env(safe-area-inset-bottom))] left-1/2 z-40 flex h-[48svh] w-[calc(100%-1.4rem)] max-w-xl -translate-x-1/2 flex-col rounded-[24px] border border-white/15 bg-[#0f1014]/95 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+          >
+            <div className="mx-auto mb-2 h-1.5 w-16 rounded-full bg-white/20" />
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white/90">Room Chat</h3>
+              <button type="button" onClick={() => setChatOpen(false)} className="rounded-full border border-white/15 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-white/75">
+                Hide
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+              {chatMessages.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-white/15 px-3 py-2 text-xs text-white/55">هنوز پیامی نیست. اولین پیام رو بفرست ✨</p>
+              ) : null}
+              {chatMessages.map((message) => (
+                <div key={message.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                  <p className="text-[11px] font-semibold text-white/85">{message.sender}</p>
+                  <p className="mt-1 text-sm text-white/90">{message.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    sendChatMessage();
+                  }
+                }}
+                placeholder="پیام بنویس..."
+                className="h-10 flex-1 rounded-xl border border-white/15 bg-white/[0.03] px-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/30"
+              />
+              <button
+                type="button"
+                onClick={sendChatMessage}
+                className="h-10 rounded-xl bg-white px-4 text-xs font-semibold text-black transition hover:brightness-95"
+              >
+                Send
+              </button>
+            </div>
+          </motion.aside>
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {topInvite ? (
