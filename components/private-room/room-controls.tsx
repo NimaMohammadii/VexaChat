@@ -1,8 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { BrainSparkIcon, ExitIcon, MicIcon, MicOffIcon, UserPlusIcon } from "@/components/private-room/room-icons";
-
 type RoomControlsProps = {
   joinedAudio: boolean;
   joiningAudio: boolean;
@@ -14,64 +11,40 @@ type RoomControlsProps = {
   onLeave: () => void;
 };
 
-function DockButton({
-  label,
-  onClick,
-  icon,
-  danger,
-  emphasis,
-  disabled
-}: {
-  label: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-  danger?: boolean;
-  emphasis?: boolean;
-  disabled?: boolean;
-}) {
+function ControlButton({ label, onClick, emphasis, danger }: { label: string; onClick: () => void; emphasis?: boolean; danger?: boolean }) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ y: -1 }}
-      className={`inline-flex min-w-[72px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] transition disabled:opacity-55 ${
-        danger
-          ? "border border-rose-400/40 bg-rose-500/10 text-rose-100"
-          : emphasis
-            ? "border border-white/30 bg-white text-black"
-            : "border border-white/15 bg-white/[0.04] text-white/90"
-      }`}
-      aria-label={label}
+      className={`rounded-full px-4 py-2 text-[11px] font-medium transition ${danger ? "border border-rose-400/45 text-rose-200" : emphasis ? "bg-white text-black" : "border border-white/20 text-white/90"}`}
     >
-      {icon}
-      <span className="leading-none">{label}</span>
-    </motion.button>
+      {label}
+    </button>
   );
 }
 
-export function RoomControls({ joinedAudio, joiningAudio, micMuted, onJoinAudio, onToggleMic, onInvite, onOpenVexa, onLeave }: RoomControlsProps) {
-  const micLabel = !joinedAudio ? (joiningAudio ? "Joining" : "Join") : micMuted ? "Unmute" : "Mute";
-
+export function RoomControls({
+  joinedAudio,
+  joiningAudio,
+  micMuted,
+  onJoinAudio,
+  onToggleMic,
+  onInvite,
+  onOpenVexa,
+  onLeave
+}: RoomControlsProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-[24px] border border-white/15 bg-[#090a10]/85 p-2.5 shadow-[0_18px_55px_rgba(0,0,0,0.5)] backdrop-blur-xl"
-    >
+    <div className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-full border border-white/10 bg-black/75 p-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <DockButton
-          label={micLabel}
-          onClick={joinedAudio ? onToggleMic : onJoinAudio}
-          emphasis={!joinedAudio}
-          disabled={joiningAudio}
-          icon={joinedAudio ? (micMuted ? <MicOffIcon className="h-4 w-4" /> : <MicIcon className="h-4 w-4" />) : <MicIcon className="h-4 w-4" />}
-        />
-        <DockButton label="Invite" onClick={onInvite} icon={<UserPlusIcon className="h-4 w-4" />} />
-        <DockButton label="Vexa" onClick={onOpenVexa} icon={<BrainSparkIcon className="h-4 w-4" />} />
-        <DockButton label="Leave" onClick={onLeave} danger icon={<ExitIcon className="h-4 w-4" />} />
+        {!joinedAudio ? (
+          <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} emphasis />
+        ) : (
+          <ControlButton label={micMuted ? "Mic Off" : "Mic On"} onClick={onToggleMic} />
+        )}
+        <ControlButton label="Invite" onClick={onInvite} />
+        <ControlButton label="Vexa" onClick={onOpenVexa} />
+        <ControlButton label="Leave" onClick={onLeave} danger />
       </div>
-    </motion.div>
+    </div>
   );
 }

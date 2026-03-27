@@ -29,8 +29,7 @@ class RealtimeStartError extends Error {
 type VexaVoicePanelProps = {
   open: boolean;
   roomId: string | null;
-  onClose?: () => void;
-  embedded?: boolean;
+  onClose: () => void;
   onStatusChange?: (status: VoiceStatus) => void;
 };
 
@@ -119,7 +118,7 @@ async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, ti
   });
 }
 
-export function VexaVoicePanel({ open, roomId, onClose, embedded = false, onStatusChange }: VexaVoicePanelProps) {
+export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVoicePanelProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -439,73 +438,6 @@ export function VexaVoicePanel({ open, roomId, onClose, embedded = false, onStat
 
   const statusLabel = useMemo(() => statusLabelMap[status], [status]);
   const isPressDisabled = status === "connecting";
-
-  if (embedded) {
-    return open ? (
-      <section className="rounded-[24px] border border-white/12 bg-[#0b0d13]/85 p-3.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-[#d58aa0]">Vexa live</p>
-            <h3 className="text-sm font-semibold text-white">Hold to talk</h3>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/65">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                status === "listening"
-                  ? "animate-pulse bg-emerald-300"
-                  : status === "speaking"
-                    ? "animate-pulse bg-[#d58aa0]"
-                    : status === "error"
-                      ? "bg-rose-300"
-                      : status === "connecting"
-                        ? "animate-pulse bg-sky-300"
-                        : "bg-white/40"
-              }`}
-            />
-            {statusLabel}
-          </div>
-        </div>
-        <div className="mt-3 flex items-center justify-center">
-          <button
-            type="button"
-            disabled={isPressDisabled}
-            onPointerDown={(event) => {
-              event.preventDefault();
-              activePointerIdRef.current = event.pointerId;
-              event.currentTarget.setPointerCapture(event.pointerId);
-              void startTalking();
-            }}
-            onPointerUp={(event) => {
-              event.preventDefault();
-              if (activePointerIdRef.current === null || event.pointerId === activePointerIdRef.current) {
-                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  event.currentTarget.releasePointerCapture(event.pointerId);
-                }
-                stopTalking();
-                activePointerIdRef.current = null;
-              }
-            }}
-            onPointerCancel={() => {
-              stopTalking();
-              activePointerIdRef.current = null;
-            }}
-            onLostPointerCapture={() => {
-              stopTalking();
-              activePointerIdRef.current = null;
-            }}
-            className={`relative h-16 w-16 touch-none rounded-full border text-[11px] font-semibold transition ${
-              status === "listening"
-                ? "scale-105 border-emerald-300/70 bg-emerald-300/20 text-emerald-100"
-                : "border-[#d58aa0]/50 bg-[#1a1115] text-[#f1bdd0]"
-            } disabled:cursor-not-allowed disabled:opacity-55`}
-          >
-            Talk
-          </button>
-        </div>
-        {error ? <p className="mt-2 text-center text-xs text-rose-300">{error}</p> : null}
-      </section>
-    ) : null;
-  }
 
   return (
     <AnimatePresence>
