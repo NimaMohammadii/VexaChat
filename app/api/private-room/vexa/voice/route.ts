@@ -56,6 +56,21 @@ type TranscriptionResult = {
   errorCode: VoiceErrorCode | null;
 };
 
+const TTS_WARNING_MESSAGE_MAP: Record<string, string> = {
+  TTS_CONFIG: "Voice generation is not configured on this server.",
+  TTS_AUTH: "Voice generation authentication failed.",
+  TTS_INVALID_VOICE: "Configured ElevenLabs voice is invalid or unavailable.",
+  TTS_INVALID_MODEL: "Configured ElevenLabs model is not available for this request.",
+  TTS_INVALID_OUTPUT_FORMAT: "Configured ElevenLabs audio format is not supported.",
+  TTS_UNSUPPORTED_REQUEST: "Voice generation request was rejected by ElevenLabs.",
+  TTS_TIMEOUT: "Voice generation timed out.",
+  TTS_NETWORK: "Network error while generating voice.",
+  TTS_EMPTY_AUDIO: "Voice generation returned empty audio.",
+  TTS_BAD_CONTENT_TYPE: "Voice generation returned an invalid content type.",
+  TTS_PROVIDER_UNAVAILABLE: "Voice generation provider is temporarily unavailable.",
+  TTS_FAILED: "Voice generation failed."
+};
+
 function devDebugMeta(stage: VoiceFailure["stage"], debug: Record<string, unknown> | undefined) {
   return process.env.NODE_ENV === "development" ? { stage, ...(debug || {}) } : undefined;
 }
@@ -361,9 +376,24 @@ export async function POST(request: NextRequest) {
       console.error("Vexa tts provider issue", {
         roomId,
         userId: user.id,
-        providerError: ttsResult.providerError
+        providerError: ttsResult.providerError,
+        providerStatus: ttsResult.providerStatus,
+        providerBodySnippet: ttsResult.providerBodySnippet,
+        errorCode: ttsResult.errorCode,
+        timeout: ttsResult.timeout,
+        outputFormat: ttsResult.outputFormat,
+        mimeType: ttsResult.mimeType
       });
     }
+
+    const ttsWarning = ttsResult.providerError
+      ? {
+          category: "tts",
+          code: ttsResult.errorCode || "TTS_FAILED",
+          message: TTS_WARNING_MESSAGE_MAP[ttsResult.errorCode || "TTS_FAILED"] || "Voice generation failed.",
+          retriable: Boolean(ttsResult.timeout || ttsResult.errorCode === "TTS_NETWORK" || ttsResult.errorCode === "TTS_PROVIDER_UNAVAILABLE")
+        }
+      : null;
 
     return NextResponse.json({
       transcript: transcriptResult.transcript,
@@ -387,7 +417,12 @@ export async function POST(request: NextRequest) {
       },
       warnings: {
         chatFallback: Boolean(vexa.providerError),
-        ttsFallback: Boolean(ttsResult.providerError)
+        ttsFallback: Boolean(ttsResult.providerError),
+        tts: ttsWarning
+      },
+      tts: {
+        ready: Boolean(ttsResult.audioBuffer),
+        code: ttsWarning?.code || null
       }
     });
   } catch (error) {

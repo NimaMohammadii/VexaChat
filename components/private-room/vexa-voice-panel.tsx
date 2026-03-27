@@ -14,6 +14,18 @@ type VoiceApiResponse = {
   code?: string;
   stage?: string;
   debug?: Record<string, unknown>;
+  warnings?: {
+    tts?: {
+      category?: string;
+      code?: string;
+      message?: string;
+      retriable?: boolean;
+    } | null;
+  };
+  tts?: {
+    ready?: boolean;
+    code?: string | null;
+  };
 };
 
 type VexaVoicePanelProps = {
@@ -30,6 +42,21 @@ const statusLabelMap: Record<VoiceStatus, string> = {
   thinking: "Thinking...",
   speaking: "Speaking...",
   error: "Try again"
+};
+
+const ttsWarningMessageMap: Record<string, string> = {
+  TTS_CONFIG: "Voice generation is not configured yet. Please contact support.",
+  TTS_AUTH: "Voice generation authentication failed on the server.",
+  TTS_INVALID_VOICE: "The configured voice is unavailable right now.",
+  TTS_INVALID_MODEL: "The configured voice model is unavailable right now.",
+  TTS_INVALID_OUTPUT_FORMAT: "The voice output format is not supported right now.",
+  TTS_UNSUPPORTED_REQUEST: "Voice generation request was rejected. Please retry.",
+  TTS_TIMEOUT: "Voice generation timed out. Please retry.",
+  TTS_NETWORK: "Network issue while generating voice. Please retry.",
+  TTS_EMPTY_AUDIO: "Voice generation returned empty audio.",
+  TTS_BAD_CONTENT_TYPE: "Voice generation returned an unexpected response.",
+  TTS_PROVIDER_UNAVAILABLE: "Voice generation service is temporarily unavailable.",
+  TTS_FAILED: "Voice generation is unavailable right now."
 };
 
 function preferredMimeType() {
@@ -246,7 +273,12 @@ export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVo
         setResponseText(responseValue);
 
         if (!data.audioBase64) {
-          setError("Vexa replied in text, but voice generation is unavailable right now.");
+          const ttsCode = data.warnings?.tts?.code || data.tts?.code || "";
+          const fallbackMessage =
+            data.warnings?.tts?.message ||
+            ttsWarningMessageMap[ttsCode] ||
+            "Vexa replied in text, but voice generation is unavailable right now.";
+          setError(fallbackMessage);
           setVoiceStatus("idle");
           return;
         }
