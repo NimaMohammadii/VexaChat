@@ -335,62 +335,77 @@ export default function PrivateRoomPage() {
   const topInvite = invites[0] ?? null;
 
   return (
-    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#070708] text-white">
+    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#060607] text-white">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-10 h-60 w-60 rounded-full bg-[#7d233f]/20 blur-[100px]" />
-        <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
+        <div className="absolute -left-20 top-0 h-64 w-64 rounded-full bg-[#6f2138]/20 blur-[110px]" />
+        <div className="absolute -right-24 bottom-12 h-72 w-72 rounded-full bg-[#2b2b31]/45 blur-[130px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-3 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-[calc(0.8rem+env(safe-area-inset-top))]">
-        <header className="flex items-start justify-between">
+      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pb-[calc(0.85rem+env(safe-area-inset-bottom))] pt-[calc(0.9rem+env(safe-area-inset-top))]">
+        <header className="mb-3 flex items-start justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70">Private audio</div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight">Private Room</h1>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/48">Vexa private room</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-white/95">Live audio</h1>
           </div>
           <HeaderMenuDrawer />
         </header>
 
-        {loading ? <p className="text-sm text-white/70">Loading private rooms...</p> : null}
-        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+        {loading ? <p className="text-sm text-white/62">Loading room…</p> : null}
+        {error ? <p className="mb-2 text-sm text-rose-300">{error}</p> : null}
 
         {!loading && !currentRoomId ? (
-          <>
-            <motion.article initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Start your room</p>
-              <h2 className="mt-2 text-lg font-medium">Create a private live room and invite your circle.</h2>
-              <button type="button" onClick={() => setSheetOpen(true)} className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black">
-                Create Space
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-1 flex-col justify-center">
+            <div className="mx-auto w-full max-w-sm text-center">
+              <h2 className="text-2xl font-semibold tracking-tight text-white/95">Start a private voice room</h2>
+              <p className="mt-2 text-sm text-white/55">Invite your circle and talk instantly in a live space.</p>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="mt-6 inline-flex rounded-full border border-white/20 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-black"
+              >
+                Create room
               </button>
-            </motion.article>
+            </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">Incoming invites</h3>
-              {invites.length === 0 ? <p className="text-sm text-white/55">No pending invites.</p> : null}
+            <div className="mx-auto mt-8 w-full max-w-md space-y-2">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Incoming invites</p>
+              {invites.length === 0 ? <p className="text-sm text-white/48">No pending invites.</p> : null}
               {invites.map((invite) => (
-                <div key={invite.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-sm font-medium">{invite.roomName || "Private Space"}</p>
-                  <p className="mt-1 text-xs text-white/60">@{invite.ownerUsername} invited you</p>
-                  <div className="mt-2 flex gap-2">
-                    <button type="button" onClick={() => void respondToInvite(invite, "accept")} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-black">
-                      Accept
+                <div key={invite.id} className="flex items-center justify-between border-b border-white/10 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-white/90">{invite.roomName || "Private space"}</p>
+                    <p className="text-xs text-white/55">@{invite.ownerUsername} invited you</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void respondToInvite(invite, "accept")}
+                      className="rounded-full border border-white/20 bg-white px-3 py-1.5 text-[11px] font-semibold text-black"
+                    >
+                      Join
                     </button>
-                    <button type="button" onClick={() => void respondToInvite(invite, "reject")} className="rounded-full border border-white/20 px-3 py-1.5 text-[11px] text-white/85">
-                      Reject
+                    <button
+                      type="button"
+                      onClick={() => void respondToInvite(invite, "reject")}
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/78"
+                    >
+                      Decline
                     </button>
                   </div>
                 </div>
               ))}
             </div>
-          </>
+          </motion.section>
         ) : null}
 
         {room ? (
-          <>
+          <div className="flex flex-1 flex-col">
             <LiveRoomHeader
               title={room.name || "Private Space"}
               roomCode={room.roomCode}
               participantCount={room.participants.length}
               onInvite={() => setInviteSheetOpen(true)}
+              onLeave={() => void leaveRoom()}
             />
 
             <LiveRoomGrid
@@ -401,7 +416,9 @@ export default function PrivateRoomPage() {
               vexaState={vexaState}
             />
 
-            <p className="px-1 text-[11px] text-white/55">{joinedAudio ? `Audio connected${micMuted ? " • mic muted" : " • mic live"}` : "Tap Join Audio to talk live"}</p>
+            <p className="mb-2 text-center text-[11px] text-white/52">
+              {joinedAudio ? `Audio connected${micMuted ? " · mic muted" : " · mic live"}` : "Join audio to speak in this room"}
+            </p>
 
             <RoomControls
               joinedAudio={joinedAudio}
@@ -413,7 +430,7 @@ export default function PrivateRoomPage() {
               onOpenVexa={() => setVexaOpen(true)}
               onLeave={() => void leaveRoom()}
             />
-          </>
+          </div>
         ) : null}
       </section>
 
@@ -423,19 +440,19 @@ export default function PrivateRoomPage() {
             initial={{ y: -24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -16, opacity: 0 }}
-            className="fixed left-1/2 top-[calc(8px+env(safe-area-inset-top))] z-[70] w-[calc(100%-1.4rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/15 bg-[#111116]/95 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.42)] backdrop-blur-xl"
+            className="fixed left-1/2 top-[calc(8px+env(safe-area-inset-top))] z-[70] w-[calc(100%-1.4rem)] max-w-md -translate-x-1/2 rounded-2xl border border-white/10 bg-[#111116]/92 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.42)] backdrop-blur-xl"
           >
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[#e8a4b9]">Private room invite</p>
-            <p className="mt-1 text-sm text-white/90">@{topInvite.ownerUsername} invited you to join a private room</p>
-            <p className="mt-1 text-[11px] text-white/55">{topInvite.roomName || "Private Space"}</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-[#e8a4b9]">Invite request</p>
+            <p className="mt-1 text-sm text-white/90">@{topInvite.ownerUsername} invited you</p>
+            <p className="mt-1 text-[11px] text-white/55">{topInvite.roomName || "Private space"}</p>
             <div className="mt-3 flex items-center gap-2">
               <button
                 type="button"
                 disabled={inviteActionLoading}
                 onClick={() => void respondToInvite(topInvite, "accept")}
-                className="rounded-full bg-white px-3.5 py-1.5 text-[11px] font-semibold text-black disabled:opacity-50"
+                className="rounded-full border border-white/20 bg-white px-3.5 py-1.5 text-[11px] font-semibold text-black disabled:opacity-50"
               >
-                Accept
+                Join
               </button>
               <button
                 type="button"
