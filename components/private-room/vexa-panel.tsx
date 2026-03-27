@@ -16,6 +16,7 @@ type SpeechRecognitionInstance = {
   lang: string;
   interimResults: boolean;
   maxAlternatives: number;
+  continuous?: boolean;
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null;
   onerror: (() => void) | null;
   onend: (() => void) | null;
@@ -33,6 +34,8 @@ type SpeechWindow = Window & {
 export function VexaPanel({ open, onClose, loading, response, error, onSubmit }: VexaPanelProps) {
   const [prompt, setPrompt] = useState("");
   const [listening, setListening] = useState(false);
+  const [responding, setResponding] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(true);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
@@ -61,7 +64,7 @@ export function VexaPanel({ open, onClose, loading, response, error, onSubmit }:
     };
 
     recognition.onerror = () => {
-      setSpeechError("Voice input failed. You can still type your question.");
+      setSpeechError("Voice capture failed. You can still type your message.");
       setListening(false);
     };
 
@@ -73,10 +76,29 @@ export function VexaPanel({ open, onClose, loading, response, error, onSubmit }:
     if (!open) {
       setPrompt("");
       setListening(false);
+      setResponding(false);
       setSpeechError(null);
       recognitionRef.current?.stop();
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!response || !open) return;
+    setResponding(true);
+    const timer = window.setTimeout(() => setResponding(false), 1200);
+
+    if (autoSpeak && typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(response);
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }
+
+    return () => window.clearTimeout(timer);
+  }, [autoSpeak, open, response]);
 
   const toggleListening = () => {
     if (!recognitionRef.current) return;
@@ -97,39 +119,60 @@ export function VexaPanel({ open, onClose, loading, response, error, onSubmit }:
     await onSubmit(prompt.trim());
   };
 
+  const statusLabel = listening ? "Listening" : loading ? "Thinking" : responding ? "Responding" : "Ready";
+
   return (
     <AnimatePresence>
       {open ? (
         <>
           <motion.div className="fixed inset-0 z-40 bg-black/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-          <motion.div className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#09090b] p-5" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: 0.25 }}>
+          <motion.div
+            className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#09090b] p-4"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ duration: 0.25 }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#d58aa0]">Vexa in room</p>
-                <h3 className="text-lg font-semibold text-white">Ask Vexa</h3>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[#d58aa0]">Vexa live</p>
+                <h3 className="text-base font-semibold text-white">Talk to Vexa</h3>
               </div>
-              <button type="button" onClick={onClose} className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/70">Close</button>
+              <button type="button" onClick={onClose} className="rounded-full border border-white/20 px-3 py-1 text-[11px] text-white/70">
+                Close
+              </button>
             </div>
 
-            <p className="mt-3 text-xs text-white/55">Status: {loading ? "Thinking…" : listening ? "Listening…" : "Ready"}</p>
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-white/65">
+              <span className={`h-2 w-2 rounded-full ${loading ? "animate-pulse bg-[#d58aa0]" : listening ? "bg-emerald-300" : "bg-white/40"}`} />
+              {statusLabel}
+            </div>
+
             <textarea
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Ask for a summary, idea, or quick answer..."
+              placeholder="Say or type: summarize this, suggest a reply, explain quickly..."
               className="mt-3 h-24 w-full rounded-2xl border border-white/10 bg-black/40 p-3 text-sm outline-none focus:border-white/40"
             />
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => void submit()} disabled={loading || !prompt.trim()} className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black disabled:opacity-50">
-                {loading ? "Vexa thinking…" : "Send"}
+                {loading ? "Thinking…" : "Ask Vexa"}
               </button>
               {speechSupported ? (
                 <button type="button" onClick={toggleListening} className="rounded-full border border-white/20 px-4 py-2 text-xs text-white/85">
-                  {listening ? "Stop Voice" : "Voice Input"}
+                  {listening ? "Stop" : "Voice"}
                 </button>
               ) : (
-                <span className="text-xs text-white/45">Voice input not supported in this browser.</span>
+                <span className="text-xs text-white/45">Voice input unsupported in this browser.</span>
               )}
+              <button
+                type="button"
+                onClick={() => setAutoSpeak((current) => !current)}
+                className={`rounded-full border px-3 py-2 text-xs ${autoSpeak ? "border-[#d58aa0]/70 text-[#efb3c3]" : "border-white/20 text-white/70"}`}
+              >
+                Auto voice {autoSpeak ? "On" : "Off"}
+              </button>
             </div>
 
             {speechError ? <p className="mt-3 text-xs text-rose-300">{speechError}</p> : null}

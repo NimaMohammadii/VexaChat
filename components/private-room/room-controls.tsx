@@ -16,7 +16,7 @@ function ControlButton({ label, onClick, emphasis, danger }: { label: string; on
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-3 text-xs font-medium transition ${danger ? "border border-rose-400/40 text-rose-200" : emphasis ? "bg-white text-black" : "border border-white/20 text-white/90"}`}
+      className={`rounded-full px-4 py-2 text-[11px] font-medium transition ${danger ? "border border-rose-400/45 text-rose-200" : emphasis ? "bg-white text-black" : "border border-white/20 text-white/90"}`}
     >
       {label}
     </button>
@@ -34,8 +34,8 @@ export function RoomControls({
   onLeave
 }: RoomControlsProps) {
   return (
-    <div className="sticky bottom-0 z-20 rounded-3xl border border-white/10 bg-black/75 p-3 backdrop-blur-xl">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="sticky bottom-[calc(10px+env(safe-area-inset-bottom))] z-20 rounded-full border border-white/10 bg-black/75 p-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {!joinedAudio ? (
           <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} emphasis />
         ) : (
