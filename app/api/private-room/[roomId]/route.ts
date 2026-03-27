@@ -23,6 +23,8 @@ export async function GET(_request: NextRequest, { params }: { params: { roomId:
       roomCode: true,
       channelName: true,
       name: true,
+      vibe: true,
+      isPublic: true,
       enableTextChat: true,
       ownerUserId: true,
       createdAt: true,

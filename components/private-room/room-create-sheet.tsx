@@ -21,12 +21,18 @@ type RoomCreateSheetProps = {
 };
 
 type RoomVibe = "chill" | "focus" | "late-night" | "party";
+type RoomVisibility = "private" | "public";
 
 const vibes: Array<{ id: RoomVibe; label: string; detail: string; accent: string }> = [
   { id: "chill", label: "Chill", detail: "Relaxed and easy conversation", accent: "from-sky-300/70 to-indigo-300/60" },
   { id: "focus", label: "Focus", detail: "Quiet and intentional speaking", accent: "from-emerald-300/70 to-cyan-300/60" },
   { id: "late-night", label: "Late Night", detail: "Slow pace with cozy energy", accent: "from-fuchsia-300/70 to-rose-300/60" },
   { id: "party", label: "Party", detail: "High-energy quick interactions", accent: "from-amber-300/70 to-pink-300/60" }
+];
+
+const visibilities: Array<{ id: RoomVisibility; title: string; detail: string; note: string }> = [
+  { id: "private", title: "Private room", detail: "Only invited people can join.", note: "Invite-only" },
+  { id: "public", title: "Public room", detail: "Appears in Private Room discovery.", note: "Visible to everyone" }
 ];
 
 function DecorativeBlob() {
@@ -61,8 +67,8 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
   const [step, setStep] = useState(1);
   const [roomName, setRoomName] = useState("");
   const [enableTextChat, setEnableTextChat] = useState(true);
-  const [enableVoice, setEnableVoice] = useState(true);
   const [roomVibe, setRoomVibe] = useState<RoomVibe>("chill");
+  const [roomVisibility, setRoomVisibility] = useState<RoomVisibility>("private");
   const [query, setQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,8 +85,8 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
     if (mode === "create") {
       setRoomName("");
       setEnableTextChat(true);
-      setEnableVoice(true);
       setRoomVibe("chill");
+      setRoomVisibility("private");
     }
   }, [mode, open]);
 
@@ -108,6 +114,8 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: roomName.trim(),
+            vibe: roomVibe,
+            visibility: roomVisibility,
             enableTextChat,
             invitedUserIds: selectedIds
           })
@@ -196,16 +204,10 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                         </button>
                       ))}
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button type="button" onClick={() => setEnableVoice((current) => !current)} className={`rounded-2xl border px-3 py-3 text-left text-sm ${enableVoice ? "border-[#f3adc1]/45 bg-[#f3adc1]/10" : "border-white/10 bg-white/[0.03]"}`}>
-                        <p className="font-medium">Voice room</p>
-                        <p className="mt-1 text-xs text-white/60">{enableVoice ? "Enabled" : "Disabled"}</p>
-                      </button>
-                      <button type="button" onClick={() => setEnableTextChat((current) => !current)} className={`rounded-2xl border px-3 py-3 text-left text-sm ${enableTextChat ? "border-[#a9d6ff]/40 bg-[#a9d6ff]/10" : "border-white/10 bg-white/[0.03]"}`}>
-                        <p className="font-medium">Text chat</p>
-                        <p className="mt-1 text-xs text-white/60">{enableTextChat ? "Enabled" : "Disabled"}</p>
-                      </button>
-                    </div>
+                    <button type="button" onClick={() => setEnableTextChat((current) => !current)} className={`rounded-2xl border px-3 py-3 text-left text-sm ${enableTextChat ? "border-[#a9d6ff]/40 bg-[#a9d6ff]/10" : "border-white/10 bg-white/[0.03]"}`}>
+                      <p className="font-medium">Text chat</p>
+                      <p className="mt-1 text-xs text-white/60">{enableTextChat ? "Enabled" : "Disabled"}</p>
+                    </button>
                   </motion.section>
                 ) : null}
 
@@ -231,7 +233,7 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                       <p className="text-xs text-white/55">No one selected yet. Invite people you trust.</p>
                     )}
 
-                    <div className="max-h-[44svh] space-y-2 overflow-y-auto pr-1">
+                    <div className="max-h-[42svh] space-y-2 overflow-y-auto pr-1">
                       {filteredFriends.map((friend) => {
                         const selected = selectedIds.includes(friend.id);
                         return (
@@ -258,11 +260,27 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
 
                 {step === 3 && mode === "create" ? (
                   <motion.section key="step-3" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }} className="relative z-10 mt-4 space-y-3">
-                    <label className="block text-xs uppercase tracking-[0.12em] text-white/60">Review</label>
+                    <label className="block text-xs uppercase tracking-[0.12em] text-white/60">Privacy & review</label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {visibilities.map((visibility) => (
+                        <button
+                          key={visibility.id}
+                          type="button"
+                          onClick={() => setRoomVisibility(visibility.id)}
+                          className={`rounded-2xl border p-3 text-left transition ${roomVisibility === visibility.id ? "border-white/55 bg-white/[0.08]" : "border-white/10 bg-white/[0.03]"}`}
+                          aria-pressed={roomVisibility === visibility.id}
+                        >
+                          <p className="text-sm font-semibold">{visibility.title}</p>
+                          <p className="mt-1 text-xs text-white/60">{visibility.detail}</p>
+                          <span className="mt-2 inline-flex rounded-full border border-white/20 px-2 py-0.5 text-[10px] text-white/70">{visibility.note}</span>
+                        </button>
+                      ))}
+                    </div>
                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                       <p className="text-sm font-medium text-white/95">{roomName.trim()}</p>
                       <p className="mt-1 text-xs text-white/60">Mood: {vibes.find((v) => v.id === roomVibe)?.label}</p>
-                      <p className="mt-1 text-xs text-white/60">Voice: {enableVoice ? "On" : "Off"} • Text: {enableTextChat ? "On" : "Off"}</p>
+                      <p className="mt-1 text-xs text-white/60">Visibility: {roomVisibility === "public" ? "Public" : "Private"}</p>
+                      <p className="mt-1 text-xs text-white/60">Text chat: {enableTextChat ? "On" : "Off"}</p>
                       <p className="mt-3 text-xs uppercase tracking-[0.12em] text-white/45">Invited users</p>
                       <ul className="mt-2 space-y-1.5 text-sm text-white/85">
                         {selectedPeople.length > 0 ? selectedPeople.map((friend) => <li key={friend.id}>@{friend.username}</li>) : <li className="text-white/55">No invites selected</li>}

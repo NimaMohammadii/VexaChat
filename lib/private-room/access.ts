@@ -7,6 +7,7 @@ export async function canAccessPrivateRoom(roomId: string, userId: string) {
       id: true,
       status: true,
       ownerUserId: true,
+      isPublic: true,
       invites: {
         where: {
           invitedUserId: userId,
@@ -27,7 +28,7 @@ export async function canAccessPrivateRoom(roomId: string, userId: string) {
     return { canAccess: false as const, room: null };
   }
 
-  const canAccess = room.ownerUserId === userId || room.invites.length > 0 || room.participants.length > 0;
+  const canAccess = room.isPublic || room.ownerUserId === userId || room.invites.length > 0 || room.participants.length > 0;
 
   return {
     canAccess,

@@ -318,6 +318,8 @@ model PrivateRoom {
   channelName    String                   @unique
   ownerUserId    String
   name           String?
+  vibe           String?
+  isPublic       Boolean                  @default(false)
   enableTextChat Boolean                  @default(true)
   status         PrivateRoomStatus        @default(active)
   createdAt      DateTime                 @default(now())
@@ -326,6 +328,7 @@ model PrivateRoom {
   invites        PrivateRoomInvite[]
 
   @@index([ownerUserId, status])
+  @@index([isPublic, status])
 }
 
 model PrivateRoomParticipant {
