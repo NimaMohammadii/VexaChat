@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { createSupabaseClient } from "@/lib/supabase-client";
-import { SvjHeartIcon, SvjHomeIcon } from "@/components/svj-icons";
+import { SvjHeartIcon, SvjHomeIcon, SvjLockIcon } from "@/components/svj-icons";
+import { MENU_ITEM_KEYS, type MenuItemKey } from "@/lib/menu-access";
 
 type MenuItem = {
+  key: MenuItemKey;
   href: string;
   label: string;
   match: (pathname: string) => boolean;
@@ -76,12 +78,12 @@ function SignOutIcon() {
 }
 
 const items: MenuItem[] = [
-  { href: "/", label: "Home", match: (pathname) => pathname === "/", Icon: HomeIcon },
-  { href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
-  { href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
-  { href: "/friends", label: "Friends", match: (pathname) => pathname === "/friends", Icon: FriendsIcon },
-  { href: "/noir", label: "Noir", match: (pathname) => pathname === "/noir", Icon: NoirIcon },
-  { href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
+  { key: "home", href: "/", label: "Home", match: (pathname) => pathname === "/", Icon: HomeIcon },
+  { key: "meet", href: "/meet", label: "Meet", match: (pathname) => pathname === "/meet", Icon: MeetIcon },
+  { key: "private-room", href: "/private-room", label: "Private Room", match: (pathname) => pathname === "/private-room", Icon: PrivateRoomIcon },
+  { key: "friends", href: "/friends", label: "Friends", match: (pathname) => pathname === "/friends", Icon: FriendsIcon },
+  { key: "noir", href: "/noir", label: "Noir", match: (pathname) => pathname === "/noir", Icon: NoirIcon },
+  { key: "me", href: "/me", label: "My Profile", match: (pathname) => pathname === "/me", Icon: ProfileIcon },
 ];
 
 function MenuIcon({ open, variant = "default" }: { open: boolean; variant?: "default" | "minimal" }) {
@@ -103,6 +105,8 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasSession, setHasSession] = useState(false);
+  const [lockedMenuKeys, setLockedMenuKeys] = useState<MenuItemKey[]>([]);
+  const [lockedMenuModal, setLockedMenuModal] = useState<{ open: boolean; label: string }>({ open: false, label: "" });
 
   useEffect(() => {
     setMounted(true);
@@ -133,6 +137,22 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   }, []);
 
   useEffect(() => {
+    const loadLocks = async () => {
+      const response = await fetch("/api/menu-access", { cache: "no-store" }).catch(() => null);
+
+      if (!response || !response.ok) {
+        return;
+      }
+
+      const data = (await response.json()) as { lockedKeys?: string[] };
+      const filtered = MENU_ITEM_KEYS.filter((key) => data.lockedKeys?.includes(key));
+      setLockedMenuKeys(filtered);
+    };
+
+    void loadLocks();
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) {
       return;
     }
@@ -152,6 +172,10 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   }, [pathname]);
 
   useEffect(() => {
+    setLockedMenuModal({ open: false, label: "" });
+  }, [pathname]);
+
+  useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
 
     return () => {
@@ -164,6 +188,12 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
     await supabase.auth.signOut();
     setIsOpen(false);
     router.refresh();
+  };
+
+  const lockedKeySet = new Set(lockedMenuKeys);
+
+  const handleLockedItemClick = (label: string) => {
+    setLockedMenuModal({ open: true, label });
   };
 
   return (
@@ -214,18 +244,33 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
 
                   return (
                     <div key={item.href}>
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        style={{ transitionDelay: `${delay}ms` }}
-                        className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-all duration-300 ease-out ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"} ${isActive ? "border-[#FF2E63]/45 bg-gradient-to-r from-[#FF2E63]/25 via-white/[0.08] to-transparent text-white shadow-[0_0_24px_rgba(255,46,99,0.25)]" : "border-white/10 bg-white/[0.02] text-white/80 hover:border-[#FF2E63]/35 hover:bg-gradient-to-r hover:from-[#FF2E63]/15 hover:via-white/[0.06] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(255,46,99,0.18)]"}`}
-                      >
-                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${isActive ? "border-[#FF2E63]/45 bg-[#FF2E63]/20 text-white" : "border-white/15 bg-black/25 text-white/75 group-hover:border-[#FF2E63]/35 group-hover:text-white"}`}>
-                          <Icon />
-                        </span>
-                        <span className="font-medium tracking-wide">{item.label}</span>
-                        <span className="ml-auto text-white/45 transition group-hover:translate-x-0.5 group-hover:text-white/75">→</span>
-                      </Link>
+                      {lockedKeySet.has(item.key) ? (
+                        <button
+                          type="button"
+                          onClick={() => handleLockedItemClick(item.label)}
+                          style={{ transitionDelay: `${delay}ms` }}
+                          className={`group flex w-full items-center gap-3 rounded-2xl border border-amber-300/25 bg-amber-500/5 px-4 py-3 text-left text-sm text-white/80 transition-all duration-300 ease-out hover:border-amber-300/40 hover:bg-amber-500/10 ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"}`}
+                        >
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-amber-200/30 bg-black/30 text-amber-100">
+                            <Icon />
+                          </span>
+                          <span className="font-medium tracking-wide">{item.label}</span>
+                          <span className="ml-auto text-xs text-amber-100/80">Locked</span>
+                        </button>
+                      ) : (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          style={{ transitionDelay: `${delay}ms` }}
+                          className={`group flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition-all duration-300 ease-out ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-3 opacity-0"} ${isActive ? "border-[#FF2E63]/45 bg-gradient-to-r from-[#FF2E63]/25 via-white/[0.08] to-transparent text-white shadow-[0_0_24px_rgba(255,46,99,0.25)]" : "border-white/10 bg-white/[0.02] text-white/80 hover:border-[#FF2E63]/35 hover:bg-gradient-to-r hover:from-[#FF2E63]/15 hover:via-white/[0.06] hover:to-transparent hover:text-white hover:shadow-[0_0_20px_rgba(255,46,99,0.18)]"}`}
+                        >
+                          <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${isActive ? "border-[#FF2E63]/45 bg-[#FF2E63]/20 text-white" : "border-white/15 bg-black/25 text-white/75 group-hover:border-[#FF2E63]/35 group-hover:text-white"}`}>
+                            <Icon />
+                          </span>
+                          <span className="font-medium tracking-wide">{item.label}</span>
+                          <span className="ml-auto text-white/45 transition group-hover:translate-x-0.5 group-hover:text-white/75">→</span>
+                        </Link>
+                      )}
                     </div>
                   );
                 })}
@@ -243,6 +288,34 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
                 </button>
               </div>
             </aside>
+
+            {lockedMenuModal.open && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm">
+                <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#0A0A0A]/95 p-6 text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                  <div aria-hidden className="pointer-events-none absolute inset-0">
+                    <div className="absolute -left-6 top-4 h-28 w-28 rounded-full bg-[#FF2E63]/20 blur-3xl" />
+                    <div className="absolute right-0 top-10 h-24 w-24 rounded-full bg-white/10 blur-3xl" />
+                  </div>
+
+                  <div className="relative mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/5 text-white">
+                    <SvjLockIcon className="h-8 w-8" />
+                  </div>
+                  <h3 className="relative text-xl font-semibold text-white">Access Locked</h3>
+                  <p className="relative mt-2 text-sm leading-6 text-white/75">
+                    بخش <span className="font-semibold text-white">{lockedMenuModal.label}</span> فعلاً غیرفعاله و دسترسی بهش بسته شده.
+                  </p>
+                  <p className="relative mt-1 text-xs tracking-wide text-white/45">Please contact the admin to unlock this section.</p>
+
+                  <button
+                    type="button"
+                    onClick={() => setLockedMenuModal({ open: false, label: "" })}
+                    className="relative mt-6 inline-flex min-w-28 items-center justify-center rounded-xl border border-[#FF2E63]/45 bg-[#FF2E63]/15 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#FF2E63]/25 hover:shadow-[0_0_20px_rgba(255,46,99,0.35)]"
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            )}
           </>,
           document.body
         )}
