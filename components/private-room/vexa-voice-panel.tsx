@@ -45,19 +45,8 @@ const statusLabelMap: Record<VoiceStatus, string> = {
 };
 
 const ttsWarningMessageMap: Record<string, string> = {
-  TTS_CONFIG: "Voice generation is not configured yet. Please contact support.",
-  TTS_AUTH: "Voice generation authentication failed on the server.",
-  TTS_INVALID_VOICE: "The configured voice is unavailable right now.",
-  TTS_INVALID_MODEL: "The configured voice model is unavailable right now.",
-  TTS_INVALID_OUTPUT_FORMAT: "The voice output format is not supported right now.",
-  TTS_UNSUPPORTED_REQUEST: "Voice generation request was rejected. Please retry.",
-  TTS_TIMEOUT: "Voice generation timed out. Please retry.",
-  TTS_NETWORK: "Network issue while generating voice. Please retry.",
-  TTS_EMPTY_AUDIO: "Voice generation returned empty audio.",
-  TTS_BAD_CONTENT_TYPE: "Voice generation returned an unexpected response.",
-  TTS_PROVIDER_UNAVAILABLE: "Voice generation service is temporarily unavailable.",
-  TTS_FAILED: "Voice generation is unavailable right now.",
-  TTS_PRIMARY_MODEL_FALLBACK: "Voice generated using fallback model."
+  OPENAI_TTS_CONFIG: "OpenAI voice generation is not configured on the server.",
+  OPENAI_TTS_FAILED: "OpenAI voice generation failed. Showing text response instead."
 };
 
 function preferredMimeType() {
