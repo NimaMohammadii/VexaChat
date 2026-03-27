@@ -291,25 +291,25 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
 
             {lockedMenuModal.open && (
               <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm">
-                <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-[#0A0A0A]/95 p-6 text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+                <div className="relative w-full max-w-[22rem] overflow-hidden rounded-3xl border border-white/15 bg-[#0A0A0A]/95 p-5 text-center shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
                   <div aria-hidden className="pointer-events-none absolute inset-0">
                     <div className="absolute -left-6 top-4 h-28 w-28 rounded-full bg-[#FF2E63]/20 blur-3xl" />
                     <div className="absolute right-0 top-10 h-24 w-24 rounded-full bg-white/10 blur-3xl" />
                   </div>
 
-                  <div className="relative mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/5 text-white">
-                    <SvjLockIcon className="h-8 w-8" />
+                  <div className="relative mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/5 text-white">
+                    <SvjLockIcon className="h-7 w-7" />
                   </div>
-                  <h3 className="relative text-xl font-semibold text-white">Access Locked</h3>
-                  <p className="relative mt-2 text-sm leading-6 text-white/75">
-                    بخش <span className="font-semibold text-white">{lockedMenuModal.label}</span> فعلاً غیرفعاله و دسترسی بهش بسته شده.
+                  <h3 className="relative text-lg font-semibold text-white">Access Locked</h3>
+                  <p className="relative mt-2 text-xs leading-5 text-white/75">
+                    Access to <span className="font-semibold text-white">{lockedMenuModal.label}</span> is currently disabled.
                   </p>
-                  <p className="relative mt-1 text-xs tracking-wide text-white/45">Please contact the admin to unlock this section.</p>
+                  <p className="relative mt-1 text-[11px] tracking-wide text-white/45">Please contact the admin to unlock this section.</p>
 
                   <button
                     type="button"
                     onClick={() => setLockedMenuModal({ open: false, label: "" })}
-                    className="relative mt-6 inline-flex min-w-28 items-center justify-center rounded-xl border border-[#FF2E63]/45 bg-[#FF2E63]/15 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#FF2E63]/25 hover:shadow-[0_0_20px_rgba(255,46,99,0.35)]"
+                    className="relative mt-5 inline-flex min-w-24 items-center justify-center rounded-xl border border-[#FF2E63]/45 bg-[#FF2E63]/15 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#FF2E63]/25 hover:shadow-[0_0_20px_rgba(255,46,99,0.35)]"
                   >
                     OK
                   </button>
