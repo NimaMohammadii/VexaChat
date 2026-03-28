@@ -369,17 +369,17 @@ export default function PrivateRoomPage() {
   }, [chatInput, localUsername]);
 
   return (
-    <main className="relative flex min-h-[100svh] overflow-hidden bg-[#070708] text-white">
+    <main className="relative flex min-h-[100svh] overflow-hidden bg-black text-[#e8e8e8]">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-10 h-60 w-60 rounded-full bg-[#7d233f]/20 blur-[100px]" />
-        <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
+        <div className="absolute -left-24 top-6 h-72 w-72 rounded-full bg-[#5a1020]/20 blur-[120px]" />
+        <div className="absolute -right-24 bottom-14 h-72 w-72 rounded-full bg-[#5a1020]/10 blur-[130px]" />
       </div>
 
-      <section className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col gap-3 px-4 pb-[calc(6.8rem+env(safe-area-inset-bottom))] pt-[calc(0.8rem+env(safe-area-inset-top))]">
-        <header className="flex items-start justify-between">
+      <section className="relative z-10 mx-auto flex w-full max-w-[430px] flex-1 flex-col gap-4 px-4 pb-[calc(6.8rem+env(safe-area-inset-bottom))] pt-[calc(1.8rem+env(safe-area-inset-top))]">
+        <header className="flex items-end justify-between">
           <div>
-            <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70">Private audio</div>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight">Private Room</h1>
+            <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/35">Private audio</div>
+            <h1 className="mt-2 text-[2rem] font-bold tracking-[-0.06em] text-white">Rooms</h1>
           </div>
           <HeaderMenuDrawer />
         </header>
@@ -391,41 +391,42 @@ export default function PrivateRoomPage() {
             <motion.article
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent p-4"
+              className="relative overflow-hidden rounded-[24px] border border-white/15 border-b-white/5 bg-[linear-gradient(160deg,rgba(255,255,255,0.065)_0%,rgba(255,255,255,0.022)_45%,rgba(0,0,0,0.06)_100%)] p-5 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.1),0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-[50px]"
             >
-              <div className="pointer-events-none absolute -right-14 -top-10 h-32 w-32 rounded-full bg-[#ff4b84]/25 blur-3xl" />
-              <p className="text-[10px] uppercase tracking-[0.16em] text-white/55">Start your room</p>
-              <h2 className="mt-2 text-lg font-medium">Build a pro-level private room in 3 quick steps.</h2>
-              <p className="mt-2 text-sm text-white/65">Set room style, choose your vibe, invite friends, and go live instantly.</p>
-
-              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-white/75">
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">1. Setup</div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">2. Vibe</div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-2">3. Invite</div>
-              </div>
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(90,16,32,.25)_0%,rgba(20,5,10,.35)_60%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,.04)_0%,transparent_50%)]" />
+              <p className="relative z-10 text-[10px] uppercase tracking-[0.2em] text-white/40">Private audio room</p>
+              <h2 className="relative z-10 mt-3 text-[22px] font-bold leading-[1.15] text-white">Create a space. <br /> Invite your circle.</h2>
 
               <button
                 type="button"
                 onClick={() => setSheetOpen(true)}
-                className="mt-4 inline-flex rounded-full bg-gradient-to-r from-white to-[#f6d5df] px-5 py-2.5 text-xs font-semibold text-black shadow-[0_8px_28px_rgba(255,120,170,0.35)]"
+                className="relative z-10 mt-5 inline-flex h-11 items-center justify-center rounded-[14px] border border-[#962841]/35 border-b-black/40 bg-[linear-gradient(160deg,rgba(120,25,48,.95)_0%,rgba(65,10,24,.92)_55%,rgba(30,4,12,.97)_100%)] px-5 text-[13px] font-semibold text-white shadow-[inset_0_1.5px_0_rgba(220,80,110,.2),0_4px_16px_rgba(0,0,0,.4)] active:scale-95"
               >
-                Create Space
+                Create room
               </button>
             </motion.article>
 
             <div className="space-y-2">
-              <h3 className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">Incoming invites</h3>
-              {invites.length === 0 ? <p className="text-sm text-white/55">No pending invites.</p> : null}
+              <h3 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/30">Incoming invites</h3>
+              {invites.length === 0 ? <p className="text-sm text-white/50">No pending invites.</p> : null}
               {invites.map((invite) => (
-                <div key={invite.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-sm font-medium">{invite.roomName || "Private Space"}</p>
-                  <p className="mt-1 text-xs text-white/60">@{invite.ownerUsername} invited you</p>
+                <div
+                  key={invite.id}
+                  className="rounded-[18px] border border-white/15 border-b-white/5 bg-[linear-gradient(160deg,rgba(255,255,255,0.065)_0%,rgba(255,255,255,0.022)_45%,rgba(0,0,0,0.06)_100%)] p-3.5 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.1)] backdrop-blur-[40px]"
+                >
+                  <p className="text-sm font-semibold text-white/95">{invite.roomName || "Private Space"}</p>
+                  <p className="mt-1 text-xs text-white/55">@{invite.ownerUsername} invited you</p>
                   <div className="mt-2 flex gap-2">
-                    <button type="button" onClick={() => void respondToInvite(invite, "accept")} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-black">
-                      Accept
+                    <button
+                      type="button"
+                      onClick={() => void respondToInvite(invite, "accept")}
+                      className="h-8 rounded-[10px] border border-[#962841]/30 bg-[linear-gradient(160deg,rgba(120,25,48,.95)_0%,rgba(65,10,24,.92)_100%)] px-3 text-[12px] font-semibold text-white"
+                    >
+                      Join
                     </button>
-                    <button type="button" onClick={() => void respondToInvite(invite, "reject")} className="rounded-full border border-white/20 px-3 py-1.5 text-[11px] text-white/85">
-                      Reject
+                    <button type="button" onClick={() => void respondToInvite(invite, "reject")} className="h-8 rounded-[10px] border border-white/15 px-3 text-[12px] text-white/65">
+                      Decline
                     </button>
                   </div>
                 </div>
@@ -498,7 +499,7 @@ export default function PrivateRoomPage() {
                 setChatOpen(false);
               }
             }}
-            className="fixed bottom-[calc(108px+env(safe-area-inset-bottom))] left-0 right-0 z-40 mx-auto flex h-[48svh] w-[calc(100%-1.4rem)] max-w-xl flex-col rounded-[24px] border border-white/15 bg-[#0f1014]/95 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+            className="fixed bottom-[calc(100px+env(safe-area-inset-bottom))] left-0 right-0 z-40 mx-auto flex h-[56svh] w-[calc(100%-1.4rem)] max-w-[430px] flex-col rounded-t-[24px] border border-white/10 border-b-0 bg-[rgba(4,2,2,0.97)] p-3 shadow-[0_-12px_40px_rgba(0,0,0,0.6)] backdrop-blur-[30px]"
           >
             <div className="mx-auto mb-2 h-1.5 w-16 rounded-full bg-white/20" />
             <div className="mb-2 flex items-center justify-between">
@@ -536,7 +537,7 @@ export default function PrivateRoomPage() {
               <button
                 type="button"
                 onClick={sendChatMessage}
-                className="h-10 rounded-xl bg-white px-4 text-xs font-semibold text-black transition hover:brightness-95"
+                className="h-10 rounded-xl border border-[#962841]/35 bg-[linear-gradient(160deg,rgba(120,25,48,0.9),rgba(65,10,24,0.88))] px-4 text-xs font-semibold text-white"
               >
                 Send
               </button>

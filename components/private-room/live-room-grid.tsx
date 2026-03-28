@@ -26,16 +26,16 @@ export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds
   const allPeople = [...speakers, ...listeners];
 
   return (
-    <section className="flex min-h-[52svh] flex-1 flex-col rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3 pb-5">
+    <section className="flex min-h-[52svh] flex-1 flex-col rounded-[24px] border border-white/15 border-b-white/5 bg-[linear-gradient(160deg,rgba(255,255,255,0.065)_0%,rgba(255,255,255,0.022)_45%,rgba(0,0,0,0.06)_100%)] px-4 py-3 pb-5 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.1)] backdrop-blur-[50px]">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-white/50">In this room</p>
+        <p className="text-[10px] uppercase tracking-[0.1em] text-white/35">In this room</p>
         <button
           type="button"
           onClick={onOpenVexa}
-          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
+          className="inline-flex items-center gap-2 rounded-full border border-[#d57e96]/30 bg-[#d57e96]/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.06em] text-[#d57e96]"
         >
           <span className={`h-1.5 w-1.5 rounded-full ${vexaState === "listening" || vexaState === "speaking" ? "animate-pulse bg-[#d57e96]" : "bg-[#d57e96]"}`} />
-          Vexa
+          Vexa · {vexaState === "idle" ? "idle" : "listening"}
         </button>
       </div>
 
