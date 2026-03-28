@@ -29,10 +29,12 @@ participants: Participant[];
 };
 
 type PublicRoom = {
-id: string; name: string | null; description: string; roomCode: string;
-topics: string[]; enableVexa: boolean;
-participants: { username: string; avatarUrl: string }[];
-createdAt: string;
+id: string;
+name: string | null;
+roomCode: string;
+vibe?: string | null;
+participantCount: number;
+participants: { id: string; userId: string; role: "owner" | "participant"; username: string; avatarUrl: string }[];
 };
 
 type VexaState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
@@ -45,6 +47,19 @@ function stableUid(userId: string) {
 let h = 0;
 for (let i = 0; i < userId.length; i++) h = (h << 5) - h + userId.charCodeAt(i), h |= 0;
 return Math.abs(h) % 1_000_000_000;
+}
+
+function getReadableErrorMessage(error: unknown) {
+  const fallback = "Something went wrong.";
+  if (!(error instanceof Error)) return fallback;
+  const raw = error.message || fallback;
+  const lowered = raw.toLowerCase();
+
+  if (lowered.includes("permission_denied") || lowered.includes("notallowederror") || lowered.includes("permission")) {
+    return "Microphone permission is blocked. Please allow microphone access in your browser settings and try again.";
+  }
+
+  return raw;
 }
 
 async function loadAgora() {
@@ -469,6 +484,8 @@ const [inviteLoading, setInviteLoading] = useState(false);
 const [declineToast,  setDeclineToast]  = useState<DeclineUpdate | null>(null);
 const [leaveConfirm,  setLeaveConfirm]  = useState(false);
 const [minimized,     setMinimized]     = useState(false);
+const [joinCode,      setJoinCode]      = useState("");
+const [joiningCode,   setJoiningCode]   = useState(false);
 
 const clientRef          = useRef<IAgoraRTCClient | null>(null);
 const localTrackRef      = useRef<LocalAudioTrack | null>(null);
@@ -516,6 +533,7 @@ if (d.room) setRoom(d.room);
 
 const loadDashboard = useCallback(async () => {
 try {
+setError(null);
 const [fRes, iRes, aRes, meRes, pubRes] = await Promise.all([
 fetch("/api/friends/list"),
 fetch("/api/private-room/invites"),
@@ -565,11 +583,42 @@ return () => clearInterval(t);
 
 const joinRoom = useCallback(async (roomId: string) => {
 const r = await fetch(`/api/private-room/${roomId}/join`, { method: "POST" });
-if (!r.ok) return;
+if (!r.ok) {
+  setError("Unable to join this room right now.");
+  return;
+}
 setCurrentRoomId(roomId);
 await fetchRoom(roomId);
 setView("room");
 }, [fetchRoom]);
+
+const joinRoomByCode = useCallback(async () => {
+  const code = joinCode.trim().toUpperCase();
+  if (!code || joiningCode) return;
+  setJoiningCode(true);
+  try {
+    const r = await fetch("/api/private-room/join-by-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string };
+      setError(d.error ?? "Room code is invalid or unavailable.");
+      return;
+    }
+    const d = (await r.json()) as { room?: { id: string } };
+    if (!d.room?.id) {
+      setError("Room code is invalid or unavailable.");
+      return;
+    }
+    setJoinCode("");
+    setError(null);
+    await joinRoom(d.room.id);
+  } finally {
+    setJoiningCode(false);
+  }
+}, [joinCode, joinRoom, joiningCode]);
 
 const respondToInvite = async (invite: Invite, action: "accept" | "reject") => {
 if (inviteLoading) return;
@@ -600,7 +649,7 @@ const track = await AgoraRTC.createMicrophoneAudioTrack();
 localTrackRef.current = track;
 await client.publish([track]);
 setJoinedAudio(true);
-} catch (e) { await leaveAgora(); setError(e instanceof Error ? e.message : "Audio join failed"); }
+} catch (e) { await leaveAgora(); setError(getReadableErrorMessage(e)); }
 finally { setJoiningAudio(false); }
 };
 
@@ -685,12 +734,23 @@ if (view === "dashboard") return (
             <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="2" y1="10" x2="18" y2="10"/></svg>
             Create room
           </button>
-          <button onClick={e => e.stopPropagation()}
+          <button onClick={e => { e.stopPropagation(); void joinRoomByCode(); }}
             className="flex items-center justify-center gap-2 rounded-[14px] h-11 px-4 text-[13px] font-semibold transition-all"
             style={{ ...glassBtn, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="16" height="16" rx="3"/><path d="M7 10h6M10 7v6"/></svg>
-            Join by code
+            {joiningCode ? "Joining..." : "Join by code"}
           </button>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <input
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === "Enter" && void joinRoomByCode()}
+            placeholder="Enter room code"
+            maxLength={12}
+            style={{ ...inputCss, height: 42, fontSize: 13, textTransform: "uppercase" }}
+          />
         </div>
       </div>
     </motion.div>
@@ -737,14 +797,24 @@ if (view === "dashboard") return (
           {publicRooms.length || 5} live now
         </span>
       </div>
-      {/* demo public rooms (replace with publicRooms.map when API is ready) */}
-      {[
-        { emoji: "🌙", name: "Late Night Talks", desc: "Philosophy, life choices & late-night thoughts. Open space for real talk.", host: "@elena_k", count: 8, tags: ["Vexa AI","Public","🔥 Trending"], bg: "linear-gradient(135deg,rgba(90,16,32,0.55),rgba(30,4,10,0.75))", avs: ["E","N","Y","+5"], topic: "Philosophy", since: "22:30" },
-        { emoji: "🎙", name: "Design & Code", desc: "Deep dive into product design, frontend craft, and the future of human interfaces.", host: "@noah_pls", count: 5, tags: ["Public","UI/UX"], bg: "linear-gradient(135deg,rgba(20,30,80,0.6),rgba(5,10,35,0.8))", avs: ["N","A","+3"], topic: "Tech", since: "21:00" },
-        { emoji: "🎵", name: "Lofi & Vibes", desc: "Chilling, studying, and being present together. No pressure, just good vibes.", host: "@yuki.t", count: 12, tags: ["Vexa AI","Public","🔥 Popular"], bg: "linear-gradient(135deg,rgba(20,60,40,0.55),rgba(5,20,12,0.8))", avs: ["Y","S","+10"], topic: "Music", since: "20:00" },
-      ].map((r, i) => (
+      {(publicRooms.length ? publicRooms.map((roomItem) => ({
+        emoji: "🎙",
+        id: roomItem.id,
+        name: roomItem.name ?? "Open Room",
+        desc: roomItem.vibe ? `${roomItem.vibe} conversation` : "Public discussion room",
+        host: roomItem.participants[0]?.username ? `@${roomItem.participants[0].username}` : "@host",
+        count: roomItem.participantCount,
+        tags: ["Public", roomItem.vibe || "Open chat"],
+        bg: "linear-gradient(135deg,rgba(20,30,80,0.6),rgba(5,10,35,0.8))",
+        avs: roomItem.participants.slice(0, 4).map((p) => (p.username?.[0] || "?").toUpperCase()),
+        since: "now",
+      })) : [
+        { id: "", emoji: "🌙", name: "Late Night Talks", desc: "Philosophy, life choices & late-night thoughts. Open space for real talk.", host: "@elena_k", count: 8, tags: ["Vexa AI","Public","🔥 Trending"], bg: "linear-gradient(135deg,rgba(90,16,32,0.55),rgba(30,4,10,0.75))", avs: ["E","N","Y","+5"], since: "22:30" },
+        { id: "", emoji: "🎙", name: "Design & Code", desc: "Deep dive into product design, frontend craft, and the future of human interfaces.", host: "@noah_pls", count: 5, tags: ["Public","UI/UX"], bg: "linear-gradient(135deg,rgba(20,30,80,0.6),rgba(5,10,35,0.8))", avs: ["N","A","+3"], since: "21:00" },
+        { id: "", emoji: "🎵", name: "Lofi & Vibes", desc: "Chilling, studying, and being present together. No pressure, just good vibes.", host: "@yuki.t", count: 12, tags: ["Vexa AI","Public","🔥 Popular"], bg: "linear-gradient(135deg,rgba(20,60,40,0.55),rgba(5,20,12,0.8))", avs: ["Y","S","+10"], since: "20:00" },
+      ]) .map((r, i) => (
         <motion.div key={r.name} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, delay: 0.05 + i * 0.06 }}
-          onClick={() => void joinRoom("demo")}
+          onClick={() => r.id && void joinRoom(r.id)}
           style={{ borderRadius: 18, marginBottom: 10, overflow: "hidden", cursor: "pointer", border: "1px solid rgba(255,255,255,0.11)", transition: "transform .2s" }}
           whileHover={{ y: -1 }}>
           {/* cover */}
@@ -765,7 +835,7 @@ if (view === "dashboard") return (
           <div style={{ padding: "12px 14px 13px", background: "linear-gradient(160deg,rgba(255,255,255,0.055) 0%,rgba(255,255,255,0.016) 45%,rgba(0,0,0,0.055) 100%)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", letterSpacing: "-.25px" }}>{r.name}</div>
-              <button onClick={e => { e.stopPropagation(); void joinRoom("demo"); }}
+              <button onClick={e => { e.stopPropagation(); if (r.id) void joinRoom(r.id); }}
                 style={{ height: 28, padding: "0 11px", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", background: "linear-gradient(160deg,rgba(120,25,48,.9),rgba(65,10,24,.88))", border: "1px solid rgba(150,40,65,.25)", color: "rgba(255,255,255,.9)" }}>
                 Join
               </button>
