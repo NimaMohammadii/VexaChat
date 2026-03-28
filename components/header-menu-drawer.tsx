@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { createSupabaseClient } from "@/lib/supabase-client";
 import { SvjHeartIcon, SvjHomeIcon, SvjLockIcon } from "@/components/svj-icons";
@@ -108,6 +108,18 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   const [lockedMenuKeys, setLockedMenuKeys] = useState<MenuItemKey[]>([]);
   const [lockedMenuModal, setLockedMenuModal] = useState<{ open: boolean; label: string }>({ open: false, label: "" });
 
+  const loadLocks = useCallback(async () => {
+    const response = await fetch("/api/menu-access", { cache: "no-store" }).catch(() => null);
+
+    if (!response || !response.ok) {
+      return;
+    }
+
+    const data = (await response.json()) as { lockedKeys?: string[] };
+    const filtered = MENU_ITEM_KEYS.filter((key) => data.lockedKeys?.includes(key));
+    setLockedMenuKeys(filtered);
+  }, []);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -137,20 +149,24 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   }, []);
 
   useEffect(() => {
-    const loadLocks = async () => {
-      const response = await fetch("/api/menu-access", { cache: "no-store" }).catch(() => null);
+    void loadLocks();
+  }, [loadLocks]);
 
-      if (!response || !response.ok) {
-        return;
-      }
-
-      const data = (await response.json()) as { lockedKeys?: string[] };
-      const filtered = MENU_ITEM_KEYS.filter((key) => data.lockedKeys?.includes(key));
-      setLockedMenuKeys(filtered);
-    };
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
 
     void loadLocks();
-  }, []);
+  }, [isOpen, loadLocks]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadLocks();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [loadLocks]);
 
   useEffect(() => {
     if (!isOpen) {
