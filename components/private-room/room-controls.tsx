@@ -36,12 +36,12 @@ function ControlButton({
       whileTap={{ scale: 0.96 }}
       whileHover={{ y: -1.5 }}
       transition={{ type: "spring", stiffness: 420, damping: 20 }}
-      className={`group flex min-w-[70px] flex-col items-center gap-1 rounded-2xl border px-3 py-2 text-[10px] font-medium tracking-[0.04em] transition ${
+      className={`group flex min-w-[60px] flex-1 flex-col items-center gap-1 rounded-xl border px-2 py-2 text-[10px] font-medium tracking-[0.04em] transition ${
         danger
-          ? "border-rose-400/45 bg-rose-500/10 text-rose-100 hover:bg-rose-500/15"
+          ? "border-rose-400/35 bg-rose-500/10 text-rose-200 hover:bg-rose-500/15"
           : emphasis
-            ? "border-white/35 bg-white text-black"
-            : "border-white/15 bg-white/[0.04] text-white/90 hover:border-white/25 hover:bg-white/[0.07]"
+            ? "border-[#3de696]/30 bg-[#3de696]/15 text-[#3de696]"
+            : "border-white/15 bg-white/[0.04] text-white/75 hover:border-white/25 hover:bg-white/[0.07]"
       }`}
     >
       <span className="text-current">{icon}</span>
@@ -63,9 +63,9 @@ export function RoomControls({
   onLeave
 }: RoomControlsProps) {
   return (
-    <div className="fixed bottom-[calc(12px+env(safe-area-inset-bottom))] left-1/2 z-30 w-[calc(100%-1.4rem)] max-w-xl -translate-x-1/2 rounded-[24px] border border-white/10 bg-black/70 px-3 py-2.5 shadow-[0_14px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-2 overflow-x-auto">
-        <div className="flex items-center justify-between gap-2">
+    <div className="fixed bottom-[calc(10px+env(safe-area-inset-bottom))] left-1/2 z-30 w-[calc(100%-1.4rem)] max-w-[430px] -translate-x-1/2 rounded-[20px] border border-white/15 border-b-white/5 bg-[linear-gradient(160deg,rgba(255,255,255,0.065)_0%,rgba(255,255,255,0.022)_45%,rgba(0,0,0,0.06)_100%)] px-3 py-2.5 shadow-[inset_0_1.5px_0_rgba(255,255,255,0.1),0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-[50px]">
+      <div className="flex items-center justify-between gap-1 overflow-x-auto">
+        <div className="flex w-full items-center justify-between gap-1">
           {!joinedAudio ? (
             <ControlButton label={joiningAudio ? "Joining…" : "Join Audio"} onClick={onJoinAudio} icon={<AudioWaveIcon className="h-4 w-4" />} emphasis />
           ) : (

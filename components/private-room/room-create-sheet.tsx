@@ -120,10 +120,10 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
         <>
           <motion.div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-end" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: 0.3, ease: "easeOut" }}>
-            <div className="mx-auto h-[88svh] w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#050505]/95 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5">
+            <div className="mx-auto h-[88svh] w-full max-w-[430px] rounded-t-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,6,8,0.98),rgba(6,2,3,0.99))] px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">{mode === "create" ? "Create Private Room" : "Invite Friends"}</h2>
-                <button type="button" onClick={onClose} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/80">Close</button>
+                <h2 className="text-lg font-semibold text-white">{mode === "create" ? "New Room" : "Invite Friends"}</h2>
+                <button type="button" onClick={onClose} className="rounded-xl border border-white/15 px-3 py-1 text-xs text-white/80">Close</button>
               </div>
 
               {mode === "create" ? (
@@ -147,7 +147,7 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                         value={roomName}
                         onChange={(event) => setRoomName(event.target.value)}
                         placeholder="For example: Midnight Talk"
-                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-white/35"
+                        className="w-full rounded-[14px] border border-white/15 bg-[linear-gradient(160deg,rgba(255,255,255,.055)_0%,rgba(255,255,255,.016)_45%,rgba(0,0,0,.07)_100%)] px-4 py-3 text-sm text-white outline-none focus:border-[#8a1f38]/40"
                       />
                       <p className="text-xs text-white/55">Use a short, catchy name to make invites feel special.</p>
                     </div>
@@ -176,7 +176,7 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                           );
                         })}
                       </div>
-                      <button type="button" onClick={() => setEnableTextChat((current) => !current)} className="mt-1 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
+                      <button type="button" onClick={() => setEnableTextChat((current) => !current)} className="mt-1 flex w-full items-center justify-between rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,.065)_0%,rgba(255,255,255,.022)_45%,rgba(0,0,0,.06)_100%)] px-4 py-3 text-sm">
                         <span>Enable text chat</span>
                         <span className={enableTextChat ? "text-emerald-300" : "text-white/50"}>{enableTextChat ? "On" : "Off"}</span>
                       </button>
@@ -191,12 +191,12 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                     <p className="text-[11px] uppercase tracking-[0.12em] text-white/65">{mode === "create" ? "Step 3: Invite friends" : "Select friends"}</p>
                     <p className="text-xs text-white/55">{selectedCount} selected</p>
                   </div>
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search friends" className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-white/35" />
+                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search friends" className="w-full rounded-[14px] border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,.055)_0%,rgba(255,255,255,.016)_45%,rgba(0,0,0,.07)_100%)] px-4 py-3 text-sm text-white outline-none focus:border-[#8a1f38]/40" />
                   <div className="max-h-[46svh] space-y-2 overflow-y-auto pr-1">
                     {filteredFriends.map((friend) => {
                       const selected = selectedIds.includes(friend.id);
                       return (
-                        <button key={friend.id} type="button" onClick={() => setSelectedIds((current) => (current.includes(friend.id) ? current.filter((id) => id !== friend.id) : [...current, friend.id]))} className={`flex w-full items-center justify-between rounded-2xl border px-3 py-2.5 ${selected ? "border-[#FF2E63]/70 bg-[#FF2E63]/10" : "border-white/10 bg-white/[0.03]"}`}>
+                        <button key={friend.id} type="button" onClick={() => setSelectedIds((current) => (current.includes(friend.id) ? current.filter((id) => id !== friend.id) : [...current, friend.id]))} className={`flex w-full items-center justify-between rounded-[14px] border px-3 py-2.5 ${selected ? "border-[#8a1f38]/60 bg-[#5a1020]/20" : "border-white/10 bg-white/[0.03]"}`}>
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 text-xs font-medium">
                               {friend.avatarUrl ? <img src={friend.avatarUrl} alt={friend.username} className="h-full w-full object-cover" /> : friend.username.slice(0, 2).toUpperCase()}
@@ -229,7 +229,7 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                       type="button"
                       onClick={() => setCreateStep((current) => current + 1)}
                       disabled={createStep === 1 && !canGoStepTwo}
-                      className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-white to-[#ffe3eb] px-5 py-3 text-sm font-semibold text-black disabled:opacity-50"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-[14px] border border-[#962841]/35 bg-[linear-gradient(160deg,rgba(120,25,48,.95)_0%,rgba(65,10,24,.92)_55%,rgba(30,4,12,.97)_100%)] px-5 text-sm font-semibold text-white disabled:opacity-50"
                     >
                       Continue
                     </button>
@@ -238,14 +238,14 @@ export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomI
                       type="button"
                       onClick={() => void submit()}
                       disabled={loading || !canCreateRoom}
-                      className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-white to-[#ffe3eb] px-5 py-3 text-sm font-semibold text-black disabled:opacity-50"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-[14px] border border-[#962841]/35 bg-[linear-gradient(160deg,rgba(120,25,48,.95)_0%,rgba(65,10,24,.92)_55%,rgba(30,4,12,.97)_100%)] px-5 text-sm font-semibold text-white disabled:opacity-50"
                     >
                       {loading ? "Please wait..." : `Create ${roomVibe[0].toUpperCase()}${roomVibe.slice(1)} Room`}
                     </button>
                   )}
                 </div>
               ) : (
-                <button type="button" onClick={() => void submit()} disabled={loading} className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-white to-[#ffe3eb] px-5 py-3 text-sm font-semibold text-black disabled:opacity-50">
+                <button type="button" onClick={() => void submit()} disabled={loading} className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-[14px] border border-[#962841]/35 bg-[linear-gradient(160deg,rgba(120,25,48,.95)_0%,rgba(65,10,24,.92)_55%,rgba(30,4,12,.97)_100%)] px-5 text-sm font-semibold text-white disabled:opacity-50">
                   {loading ? "Please wait..." : "Send Invites"}
                 </button>
               )}
