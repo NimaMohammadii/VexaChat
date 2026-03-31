@@ -1,16 +1,16 @@
-“use client”;
+"use client";
 
-import { ParticipantBubble } from “@/components/private-room/participant-bubble”;
+import { ParticipantBubble } from "@/components/private-room/participant-bubble";
 
 type Participant = {
 id: string;
 userId: string;
-role: “owner” | “participant”;
+role: "owner" | "participant";
 username: string;
 avatarUrl?: string;
 };
 
-type VexaVisualState = “idle” | “connecting” | “listening” | “thinking” | “speaking” | “error”;
+type VexaVisualState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
 type LiveRoomGridProps = {
 participants: Participant[];
@@ -20,10 +20,10 @@ onOpenVexa: () => void;
 vexaState?: VexaVisualState;
 };
 
-export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds, onOpenVexa, vexaState = “idle” }: LiveRoomGridProps) {
-const speakers = participants.filter((participant) => participant.role === “owner”);
-const listeners = participants.filter((participant) => participant.role !== “owner”);
-const allPeople = […speakers, …listeners];
+export function LiveRoomGrid({ participants, localUserId, speakingParticipantIds, onOpenVexa, vexaState = "idle" }: LiveRoomGridProps) {
+const speakers = participants.filter((participant) => participant.role === "owner");
+const listeners = participants.filter((participant) => participant.role !== "owner");
+const allPeople = [...speakers, ...listeners];
 
 return (
 <section className="rounded-[26px] border border-white/10 bg-[#0f0f12]/75 px-4 py-3">
@@ -39,7 +39,6 @@ Vexa
 </button>
 </div>
 
-```
   <div className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
     <button type="button" onClick={onOpenVexa} className="flex flex-col items-center gap-1.5 text-center">
       <ParticipantBubble
@@ -70,7 +69,6 @@ Vexa
     </p>
   ) : null}
 </section>
-```
 
 );
 }

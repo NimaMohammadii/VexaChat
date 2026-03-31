@@ -1,10 +1,10 @@
-“use client”;
+"use client";
 
-import type { IAgoraRTCClient } from “agora-rtc-sdk-ng”;
-import { AnimatePresence, motion, useMotionValue, useTransform } from “framer-motion”;
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from “react”;
-import { presignRead, presignUpload, uploadFileWithPresignedUrl } from “@/lib/client/storage”;
-import { processImageFile, previewUrl as makePreviewUrl } from “@/lib/image-processing”;
+import type { IAgoraRTCClient } from "agora-rtc-sdk-ng";
+import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
+import { processImageFile, previewUrl as makePreviewUrl } from "@/lib/image-processing";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ roomCode: string; ownerUsername: string; createdAt?: string;
 };
 
 type Participant = {
-id: string; userId: string; role: “owner” | “participant”;
+id: string; userId: string; role: "owner" | "participant";
 username: string; avatarUrl: string;
 };
 
@@ -35,7 +35,7 @@ participants: { username: string; avatarUrl: string }[];
 createdAt: string;
 };
 
-type VexaState = “idle” | “connecting” | “listening” | “thinking” | “speaking” | “error”;
+type VexaState = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 
 type DeclineUpdate = { inviteId: string; invitedUsername: string; roomName: string | null; updatedAt: string };
 
@@ -48,68 +48,68 @@ return Math.abs(h) % 1_000_000_000;
 }
 
 async function loadAgora() {
-if (typeof window === “undefined”) return null;
-const mod = await import(“agora-rtc-sdk-ng”);
+if (typeof window === "undefined") return null;
+const mod = await import("agora-rtc-sdk-ng");
 return mod.default;
 }
 
 // ── style helpers ─────────────────────────────────────────────────────────────
 
 const glassCard: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.018) 45%,rgba(0,0,0,0.055) 100%)”,
-border: “1px solid rgba(255,255,255,0.11)”,
-backdropFilter: “blur(40px) saturate(1.5)”,
-boxShadow: “inset 0 1px 0 rgba(255,255,255,0.07),0 2px 16px rgba(0,0,0,0.35)”,
+background: "linear-gradient(160deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.018) 45%,rgba(0,0,0,0.055) 100%)",
+border: "1px solid rgba(255,255,255,0.11)",
+backdropFilter: "blur(40px) saturate(1.5)",
+boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07),0 2px 16px rgba(0,0,0,0.35)",
 };
 
 const wineBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(120,25,48,.95) 0%,rgba(65,10,24,.92) 55%,rgba(30,4,12,.97) 100%)”,
-border: “1px solid rgba(150,40,65,.28)”,
-boxShadow: “inset 0 1.5px 0 rgba(220,80,110,.2),0 4px 16px rgba(0,0,0,.4)”,
-color: “rgba(255,255,255,.9)”,
+background: "linear-gradient(160deg,rgba(120,25,48,.95) 0%,rgba(65,10,24,.92) 55%,rgba(30,4,12,.97) 100%)",
+border: "1px solid rgba(150,40,65,.28)",
+boxShadow: "inset 0 1.5px 0 rgba(220,80,110,.2),0 4px 16px rgba(0,0,0,.4)",
+color: "rgba(255,255,255,.9)",
 };
 
 const glassBtn: React.CSSProperties = {
-background: “linear-gradient(160deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.025) 50%,rgba(0,0,0,.07) 100%)”,
-border: “1px solid rgba(255,255,255,.12)”,
-boxShadow: “inset 0 1.5px 0 rgba(255,255,255,.07)”,
-color: “rgba(255,255,255,.75)”,
+background: "linear-gradient(160deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.025) 50%,rgba(0,0,0,.07) 100%)",
+border: "1px solid rgba(255,255,255,.12)",
+boxShadow: "inset 0 1.5px 0 rgba(255,255,255,.07)",
+color: "rgba(255,255,255,.75)",
 };
 
 const inputCss: React.CSSProperties = {
-width: “100%”, padding: “12px 15px”, borderRadius: 14,
-fontFamily: “‘DM Sans’, sans-serif”, fontSize: 14, color: “#e8e8e8”,
-background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255,255,255,0.1)”,
-outline: “none”, caretColor: “#8a1f38”,
+width: "100%", padding: "12px 15px", borderRadius: 14,
+fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#e8e8e8",
+background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+outline: "none", caretColor: "#8a1f38",
 };
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-const TOPIC_OPTIONS = [“Philosophy”,“Tech”,“Music”,“Art”,“Startups”,“Chill”,“Q&A”,“Design”,“Gaming”,“Wellness”];
+const TOPIC_OPTIONS = ["Philosophy","Tech","Music","Art","Startups","Chill","Q&A","Design","Gaming","Wellness"];
 
 function ParticipantBubble({
 username, avatarUrl, role, isLocal, isSpeaking, isVexa, vexaState,
 }: {
-username: string; avatarUrl?: string; role?: “owner” | “participant”;
+username: string; avatarUrl?: string; role?: "owner" | "participant";
 isLocal?: boolean; isSpeaking?: boolean; isVexa?: boolean; vexaState?: VexaState;
 }) {
 const initials = username.slice(0, 2).toUpperCase();
 return (
 <div className="flex flex-col items-center gap-1.5">
 <div
-className=“relative p-[3px] rounded-full transition-all duration-300”
+className="relative p-[3px] rounded-full transition-all duration-300"
 style={isSpeaking
-? { boxShadow: “0 0 0 2px rgba(90,16,32,0.6),0 0 14px rgba(90,16,32,0.25)” }
-: { boxShadow: “0 0 0 1px rgba(255,255,255,0.1)” }
+? { boxShadow: "0 0 0 2px rgba(90,16,32,0.6),0 0 14px rgba(90,16,32,0.25)" }
+: { boxShadow: "0 0 0 1px rgba(255,255,255,0.1)" }
 }
 >
 <div
-className=“w-[52px] h-[52px] rounded-full flex items-center justify-center text-[15px] font-bold overflow-hidden relative”
-style={{ color: “rgba(255,255,255,0.65)”, border: “1px solid rgba(255,255,255,0.07)” }}
+className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-[15px] font-bold overflow-hidden relative"
+style={{ color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.07)" }}
 >
 {isVexa ? (
-<div className=“w-full h-full flex items-center justify-center”
-style={{ background: “linear-gradient(135deg,rgba(213,126,150,0.18),rgba(90,16,32,0.32))” }}>
+<div className="w-full h-full flex items-center justify-center"
+style={{ background: "linear-gradient(135deg,rgba(213,126,150,0.18),rgba(90,16,32,0.32))" }}>
 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="rgba(213,126,150,0.75)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
 <path d="M10 3a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0v-4A2.5 2.5 0 0 0 10 3Z"/>
 <path d="M15.5 9v.5a5.5 5.5 0 0 1-11 0V9"/>
@@ -119,30 +119,30 @@ style={{ background: “linear-gradient(135deg,rgba(213,126,150,0.18),rgba(90,16
 ) : avatarUrl ? (
 <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
 ) : (
-<div className=“w-full h-full flex items-center justify-center”
-style={{ background: “linear-gradient(135deg,rgba(90,16,32,0.25),rgba(20,5,10,0.4))” }}>
+<div className="w-full h-full flex items-center justify-center"
+style={{ background: "linear-gradient(135deg,rgba(90,16,32,0.25),rgba(20,5,10,0.4))" }}>
 {initials}
 </div>
 )}
 </div>
-{role === “owner” && (
-<span className=“absolute -top-[3px] -right-[3px] text-[7px] font-bold uppercase tracking-[0.08em] px-[5px] py-[2px] rounded-[5px]”
-style={{ background: “rgba(5,4,4,0.95)”, border: “1px solid rgba(138,31,56,0.35)”, color: “rgba(213,126,150,0.9)”, whiteSpace: “nowrap” }}>
+{role === "owner" && (
+<span className="absolute -top-[3px] -right-[3px] text-[7px] font-bold uppercase tracking-[0.08em] px-[5px] py-[2px] rounded-[5px]"
+style={{ background: "rgba(5,4,4,0.95)", border: "1px solid rgba(138,31,56,0.35)", color: "rgba(213,126,150,0.9)", whiteSpace: "nowrap" }}>
 Host
 </span>
 )}
 {isLocal && (
-<span className=“absolute -bottom-[3px] left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.06em] px-[5px] py-[2px] rounded-[5px]”
-style={{ background: “rgba(5,4,4,0.92)”, border: “1px solid rgba(255,255,255,0.12)”, color: “rgba(255,255,255,0.6)”, whiteSpace: “nowrap” }}>
+<span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.06em] px-[5px] py-[2px] rounded-[5px]"
+style={{ background: "rgba(5,4,4,0.92)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>
 You
 </span>
 )}
 </div>
-<span className=“text-[10.5px] font-medium max-w-[64px] truncate text-center” style={{ color: “rgba(255,255,255,0.58)” }}>
-{isVexa ? “Vexa” : username}
+<span className="text-[10.5px] font-medium max-w-[64px] truncate text-center" style={{ color: "rgba(255,255,255,0.58)" }}>
+{isVexa ? "Vexa" : username}
 </span>
-{isVexa && vexaState && vexaState !== “idle” && (
-<span className=“text-[9px]” style={{ color: “rgba(232,232,232,0.32)” }}>{vexaState}</span>
+{isVexa && vexaState && vexaState !== "idle" && (
+<span className="text-[9px]" style={{ color: "rgba(232,232,232,0.32)" }}>{vexaState}</span>
 )}
 </div>
 );
@@ -154,16 +154,16 @@ function CreateWizard({ friends, onCreated, onClose }: {
 friends: Friend[]; onCreated: (roomId: string) => void; onClose: () => void;
 }) {
 const [step, setStep]               = useState(1);
-const [roomName, setRoomName]       = useState(””);
-const [description, setDescription] = useState(””);
-const [coverUrl, setCoverUrl]       = useState(””);  // storage key
-const [coverPreview, setCoverPreview] = useState(””);
+const [roomName, setRoomName]       = useState("");
+const [description, setDescription] = useState("");
+const [coverUrl, setCoverUrl]       = useState("");  // storage key
+const [coverPreview, setCoverPreview] = useState("");
 const [topics, setTopics]           = useState<Set<string>>(new Set());
 const [enableTextChat, setEnableTextChat] = useState(true);
 const [enableVexa, setEnableVexa]   = useState(true);
 const [isPublic, setIsPublic]       = useState(false);
 const [selectedIds, setSelectedIds] = useState<string[]>([]);
-const [friendQ, setFriendQ]         = useState(””);
+const [friendQ, setFriendQ]         = useState("");
 const [loading, setLoading]         = useState(false);
 const [error, setError]             = useState<string | null>(null);
 const [uploading, setUploading]     = useState(false);
@@ -176,7 +176,7 @@ return q ? friends.filter(f => f.username.toLowerCase().includes(q)) : friends;
 }, [friends, friendQ]);
 
 const toggleFriend = (id: string) =>
-setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : […prev, id]);
+setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
 const toggleTopic = (t: string) =>
 setTopics(prev => { const n = new Set(prev); n.has(t) ? n.delete(t) : n.add(t); return n; });
@@ -186,26 +186,26 @@ const file = e.target.files?.[0];
 if (!file) return;
 setUploading(true);
 try {
-const meRes = await fetch(”/api/me”, { cache: “no-store” });
-if (!meRes.ok) throw new Error(“Not authenticated”);
+const meRes = await fetch("/api/me", { cache: "no-store" });
+if (!meRes.ok) throw new Error("Not authenticated");
 const { user } = (await meRes.json()) as { user: { id: string } };
-const processed = await processImageFile(file, { maxWidth: 1200, quality: 0.82, cropAspect: “none” });
+const processed = await processImageFile(file, { maxWidth: 1200, quality: 0.82, cropAspect: "none" });
 setCoverPreview(makePreviewUrl(processed));
-const ext = file.name.split(”.”).pop() || “jpg”;
+const ext = file.name.split(".").pop() || "jpg";
 const key = `private-room-covers/${user.id}/${crypto.randomUUID()}.${ext}`;
-const { uploadUrl } = await presignUpload(key, processed.type || “application/octet-stream”);
+const { uploadUrl } = await presignUpload(key, processed.type || "application/octet-stream");
 await uploadFileWithPresignedUrl(uploadUrl, processed);
 setCoverUrl(key);
-} catch { setError(“Cover upload failed.”); }
-finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = “”; }
+} catch { setError("Cover upload failed."); }
+finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
 };
 
 const submit = async () => {
 setLoading(true); setError(null);
 try {
-const r = await fetch(”/api/private-room/create”, {
-method: “POST”,
-headers: { “Content-Type”: “application/json” },
+const r = await fetch("/api/private-room/create", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
 body: JSON.stringify({
 name: roomName.trim() || undefined,
 description: description.trim(),
@@ -217,56 +217,55 @@ isPublic,
 invitedUserIds: selectedIds,
 }),
 });
-if (!r.ok) throw new Error(“Unable to create room”);
+if (!r.ok) throw new Error("Unable to create room");
 const data = (await r.json()) as { room?: { id: string } };
-if (!data.room?.id) throw new Error(“Invalid room response”);
+if (!data.room?.id) throw new Error("Invalid room response");
 onCreated(data.room.id);
 onClose();
 } catch (err) {
-setError(err instanceof Error ? err.message : “Something went wrong”);
+setError(err instanceof Error ? err.message : "Something went wrong");
 } finally { setLoading(false); }
 };
 
-const stepTitles = [””, “Name & cover”, “Description”, “Settings”, “Invite friends”];
+const stepTitles = ["", "Name & cover", "Description", "Settings", "Invite friends"];
 const spring = { duration: 0.38, ease: [0.34, 1.15, 0.64, 1] as const };
 
 const ToggleRow = ({ id, icon, label, desc, value, onChange }: {
 id: string; icon: React.ReactNode; label: string; desc: string; value: boolean; onChange: () => void;
 }) => (
-<div onClick={onChange} className=“flex items-center gap-3 px-4 py-[13px] rounded-[14px] cursor-pointer transition-all”
-style={{ …glassCard, borderColor: value ? “rgba(138,31,56,0.22)” : “rgba(255,255,255,0.11)” }}>
-<div className=“w-[34px] h-[34px] rounded-[10px] flex items-center justify-center flex-shrink-0 transition-all”
+<div onClick={onChange} className="flex items-center gap-3 px-4 py-[13px] rounded-[14px] cursor-pointer transition-all"
+style={{ ...glassCard, borderColor: value ? "rgba(138,31,56,0.22)" : "rgba(255,255,255,0.11)" }}>
+<div className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center flex-shrink-0 transition-all"
 style={value
-? { background: “rgba(90,16,32,0.2)”, border: “1px solid rgba(138,31,56,0.28)”, color: “rgba(213,126,150,0.85)” }
-: { background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255,255,255,0.09)”, color: “rgba(255,255,255,0.3)” }
+? { background: "rgba(90,16,32,0.2)", border: "1px solid rgba(138,31,56,0.28)", color: "rgba(213,126,150,0.85)" }
+: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.3)" }
 }>{icon}</div>
 <div className="flex-1">
-<div style={{ fontSize: 13.5, fontWeight: 500, color: “#e8e8e8” }}>{label}</div>
-<div style={{ fontSize: 11.5, color: “rgba(232,232,232,0.38)”, marginTop: 2 }}>{desc}</div>
+<div style={{ fontSize: 13.5, fontWeight: 500, color: "#e8e8e8" }}>{label}</div>
+<div style={{ fontSize: 11.5, color: "rgba(232,232,232,0.38)", marginTop: 2 }}>{desc}</div>
 </div>
-<div className=“px-[9px] py-[3px] rounded-full text-[10px] font-semibold tracking-[0.06em] transition-all”
+<div className="px-[9px] py-[3px] rounded-full text-[10px] font-semibold tracking-[0.06em] transition-all"
 style={value
-? { background: “rgba(90,16,32,0.18)”, border: “1px solid rgba(138,31,56,0.3)”, color: “rgba(213,126,150,0.9)” }
-: { background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255,255,255,0.1)”, color: “rgba(232,232,232,0.5)” }
-}>{value ? “On” : “Off”}</div>
+? { background: "rgba(90,16,32,0.18)", border: "1px solid rgba(138,31,56,0.3)", color: "rgba(213,126,150,0.9)" }
+: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(232,232,232,0.5)" }
+}>{value ? "On" : "Off"}</div>
 </div>
 );
 
 return (
 <div className="flex flex-col h-full">
 {/* header */}
-<div className=“flex items-center gap-3 px-5 flex-shrink-0” style={{ paddingTop: 52 }}>
-<button onClick={onClose} className=“w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 transition-all”
-style={{ background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255,255,255,0.11)”, color: “rgba(255,255,255,0.55)” }}>
+<div className="flex items-center gap-3 px-5 flex-shrink-0" style={{ paddingTop: 52 }}>
+<button onClick={onClose} className="w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 transition-all"
+style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.11)", color: "rgba(255,255,255,0.55)" }}>
 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4 5 10l7 6"/></svg>
 </button>
 <div>
-<div style={{ fontSize: 15, fontWeight: 700, color: “#fff”, letterSpacing: “-.2px” }}>New Room</div>
-<div style={{ fontSize: 11, color: “rgba(232,232,232,0.4)”, marginTop: 1 }}>Step {step} of {TOTAL} · {stepTitles[step]}</div>
+<div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-.2px" }}>New Room</div>
+<div style={{ fontSize: 11, color: "rgba(232,232,232,0.4)", marginTop: 1 }}>Step {step} of {TOTAL} · {stepTitles[step]}</div>
 </div>
 </div>
 
-```
   {/* step dots */}
   <div className="flex gap-[5px] px-5 flex-shrink-0" style={{ paddingTop: 14 }}>
     {Array.from({ length: TOTAL }, (_, i) => (
@@ -298,7 +297,7 @@ style={{ background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255
             {coverPreview && <img src={coverPreview} alt="" className="absolute inset-0 w-full h-full object-cover rounded-[17px]" />}
             {uploading && (
               <div className="absolute inset-0 flex items-center justify-center rounded-[17px]" style={{ background: "rgba(0,0,0,0.55)" }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>Uploading…</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>Uploading...</span>
               </div>
             )}
             {!coverPreview && !uploading && (<>
@@ -316,7 +315,7 @@ style={{ background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void onCoverChange(e)} />
 
-          <input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="e.g. Night Lounge, Studio Talk…" maxLength={40}
+          <input value={roomName} onChange={e => setRoomName(e.target.value)} placeholder="e.g. Night Lounge, Studio Talk..." maxLength={40}
             style={{ ...inputCss, borderRadius: 14 }} />
           <div className="flex justify-between items-center" style={{ marginTop: -6 }}>
             <span style={{ fontSize: 11.5, color: "rgba(232,232,232,0.38)" }}>Leave blank for anonymous room</span>
@@ -386,10 +385,10 @@ style={{ background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255
         {step === 4 && (<>
           <div>
             <div style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(232,232,232,.28)", marginBottom: 7 }}>Invite friends</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: "-.55px", lineHeight: 1.1, marginBottom: 6 }}>Who's joining?</div>
-            <div style={{ fontSize: 13, color: "rgba(232,232,232,.42)", lineHeight: 1.6 }}>Select friends — you can invite more later.</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: "-.55px", lineHeight: 1.1, marginBottom: 6 }}>Who&apos;s joining?</div>
+            <div style={{ fontSize: 13, color: "rgba(232,232,232,.42)", lineHeight: 1.6 }}>Select friends - you can invite more later.</div>
           </div>
-          <input value={friendQ} onChange={e => setFriendQ(e.target.value)} placeholder="Search friends…" style={{ ...inputCss, borderRadius: 14 }} />
+          <input value={friendQ} onChange={e => setFriendQ(e.target.value)} placeholder="Search friends..." style={{ ...inputCss, borderRadius: 14 }} />
           <div className="flex flex-col gap-[6px]">
             {filteredFriends.map(f => {
               const sel = selectedIds.includes(f.id);
@@ -429,23 +428,22 @@ style={{ background: “rgba(255,255,255,0.04)”, border: “1px solid rgba(255
     <button onClick={() => step < TOTAL ? setStep(p => p + 1) : void submit()} disabled={loading || uploading}
       className="flex flex-1 items-center justify-center gap-2 rounded-[14px] h-11 text-[13.5px] font-semibold transition-all disabled:opacity-40"
       style={{ ...wineBtn, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-      {loading ? "Creating…" : step < TOTAL ? (<>Continue <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4l7 6-7 6"/></svg></>) : (<><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10l5 5 9-9"/></svg> Create room</>)}
+      {loading ? "Creating..." : step < TOTAL ? (<>Continue <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4l7 6-7 6"/></svg></>) : (<><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10l5 5 9-9"/></svg> Create room</>)}
     </button>
   </div>
 </div>
-```
 
 );
 }
 
 // ── main page ─────────────────────────────────────────────────────────────────
 
-type View = “dashboard” | “create” | “room”;
+type View = "dashboard" | "create" | "room";
 
 export default function PrivateRoomPage() {
 const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
-const [view,          setView]          = useState<View>(“dashboard”);
+const [view,          setView]          = useState<View>("dashboard");
 const [loading,       setLoading]       = useState(true);
 const [error,         setError]         = useState<string | null>(null);
 const [friends,       setFriends]       = useState<Friend[]>([]);
@@ -459,14 +457,14 @@ const [joiningAudio,  setJoiningAudio]  = useState(false);
 const [micMuted,      setMicMuted]      = useState(false);
 const [speakingUids,  setSpeakingUids]  = useState<number[]>([]);
 const [vexaOpen,      setVexaOpen]      = useState(false);
-const [vexaState,     setVexaState]     = useState<VexaState>(“idle”);
+const [vexaState,     setVexaState]     = useState<VexaState>("idle");
 const [chatOpen,      setChatOpen]      = useState(false);
 const [chatMessages,  setChatMessages]  = useState<{ mine: boolean; text: string; time: string }[]>([
-{ mine: false, text: “Hey! Can everyone hear me?”, time: “22:14” },
-{ mine: true,  text: “Yes, loud and clear 🎙”,    time: “22:15” },
-{ mine: false, text: “Great, let’s start ✨”,      time: “22:15” },
+{ mine: false, text: "Hey! Can everyone hear me?", time: "22:14" },
+{ mine: true,  text: "Yes, loud and clear 🎙",    time: "22:15" },
+{ mine: false, text: "Great, let's start ✨",      time: "22:15" },
 ]);
-const [chatInput,     setChatInput]     = useState(””);
+const [chatInput,     setChatInput]     = useState("");
 const [inviteLoading, setInviteLoading] = useState(false);
 const [declineToast,  setDeclineToast]  = useState<DeclineUpdate | null>(null);
 const [leaveConfirm,  setLeaveConfirm]  = useState(false);
@@ -492,14 +490,14 @@ setJoinedAudio(false); setMicMuted(false); setSpeakingUids([]);
 
 const ensureClient = useCallback(async () => {
 const AgoraRTC = await loadAgora();
-if (!AgoraRTC) throw new Error(“Agora SDK unavailable”);
+if (!AgoraRTC) throw new Error("Agora SDK unavailable");
 if (clientRef.current) return { AgoraRTC, client: clientRef.current };
-const client = AgoraRTC.createClient({ mode: “rtc”, codec: “vp8” });
-client.on(“user-published”, async (user, mediaType) => {
+const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+client.on("user-published", async (user, mediaType) => {
 await client.subscribe(user, mediaType);
-if (mediaType === “audio”) user.audioTrack?.play();
+if (mediaType === "audio") user.audioTrack?.play();
 });
-client.on(“volume-indicator”, volumes => {
+client.on("volume-indicator", volumes => {
 setSpeakingUids(volumes.filter(v => v.level > 6).map(v => Number(v.uid)).filter(Number.isFinite));
 });
 client.enableAudioVolumeIndicator();
@@ -519,18 +517,18 @@ if (d.room) setRoom(d.room);
 const loadDashboard = useCallback(async () => {
 try {
 const [fRes, iRes, aRes, meRes, pubRes] = await Promise.all([
-fetch(”/api/friends/list”),
-fetch(”/api/private-room/invites”),
-fetch(”/api/private-room/active”),
-fetch(”/api/me”),
-fetch(”/api/private-room/public”).catch(() => null), // optional endpoint
+fetch("/api/friends/list"),
+fetch("/api/private-room/invites"),
+fetch("/api/private-room/active"),
+fetch("/api/me"),
+fetch("/api/private-room/public").catch(() => null), // optional endpoint
 ]);
 if (fRes.ok) setFriends(((await fRes.json()) as { friends: Friend[] }).friends ?? []);
 if (iRes.ok) setInvites(((await iRes.json()) as { invites: Invite[] }).invites ?? []);
 if (meRes.ok) { const d = (await meRes.json()) as { user?: { id?: string } }; setLocalUserId(d.user?.id ?? null); }
 if (aRes.ok) {
 const d = (await aRes.json()) as { room: { id: string } | null };
-if (d.room?.id) { setCurrentRoomId(d.room.id); await fetchRoom(d.room.id); setView(“room”); }
+if (d.room?.id) { setCurrentRoomId(d.room.id); await fetchRoom(d.room.id); setView("room"); }
 }
 if (pubRes?.ok) {
 const d = (await pubRes.json()) as { rooms?: PublicRoom[] };
@@ -566,24 +564,24 @@ return () => clearInterval(t);
 // ── room actions ──────────────────────────────────────────────────────────
 
 const joinRoom = useCallback(async (roomId: string) => {
-const r = await fetch(`/api/private-room/${roomId}/join`, { method: “POST” });
+const r = await fetch(`/api/private-room/${roomId}/join`, { method: "POST" });
 if (!r.ok) return;
 setCurrentRoomId(roomId);
 await fetchRoom(roomId);
-setView(“room”);
+setView("room");
 }, [fetchRoom]);
 
-const respondToInvite = async (invite: Invite, action: “accept” | “reject”) => {
+const respondToInvite = async (invite: Invite, action: "accept" | "reject") => {
 if (inviteLoading) return;
 setInviteLoading(true);
 try {
 const r = await fetch(`/api/private-room/invites/${invite.id}/respond`, {
-method: “POST”, headers: { “Content-Type”: “application/json” },
+method: "POST", headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ action }),
 });
 if (!r.ok) return;
 setInvites(prev => prev.filter(i => i.id !== invite.id));
-if (action === “accept”) await joinRoom(invite.roomId);
+if (action === "accept") await joinRoom(invite.roomId);
 } finally { setInviteLoading(false); }
 };
 
@@ -594,24 +592,24 @@ try {
 const { AgoraRTC, client } = await ensureClient();
 const uid = stableUid(localUserId);
 const tokenRes = await fetch(`/api/agora/token?channel=${encodeURIComponent(room.channelName)}&uid=${uid}`);
-if (!tokenRes.ok) throw new Error(“Token fetch failed”);
+if (!tokenRes.ok) throw new Error("Token fetch failed");
 const { token } = (await tokenRes.json()) as { token?: string };
-if (!token) throw new Error(“Invalid token”);
+if (!token) throw new Error("Invalid token");
 await client.join(appId, room.channelName, token, uid);
 const track = await AgoraRTC.createMicrophoneAudioTrack();
 localTrackRef.current = track;
 await client.publish([track]);
 setJoinedAudio(true);
-} catch (e) { await leaveAgora(); setError(e instanceof Error ? e.message : “Audio join failed”); }
+} catch (e) { await leaveAgora(); setError(e instanceof Error ? e.message : "Audio join failed"); }
 finally { setJoiningAudio(false); }
 };
 
 const leaveRoom = async () => {
 if (!currentRoomId) return;
-await fetch(`/api/private-room/${currentRoomId}/leave`, { method: “POST” });
+await fetch(`/api/private-room/${currentRoomId}/leave`, { method: "POST" });
 await leaveAgora();
-setCurrentRoomId(null); setRoom(null); setVexaState(“idle”);
-setLeaveConfirm(false); setMinimized(false); setView(“dashboard”);
+setCurrentRoomId(null); setRoom(null); setVexaState("idle");
+setLeaveConfirm(false); setMinimized(false); setView("dashboard");
 await loadDashboard();
 };
 
@@ -632,36 +630,35 @@ return new Set(room.participants.filter(p => active.has(stableUid(p.userId))).ma
 
 const sendChat = () => {
 if (!chatInput.trim()) return;
-const now = new Date().toLocaleTimeString(“en”, { hour: “2-digit”, minute: “2-digit” });
-setChatMessages(prev => […prev, { mine: true, text: chatInput.trim(), time: now }]);
-setChatInput(””);
-setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: “smooth” }), 60);
+const now = new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" });
+setChatMessages(prev => [...prev, { mine: true, text: chatInput.trim(), time: now }]);
+setChatInput("");
+setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 };
 
 // ── shared styles ─────────────────────────────────────────────────────────
 
 const screenBase: React.CSSProperties = {
-background: “#050404”, minHeight: “100svh”, width: “100%”, maxWidth: 430,
-margin: “0 auto”, display: “flex”, flexDirection: “column”,
-fontFamily: “‘DM Sans’, sans-serif”, color: “#e8e8e8”, overflow: “hidden”,
-position: “relative”,
+background: "#050404", minHeight: "100svh", width: "100%", maxWidth: 430,
+margin: "0 auto", display: "flex", flexDirection: "column",
+fontFamily: "'DM Sans', sans-serif", color: "#e8e8e8", overflow: "hidden",
+position: "relative",
 };
 
 // ══════════════════════════════════════════════════════════════════════════
 // RENDER: DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 
-if (view === “dashboard”) return (
+if (view === "dashboard") return (
 <main style={screenBase}>
 {/* background: subtle grid */}
-<div style={{ position: “absolute”, inset: 0, overflow: “hidden”, pointerEvents: “none”, zIndex: 0 }}>
-<div style={{ position: “absolute”, inset: 0, backgroundImage: “linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)”, backgroundSize: “32px 32px”, maskImage: “radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 80%)”, WebkitMaskImage: “radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 80%)” }} />
-<div style={{ position: “absolute”, left: “-18%”, top: “-5%”, width: 320, height: 320, borderRadius: “50%”, background: “radial-gradient(circle,rgba(90,16,32,0.26) 0%,rgba(90,16,32,0.06) 55%,transparent 80%)”, filter: “blur(40px)” }} />
-<div style={{ position: “absolute”, right: “-20%”, top: “35%”, width: 220, height: 220, borderRadius: “50%”, background: “rgba(255,255,255,0.04)”, filter: “blur(80px)” }} />
+<div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+<div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px)", backgroundSize: "32px 32px", maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 80%)", WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 80%)" }} />
+<div style={{ position: "absolute", left: "-18%", top: "-5%", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(90,16,32,0.26) 0%,rgba(90,16,32,0.06) 55%,transparent 80%)", filter: "blur(40px)" }} />
+<div style={{ position: "absolute", right: "-20%", top: "35%", width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.04)", filter: "blur(80px)" }} />
 </div>
-<div style={{ position: “absolute”, left: 0, right: 0, top: 0, height: 1, background: “linear-gradient(90deg,transparent 0%,rgba(138,31,56,0.5) 40%,rgba(138,31,56,0.5) 60%,transparent 100%)”, zIndex: 6 }} />
+<div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 1, background: "linear-gradient(90deg,transparent 0%,rgba(138,31,56,0.5) 40%,rgba(138,31,56,0.5) 60%,transparent 100%)", zIndex: 6 }} />
 
-```
   <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "none", paddingBottom: 36, position: "relative", zIndex: 5 }}>
 
     {/* header */}
@@ -670,7 +667,7 @@ if (view === “dashboard”) return (
       <h1 style={{ fontSize: 30, fontWeight: 700, color: "#fff", letterSpacing: -1, lineHeight: 1 }}>Rooms</h1>
     </div>
 
-    {loading && <p style={{ padding: "20px 20px 0", fontSize: 13, color: "rgba(232,232,232,.4)" }}>Loading…</p>}
+    {loading && <p style={{ padding: "20px 20px 0", fontSize: 13, color: "rgba(232,232,232,.4)" }}>Loading...</p>}
     {error && <p style={{ padding: "12px 20px 0", fontSize: 13, color: "rgba(252,165,165,.8)" }}>{error}</p>}
 
     {/* create card */}
@@ -808,7 +805,6 @@ if (view === “dashboard”) return (
 
   <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}`}</style>
 </main>
-```
 
 );
 
@@ -816,16 +812,16 @@ if (view === “dashboard”) return (
 // RENDER: CREATE WIZARD
 // ══════════════════════════════════════════════════════════════════════════
 
-if (view === “create”) return (
-<main style={{ …screenBase, minHeight: “100svh” }}>
-<div style={{ position: “absolute”, inset: 0, overflow: “hidden”, pointerEvents: “none”, zIndex: 0 }}>
-<div style={{ position: “absolute”, left: “-20%”, top: “0%”, width: 240, height: 240, borderRadius: “50%”, background: “rgba(90,16,32,0.1)”, filter: “blur(80px)” }} />
+if (view === "create") return (
+<main style={{ ...screenBase, minHeight: "100svh" }}>
+<div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+<div style={{ position: "absolute", left: "-20%", top: "0%", width: 240, height: 240, borderRadius: "50%", background: "rgba(90,16,32,0.1)", filter: "blur(80px)" }} />
 </div>
-<div style={{ position: “relative”, zIndex: 5, flex: 1, display: “flex”, flexDirection: “column”, overflow: “hidden” }}>
+<div style={{ position: "relative", zIndex: 5, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 <CreateWizard
 friends={friends}
-onCreated={async (roomId) => { setCurrentRoomId(roomId); await fetchRoom(roomId); setView(“room”); }}
-onClose={() => setView(“dashboard”)}
+onCreated={async (roomId) => { setCurrentRoomId(roomId); await fetchRoom(roomId); setView("room"); }}
+onClose={() => setView("dashboard")}
 />
 </div>
 </main>
@@ -838,23 +834,22 @@ onClose={() => setView(“dashboard”)}
 const CtrlBtn = ({ label, onClick, active, danger, muted, children }: {
 label: string; onClick: () => void; active?: boolean; danger?: boolean; muted?: boolean; children: React.ReactNode;
 }) => (
-<button onClick={onClick} style={{ display: “flex”, flexDirection: “column”, alignItems: “center”, gap: 4, cursor: “pointer”, background: “none”, border: “none”, flex: 1, fontFamily: “‘DM Sans’, sans-serif”, transition: “all .18s” }}>
-<div style={{ width: 44, height: 44, borderRadius: 14, display: “flex”, alignItems: “center”, justifyContent: “center”, transition: “all .2s”,
-background: active ? “rgba(61,230,150,0.1)” : danger ? “rgba(239,68,68,0.08)” : muted ? “rgba(239,68,68,0.08)” : “rgba(255,255,255,0.04)”,
-border: active ? “1px solid rgba(61,230,150,0.25)” : danger ? “1px solid rgba(239,68,68,0.18)” : muted ? “1px solid rgba(239,68,68,0.18)” : “1px solid rgba(255,255,255,0.08)”,
-color: active ? “#3de696” : danger ? “rgba(252,165,165,0.75)” : muted ? “rgba(252,165,165,0.8)” : “rgba(232,232,232,0.55)” }}>
+<button onClick={onClick} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", background: "none", border: "none", flex: 1, fontFamily: "'DM Sans', sans-serif", transition: "all .18s" }}>
+<div style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s",
+background: active ? "rgba(61,230,150,0.1)" : danger ? "rgba(239,68,68,0.08)" : muted ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+border: active ? "1px solid rgba(61,230,150,0.25)" : danger ? "1px solid rgba(239,68,68,0.18)" : muted ? "1px solid rgba(239,68,68,0.18)" : "1px solid rgba(255,255,255,0.08)",
+color: active ? "#3de696" : danger ? "rgba(252,165,165,0.75)" : muted ? "rgba(252,165,165,0.8)" : "rgba(232,232,232,0.55)" }}>
 {children}
 </div>
-<span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: “.02em”, color: active ? “rgba(61,230,150,0.8)” : danger ? “rgba(252,165,165,0.65)” : muted ? “rgba(252,165,165,0.7)” : “rgba(232,232,232,0.5)” }}>{label}</span>
+<span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".02em", color: active ? "rgba(61,230,150,0.8)" : danger ? "rgba(252,165,165,0.65)" : muted ? "rgba(252,165,165,0.7)" : "rgba(232,232,232,0.5)" }}>{label}</span>
 </button>
 );
 
 return (
-<motion.main style={{ …screenBase, minHeight: “100svh” }}
-animate={minimized ? { y: “100%” } : { y: 0 }}
-transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
+<motion.main style={{ ...screenBase, minHeight: "100svh" }}
+animate={minimized ? { y: "100%" } : { y: 0 }}
+transition={{ type: "spring", stiffness: 260, damping: 30 }}>
 
-```
   {/* blobs */}
   <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
     <div style={{ position: "absolute", left: "-15%", top: "20%", width: 200, height: 200, borderRadius: "50%", background: "rgba(90,16,32,0.14)", filter: "blur(90px)" }} />
@@ -884,7 +879,7 @@ transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
     </button>
   </div>
 
-  {/* participant grid — fills remaining space */}
+  {/* participant grid - fills remaining space */}
   <div style={{ margin: "12px 16px 0", flex: 1, display: "flex", flexDirection: "column", borderRadius: 22, overflow: "hidden", position: "relative", zIndex: 5, ...glassCard }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "16px 16px 0", flexShrink: 0 }}>
       <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(232,232,232,.28)" }}>In this room</span>
@@ -919,7 +914,7 @@ transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
   {/* controls */}
   <div style={{ margin: "8px 16px 16px", borderRadius: 20, padding: 8, display: "flex", alignItems: "center", justifyContent: "space-around", flexShrink: 0, position: "relative", zIndex: 5, ...glassCard }}>
     {!joinedAudio ? (
-      <CtrlBtn label={joiningAudio ? "Joining…" : "Join Audio"} onClick={() => void joinAudio()} active>
+      <CtrlBtn label={joiningAudio ? "Joining..." : "Join Audio"} onClick={() => void joinAudio()} active>
         <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0v-4A2.5 2.5 0 0 0 10 3Z"/><path d="M15.5 9v.5a5.5 5.5 0 0 1-11 0V9"/><line x1="10" y1="16" x2="10" y2="19"/></svg>
       </CtrlBtn>
     ) : (
@@ -974,7 +969,7 @@ transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
           <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()}
-            placeholder="Message the room…"
+            placeholder="Message the room..."
             style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 14, padding: "9px 13px", fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: "rgba(232,232,232,.85)", outline: "none", caretColor: "#8a1f38" }} />
           <button onClick={sendChat} style={{ width: 36, height: 36, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(160deg,rgba(120,25,48,.9),rgba(65,10,24,.88))", border: "1px solid rgba(150,40,65,.28)", color: "rgba(255,255,255,.9)", cursor: "pointer", flexShrink: 0 }}>
             <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="2" x2="9" y2="11"/><polygon points="18 2 11 18 9 11 2 9 18 2"/></svg>
@@ -999,7 +994,7 @@ transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/><path d="M13 14l4-4-4-4M17 10H8"/></svg>
           </div>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-.3px", textAlign: "center", marginBottom: 5 }}>Leave the room?</h3>
-          <p style={{ fontSize: 13, color: "rgba(232,232,232,.42)", textAlign: "center", lineHeight: 1.5, marginBottom: 22 }}>You'll be disconnected from the audio. Others will stay in the room.</p>
+          <p style={{ fontSize: 13, color: "rgba(232,232,232,.42)", textAlign: "center", lineHeight: 1.5, marginBottom: 22 }}>You&apos;ll be disconnected from the audio. Others will stay in the room.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             <button onClick={() => void leaveRoom()}
               style={{ height: 48, borderRadius: 14, fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.25)", color: "rgba(252,165,165,.9)" }}>
@@ -1018,7 +1013,6 @@ transition={{ type: “spring”, stiffness: 260, damping: 30 }}>
 
   <style>{`@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}`}</style>
 </motion.main>
-```
 
 );
 }

@@ -1,16 +1,16 @@
-“use client”;
+"use client";
 
-import { AnimatePresence, motion } from “framer-motion”;
-import { useCallback, useEffect, useMemo, useRef, useState } from “react”;
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-export type VoiceStatus = “idle” | “connecting” | “listening” | “thinking” | “speaking” | “error”;
+export type VoiceStatus = "idle" | "connecting" | "listening" | "thinking" | "speaking" | "error";
 type StartFailureCategory =
-| “unsupported_browser”
-| “microphone_stream_failure”
-| “backend_session_creation_failed”
-| “invalid_sdp_response”
-| “webrtc_peer_connection_failed”
-| “openai_auth_or_config_issue”;
+| "unsupported_browser"
+| "microphone_stream_failure"
+| "backend_session_creation_failed"
+| "invalid_sdp_response"
+| "webrtc_peer_connection_failed"
+| "openai_auth_or_config_issue";
 
 class RealtimeStartError extends Error {
 constructor(
@@ -18,7 +18,7 @@ message: string,
 readonly category: StartFailureCategory
 ) {
 super(message);
-this.name = “RealtimeStartError”;
+this.name = "RealtimeStartError";
 }
 }
 
@@ -30,44 +30,44 @@ onStatusChange?: (status: VoiceStatus) => void;
 };
 
 const statusLabelMap: Record<VoiceStatus, string> = {
-idle: “Hold to talk”,
-connecting: “Connecting…”,
-listening: “Listening…”,
-thinking: “Thinking…”,
-speaking: “Speaking…”,
-error: “Try again”
+idle: "Hold to talk",
+connecting: "Connecting...",
+listening: "Listening...",
+thinking: "Thinking...",
+speaking: "Speaking...",
+error: "Try again"
 };
 
 function buildRealtimeEvent(type: string, extra: Record<string, unknown> = {}) {
 return {
 event_id: crypto.randomUUID(),
 type,
-…extra
+...extra
 };
 }
 
 function createSdpPreview(sdp: string, edgeLength = 80) {
-const compact = sdp.replace(/\r?\n/g, “\n”);
+const compact = sdp.replace(/\r?\n/g, "\n");
 if (compact.length <= edgeLength * 2) {
 return compact;
 }
-return `${compact.slice(0, edgeLength)}…${compact.slice(-edgeLength)}`;
+return `${compact.slice(0, edgeLength)}...${compact.slice(-edgeLength)}`;
 }
 
 async function waitForIceGatheringComplete(peerConnection: RTCPeerConnection, timeoutMs = 1200) {
-if (peerConnection.iceGatheringState === “complete”) {
+if (peerConnection.iceGatheringState === "complete") {
 return;
 }
 
 await Promise.race([
 new Promise<void>((resolve) => {
 const onStateChange = () => {
-if (peerConnection.iceGatheringState === “complete”) {
-peerConnection.removeEventListener(“icegatheringstatechange”, onStateChange);
+if (peerConnection.iceGatheringState === "complete") {
+peerConnection.removeEventListener("icegatheringstatechange", onStateChange);
 resolve();
 }
 };
-peerConnection.addEventListener(“icegatheringstatechange”, onStateChange);
+peerConnection.addEventListener("icegatheringstatechange", onStateChange);
 }),
 new Promise<void>((resolve) => {
 window.setTimeout(resolve, timeoutMs);
@@ -76,7 +76,7 @@ window.setTimeout(resolve, timeoutMs);
 }
 
 export function VexaVoicePanel({ open, roomId, onClose, onStatusChange }: VexaVoicePanelProps) {
-const [status, setStatus] = useState<VoiceStatus>(“idle”);
+const [status, setStatus] = useState<VoiceStatus>("idle");
 const [error, setError] = useState<string | null>(null);
 
 const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -99,7 +99,6 @@ const cleanupRealtimeSession = useCallback(() => {
 dataChannelRef.current?.close();
 dataChannelRef.current = null;
 
-```
 peerConnectionRef.current?.close();
 peerConnectionRef.current = null;
 
@@ -117,13 +116,12 @@ if (remoteAudioRef.current) {
 
 isPointerDownRef.current = false;
 activePointerIdRef.current = null;
-```
 
 }, []);
 
 const sendRealtimeEvent = useCallback((event: Record<string, unknown>) => {
 const channel = dataChannelRef.current;
-if (!channel || channel.readyState !== “open”) return;
+if (!channel || channel.readyState !== "open") return;
 channel.send(JSON.stringify(event));
 }, []);
 
@@ -132,7 +130,6 @@ if (cause instanceof RealtimeStartError) {
 return cause.message;
 }
 
-```
 if (cause instanceof Error && cause.name === "NotAllowedError") {
   return "Microphone permission was denied. Please allow mic access and try again.";
 }
@@ -146,16 +143,14 @@ if (cause instanceof Error && cause.message) {
 }
 
 return "Unable to start realtime voice right now.";
-```
 
 }, []);
 
 const ensureRealtimeSession = useCallback(async () => {
 if (!roomId) {
-throw new Error(“Join a room first to talk to Vexa.”);
+throw new Error("Join a room first to talk to Vexa.");
 }
 
-```
 if (peerConnectionRef.current && dataChannelRef.current?.readyState === "open") {
   return;
 }
@@ -336,14 +331,12 @@ microphoneTrackRef.current = track;
 remoteAudioRef.current = audio;
 
 setVoiceStatus("idle");
-```
 
 }, [open, roomId, setVoiceStatus]);
 
 const startTalking = useCallback(async () => {
-if (status === “connecting”) return;
+if (status === "connecting") return;
 
-```
 try {
   setError(null);
   await ensureRealtimeSession();
@@ -362,14 +355,12 @@ try {
   setError(toFriendlyRealtimeError(startError));
   setVoiceStatus("error");
 }
-```
 
 }, [cleanupRealtimeSession, ensureRealtimeSession, sendRealtimeEvent, setVoiceStatus, status, toFriendlyRealtimeError]);
 
 const stopTalking = useCallback(() => {
 if (!isPointerDownRef.current) return;
 
-```
 isPointerDownRef.current = false;
 
 const microphoneTrack = microphoneTrackRef.current;
@@ -380,7 +371,6 @@ if (microphoneTrack) {
 sendRealtimeEvent(buildRealtimeEvent("input_audio_buffer.commit"));
 sendRealtimeEvent(buildRealtimeEvent("response.create"));
 setVoiceStatus("thinking");
-```
 
 }, [sendRealtimeEvent, setVoiceStatus]);
 
@@ -388,7 +378,7 @@ useEffect(() => {
 if (!open) {
 cleanupRealtimeSession();
 setError(null);
-setVoiceStatus(“idle”);
+setVoiceStatus("idle");
 }
 }, [cleanupRealtimeSession, open, setVoiceStatus]);
 
@@ -399,18 +389,18 @@ cleanupRealtimeSession();
 }, [cleanupRealtimeSession]);
 
 const statusLabel = useMemo(() => statusLabelMap[status], [status]);
-const isPressDisabled = status === “connecting”;
+const isPressDisabled = status === "connecting";
 
 return (
 <AnimatePresence>
 {open ? (
 <>
-<motion.div className=“fixed inset-0 z-40 bg-black/70” initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+<motion.div className="fixed inset-0 z-40 bg-black/70" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
 <motion.div
-className=“fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#09090b] p-4”
-initial={{ y: “100%” }}
+className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#09090b] p-4"
+initial={{ y: "100%" }}
 animate={{ y: 0 }}
-exit={{ y: “100%” }}
+exit={{ y: "100%" }}
 transition={{ duration: 0.25 }}
 >
 <div className="flex items-center justify-between">
@@ -423,7 +413,6 @@ Close
 </button>
 </div>
 
-```
         <div className="mt-3 flex items-center gap-2 text-[11px] text-white/65">
           <span
             className={`h-2 w-2 rounded-full ${
@@ -485,7 +474,6 @@ Close
     </>
   ) : null}
 </AnimatePresence>
-```
 
 );
 }
