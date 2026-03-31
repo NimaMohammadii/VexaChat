@@ -1,7 +1,7 @@
-“use client”;
+"use client";
 
-import { useEffect, useMemo, useState } from “react”;
-import { AnimatePresence, motion } from “framer-motion”;
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Friend = {
 id: string;
@@ -14,16 +14,16 @@ type RoomCreateSheetProps = {
 open: boolean;
 onClose: () => void;
 friends: Friend[];
-mode?: “create” | “invite”;
+mode?: "create" | "invite";
 roomId?: string;
 onCreated?: (roomId: string) => void;
 onInvited?: () => void;
 };
 
-export function RoomCreateSheet({ open, onClose, friends, mode = “create”, roomId, onCreated, onInvited }: RoomCreateSheetProps) {
-const [roomName, setRoomName] = useState(””);
+export function RoomCreateSheet({ open, onClose, friends, mode = "create", roomId, onCreated, onInvited }: RoomCreateSheetProps) {
+const [roomName, setRoomName] = useState("");
 const [enableTextChat, setEnableTextChat] = useState(true);
-const [query, setQuery] = useState(””);
+const [query, setQuery] = useState("");
 const [selectedIds, setSelectedIds] = useState<string[]>([]);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,6 @@ if (!open) {
 return;
 }
 
-```
 setQuery("");
 setSelectedIds([]);
 setError(null);
@@ -42,7 +41,6 @@ if (mode === "create") {
   setRoomName("");
   setEnableTextChat(true);
 }
-```
 
 }, [mode, open]);
 
@@ -51,10 +49,8 @@ if (!query.trim()) {
 return friends;
 }
 
-```
 const normalized = query.toLowerCase();
 return friends.filter((friend) => friend.username.toLowerCase().includes(normalized));
-```
 
 }, [friends, query]);
 
@@ -62,7 +58,6 @@ const submit = async () => {
 setLoading(true);
 setError(null);
 
-```
 try {
   if (mode === "create") {
     const response = await fetch("/api/private-room/create", {
@@ -111,7 +106,6 @@ try {
 } finally {
   setLoading(false);
 }
-```
 
 };
 
@@ -119,15 +113,14 @@ return (
 <AnimatePresence>
 {open ? (
 <>
-<motion.div className=“fixed inset-0 z-40 bg-black/70 backdrop-blur-md” initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-<motion.div role=“dialog” aria-modal=“true” className=“fixed inset-0 z-50 flex items-end” initial={{ y: “100%” }} animate={{ y: 0 }} exit={{ y: “100%” }} transition={{ duration: 0.3, ease: “easeOut” }}>
+<motion.div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+<motion.div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-end" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: 0.3, ease: "easeOut" }}>
 <div className="mx-auto h-[88svh] w-full max-w-xl rounded-t-3xl border border-white/10 bg-[#050505]/95 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-5">
 <div className="mb-4 flex items-center justify-between">
-<h2 className="text-lg font-semibold">{mode === “create” ? “Create Private Room” : “Invite Friends”}</h2>
+<h2 className="text-lg font-semibold">{mode === "create" ? "Create Private Room" : "Invite Friends"}</h2>
 <button type="button" onClick={onClose} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/80">Close</button>
 </div>
 
-```
           {mode === "create" ? (
             <div className="space-y-3">
               <input value={roomName} onChange={(event) => setRoomName(event.target.value)} placeholder="Room name (optional)" className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none focus:border-white/35" />
@@ -168,7 +161,6 @@ return (
     </>
   ) : null}
 </AnimatePresence>
-```
 
 );
 }
