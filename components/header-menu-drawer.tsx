@@ -153,14 +153,6 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
   }, [loadLocks]);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    void loadLocks();
-  }, [isOpen, loadLocks]);
-
-  useEffect(() => {
     const intervalId = setInterval(() => {
       void loadLocks();
     }, 30000);
@@ -233,12 +225,12 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
               type="button"
               aria-label="Close navigation menu"
               tabIndex={isOpen ? 0 : -1}
-              className={`fixed inset-0 z-[9998] bg-black/70 transition-opacity duration-300 ${isOpen ? "pointer-events-auto opacity-100 ease-out" : "pointer-events-none opacity-0 ease-in"}`}
+              className={`fixed inset-0 z-[9998] bg-black/60 transition-opacity duration-200 ${isOpen ? "pointer-events-auto opacity-100 ease-out" : "pointer-events-none opacity-0 ease-in"}`}
               onClick={() => setIsOpen(false)}
             />
 
             <aside
-              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_60px_rgba(255,46,99,0.22)] backdrop-blur transition-[transform,opacity] duration-300 will-change-transform ${isOpen ? "pointer-events-auto translate-x-0 opacity-100 ease-out" : "pointer-events-none -translate-x-full opacity-90 ease-in"}`}
+              className={`fixed left-0 top-0 z-[9999] flex h-full w-[50vw] max-w-[380px] min-w-[270px] transform-gpu flex-col overflow-hidden border-r border-[#FF2E63]/30 bg-[#060606]/96 px-4 pb-5 pt-6 shadow-[0_0_32px_rgba(255,46,99,0.16)] transition-transform duration-200 will-change-transform ${isOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full"}`}
               aria-hidden={!isOpen}
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -256,7 +248,7 @@ export function HeaderMenuDrawer({ variant = "default" }: { variant?: "default" 
                 {items.map((item, index) => {
                   const isActive = item.match(pathname);
                   const Icon = item.Icon;
-                  const delay = isOpen ? 80 + index * 35 : (items.length - index) * 20;
+                  const delay = isOpen ? index * 12 : 0;
 
                   return (
                     <div key={item.href}>

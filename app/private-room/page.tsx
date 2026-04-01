@@ -664,12 +664,11 @@ if (view === "dashboard") return (
 
     {/* header */}
     <div style={{ padding: "22px 20px 0" }}>
-      <div className="mb-5 flex items-center gap-3">
-        <HeaderMenuDrawer />
-        <span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(232,232,232,.28)" }}>Vexa</span>
-      </div>
       <span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(232,232,232,.28)", display: "block", marginBottom: 8 }}>Private audio</span>
-      <h1 style={{ fontSize: 30, fontWeight: 700, color: "#fff", letterSpacing: -1, lineHeight: 1 }}>Rooms</h1>
+      <div className="flex items-center gap-2">
+        <HeaderMenuDrawer variant="minimal" />
+        <h1 style={{ fontSize: 30, fontWeight: 700, color: "#fff", letterSpacing: -1, lineHeight: 1 }}>Rooms</h1>
+      </div>
     </div>
 
     {loading && <p style={{ padding: "20px 20px 0", fontSize: 13, color: "rgba(232,232,232,.4)" }}>Loading...</p>}
