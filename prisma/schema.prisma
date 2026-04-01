@@ -298,6 +298,12 @@ model HomepageImage {
   @@index([slot, order])
 }
 
+model MenuAccessConfig {
+  id         String   @id @default(cuid())
+  lockedKeys String[] @default([])
+  updatedAt  DateTime @updatedAt
+}
+
 model NoirQueue {
   id        String   @id @default(cuid())
   userId    String?
