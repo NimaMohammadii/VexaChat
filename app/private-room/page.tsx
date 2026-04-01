@@ -3,6 +3,7 @@
 import type { IAgoraRTCClient } from "agora-rtc-sdk-ng";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { HeaderMenuDrawer } from "@/components/header-menu-drawer";
 import { presignRead, presignUpload, uploadFileWithPresignedUrl } from "@/lib/client/storage";
 import { processImageFile, previewUrl as makePreviewUrl } from "@/lib/image-processing";
 
@@ -662,7 +663,11 @@ if (view === "dashboard") return (
   <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "none", paddingBottom: 36, position: "relative", zIndex: 5 }}>
 
     {/* header */}
-    <div style={{ padding: "52px 20px 0" }}>
+    <div style={{ padding: "22px 20px 0" }}>
+      <div className="mb-5 flex items-center gap-3">
+        <HeaderMenuDrawer />
+        <span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(232,232,232,.28)" }}>Vexa</span>
+      </div>
       <span style={{ fontSize: 9.5, fontWeight: 500, letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(232,232,232,.28)", display: "block", marginBottom: 8 }}>Private audio</span>
       <h1 style={{ fontSize: 30, fontWeight: 700, color: "#fff", letterSpacing: -1, lineHeight: 1 }}>Rooms</h1>
     </div>
