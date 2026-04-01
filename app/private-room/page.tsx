@@ -253,7 +253,7 @@ style={value
 );
 
 return (
-<div className="flex flex-col h-full">
+<div className="flex h-full min-h-0 flex-col">
 {/* header */}
 <div className="flex items-center gap-3 px-5 flex-shrink-0" style={{ paddingTop: 52 }}>
 <button onClick={onClose} className="w-9 h-9 rounded-[12px] flex items-center justify-center flex-shrink-0 transition-all"
@@ -275,7 +275,7 @@ style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,2
   </div>
 
   {/* steps */}
-  <div className="flex-1 overflow-hidden relative">
+  <div className="relative flex-1 overflow-hidden min-h-0">
     <AnimatePresence mode="wait">
       <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 0.999, x: 0 }} exit={{ opacity: 0, x: -20 }}
         transition={{ duration: 0.22 }}
@@ -817,7 +817,7 @@ if (view === "create") return (
 <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
 <div style={{ position: "absolute", left: "-20%", top: "0%", width: 240, height: 240, borderRadius: "50%", background: "rgba(90,16,32,0.1)", filter: "blur(80px)" }} />
 </div>
-<div style={{ position: "relative", zIndex: 5, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+<div style={{ position: "relative", zIndex: 5, flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 <CreateWizard
 friends={friends}
 onCreated={async (roomId) => { setCurrentRoomId(roomId); await fetchRoom(roomId); setView("room"); }}
