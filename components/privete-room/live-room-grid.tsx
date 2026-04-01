@@ -1,6 +1,6 @@
 "use client";
 
-import { ParticipantBubble } from "@/components/private-room/participant-bubble";
+import { ParticipantBubble } from "@/components/privete-room/participant-bubble";
 
 type Participant = {
 id: string;

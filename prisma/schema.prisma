@@ -284,6 +284,12 @@ model HomePageConfig {
   updatedAt        DateTime @updatedAt
 }
 
+model MenuAccessConfig {
+  id         String   @id @default("menu-access-config")
+  lockedKeys String[] @default([])
+  updatedAt  DateTime @updatedAt
+}
+
 model HomepageImage {
   id          String   @id @default(cuid())
   slot        String
