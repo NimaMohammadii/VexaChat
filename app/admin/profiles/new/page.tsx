@@ -10,7 +10,9 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
-async function createProfile(formData: FormData): Promise<void> {
+type ServerFormAction = (formData: FormData) => void | Promise<void>
+
+const createProfile: ServerFormAction = async (formData) => {
   "use server";
 
   const name = String(formData.get("name") ?? "").trim();
@@ -75,7 +77,7 @@ async function createProfile(formData: FormData): Promise<void> {
   revalidatePath("/admin/profiles");
 
   redirect("/admin/profiles");
-}
+};
 
 export default function NewProfilePage() {
   return (
