@@ -10,7 +10,7 @@ function splitCommaSeparated(value: string) {
     .filter(Boolean);
 }
 
-async function createProfile(formData: FormData) {
+async function createProfile(formData: FormData): Promise<void> {
   "use server";
 
   const name = String(formData.get("name") ?? "").trim();
@@ -27,24 +27,49 @@ async function createProfile(formData: FormData) {
   const languages = splitCommaSeparated(String(formData.get("languages") ?? ""));
   const services = splitCommaSeparated(String(formData.get("services") ?? ""));
 
-  await prisma.profile.create({
-    data: {
-      name,
-      age,
-      city,
-      price,
-      description,
-      images: [],
-      height,
-      availability,
-      experienceYears,
-      rating,
-      verified,
-      isTop,
-      languages,
-      services
-    }
-  });
+  if (!name || !city || !description) {
+    throw new Error("Name, city, and description are required.");
+  }
+
+  if (!Number.isFinite(age) || age < 18) {
+    throw new Error("Age must be at least 18.");
+  }
+
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error("Price must be 0 or greater.");
+  }
+
+  if (!Number.isFinite(experienceYears) || experienceYears < 0) {
+    throw new Error("Experience years must be 0 or greater.");
+  }
+
+  if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+    throw new Error("Rating must be between 0 and 5.");
+  }
+
+  try {
+    await prisma.profile.create({
+      data: {
+        name,
+        age,
+        city,
+        price,
+        description,
+        images: [],
+        height,
+        availability,
+        experienceYears,
+        rating,
+        verified,
+        isTop,
+        languages,
+        services
+      }
+    });
+  } catch (error) {
+    console.error("Failed to create profile", error);
+    throw new Error("Unable to create profile.");
+  }
 
   revalidatePath("/");
   revalidatePath("/admin/profiles");
