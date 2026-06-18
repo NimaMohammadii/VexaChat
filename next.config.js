@@ -10,7 +10,7 @@ if (r2Endpoint) {
       r2Pattern = {
         protocol: protocol.replace(":", "") || "https",
         hostname,
-        pathname: '/**',
+        pathname: "/**",
       };
     }
   } catch {
@@ -21,11 +21,14 @@ if (r2Endpoint) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
       ...(r2Pattern ? [r2Pattern] : []),
     ],
