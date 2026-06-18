@@ -1,121 +1,13 @@
-import { GoogleAuthControl } from "@/components/google-auth-control";
-import { HomePageRedesign } from "@/components/home-page-redesign";
-import { PublicHeader } from "@/components/public-header";
-import { ensureHomePageConfig } from "@/lib/homepage-config";
-import { prisma } from "@/lib/prisma";
-import { resolveStoredFileUrl } from "@/lib/storage/object-storage";
-import { getAuthenticatedUser } from "@/lib/supabase-server";
-
-export const dynamic = "force-dynamic";
-
-function parseList(value: string | undefined) {
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-export default async function HomePage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
-  const city = searchParams.city?.trim() ?? "";
-  const min = Number(searchParams.min ?? "");
-  const max = Number(searchParams.max ?? "");
-  const languages = parseList(searchParams.languages);
-  const services = parseList(searchParams.services);
-  const sort = searchParams.sort ?? "newest";
-
-  const orderBy =
-    sort === "lowest" ? [{ price: "asc" as const }] :
-      sort === "highest" ? [{ price: "desc" as const }] :
-        sort === "verified" ? [{ verified: "desc" as const }, { createdAt: "desc" as const }] :
-          [{ createdAt: "desc" as const }];
-
-  const profiles = await (async () => {
-    try {
-      return await prisma.profile.findMany({
-        where: {
-          verified: true,
-          city: city ? { contains: city, mode: "insensitive" } : undefined,
-          price: {
-            gte: Number.isFinite(min) ? min : undefined,
-            lte: Number.isFinite(max) ? max : undefined
-          },
-          languages: languages.length ? { hasSome: languages } : undefined,
-          services: services.length ? { hasSome: services } : undefined
-        },
-        orderBy
-      });
-    } catch {
-      return [];
-    }
-  })();
-
-  const user = await getAuthenticatedUser({ canSetCookies: false });
-  const favorites = await (async () => {
-    if (!user) {
-      return [];
-    }
-
-    try {
-      return await prisma.favorite.findMany({ where: { userId: user.id }, select: { profileId: true } });
-    } catch {
-      return [];
-    }
-  })();
-
-  const favoriteProfileIds = favorites.map((item) => item.profileId);
-
-  const homeHeroConfig = await (async () => {
-    try {
-      return await ensureHomePageConfig();
-    } catch {
-      return null;
-    }
-  })();
-
-  const homeSections = await (async () => {
-    try {
-      const sections = await prisma.homeSection.findMany({
-        where: { isActive: true },
-        orderBy: [{ order: "asc" }, { createdAt: "desc" }]
-      });
-
-      return Promise.all(
-        sections.map(async (section) => ({
-          ...section,
-          imageUrl: await resolveStoredFileUrl(section.imageUrl)
-        }))
-      );
-    } catch {
-      return [];
-    }
-  })();
-
-  const homepageImages = await (async () => {
-    try {
-      const images = await prisma.homepageImage.findMany({
-        where: { slot: "homepage" },
-        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-        select: { id: true, order: true, storagePath: true }
-      });
-
-      return Promise.all(images.map(async (image) => ({
-        id: image.id,
-        order: image.order,
-        url: image.storagePath ? await resolveStoredFileUrl(image.storagePath) : ""
-      })));
-    } catch {
-      return [];
-    }
-  })();
-
+export default function HomePage() {
   return (
-    <>
-      <PublicHeader rightSlot={<GoogleAuthControl />} />
-      <HomePageRedesign profiles={profiles} favoriteProfileIds={favoriteProfileIds} homeSections={homeSections} homepageImages={homepageImages} homeHeroConfig={homeHeroConfig ?? { heroTitle: "Where Desire Meets", heroAccentWord: "Discretion", heroSubtitle: "Refined discovery for people who value privacy, curation, and meaningful introductions.", primaryCtaText: "Explore the Experience", secondaryCtaText: "Create Your Profile" }} />
-    </>
+    <main className="min-h-screen bg-ink px-5 py-8 text-paper">
+      <section className="mx-auto flex min-h-[80vh] max-w-md flex-col items-center justify-center text-center">
+        <div className="mb-5 rounded-full border border-line bg-white/[0.06] px-4 py-2 text-sm text-muted">
+          Telegram Mini App
+        </div>
+        <h1 className="text-4xl font-semibold tracking-tight">Vexa Chat</h1>
+        <p className="mt-4 text-sm leading-6 text-muted">Lightweight version is active.</p>
+      </section>
+    </main>
   );
 }
