@@ -4,13 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "next:build": "prisma generate && next build",
+    "build": "npm run cf:build",
     "start": "npm run start:prod:safe",
     "start:prod": "npx prisma migrate deploy && next start",
     "start:prod:safe": "node scripts/db-repair-prisma.js && npx prisma migrate deploy && next start",
     "cf:build": "prisma generate && opennextjs-cloudflare build",
     "cf:preview": "npm run cf:build && wrangler dev",
     "cf:deploy": "npm run cf:build && wrangler deploy",
+    "deploy": "npm run cf:deploy",
+    "preview": "npm run cf:preview",
     "db:deploy": "npx prisma migrate deploy",
     "postinstall": "prisma generate",
     "db:status": "prisma migrate status",
@@ -23,7 +26,7 @@
     "@aws-sdk/client-s3": "^3.883.0",
     "@aws-sdk/s3-request-presigner": "^3.883.0",
     "@prisma/client": "^6.3.1",
-    "@prisma/extension-accelerate": "^2.0.2",
+    "@prisma/extension-accelerate": "2.0.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.8",
     "agora-access-token": "^2.0.4",
@@ -34,7 +37,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.8.3",
+    "@opennextjs/cloudflare": "1.8.3",
     "@types/node": "20.14.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -45,6 +48,6 @@
     "tailwindcss": "3.4.4",
     "typescript": "5.5.3",
     "prisma": "^6.3.1",
-    "wrangler": "^4.20.5"
+    "wrangler": "4.20.5"
   }
 }
