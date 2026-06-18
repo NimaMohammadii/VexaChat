@@ -33,15 +33,28 @@ export async function GET() {
       expiresAt: { gt: now },
       OR: [{ userAId: user.id }, { userBId: user.id }]
     },
-    include: {
-      messages: {
-        select: { text: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-        take: 1
-      }
-    },
     orderBy: [{ lastMessageAt: "desc" }, { updatedAt: "desc" }]
   });
+
+  const conversationIds = conversations.map((conversation) => conversation.id);
+
+  const latestMessages = conversationIds.length
+    ? await prisma.message.findMany({
+        where: { conversationId: { in: conversationIds } },
+        select: { conversationId: true, text: true, createdAt: true },
+        orderBy: { createdAt: "desc" }
+      })
+    : [];
+
+  const latestMessageByConversationId = new Map<string, { text: string | null; createdAt: Date }>();
+  for (const message of latestMessages) {
+    if (!latestMessageByConversationId.has(message.conversationId)) {
+      latestMessageByConversationId.set(message.conversationId, {
+        text: message.text,
+        createdAt: message.createdAt
+      });
+    }
+  }
 
   const friendIds = Array.from(
     new Set(
@@ -64,7 +77,7 @@ export async function GET() {
     conversations: await Promise.all(conversations.map(async (conversation) => {
       const friendId = conversation.userAId === user.id ? conversation.userBId : conversation.userAId;
       const friend = friendById.get(friendId);
-      const lastMessage = conversation.messages[0] ?? null;
+      const lastMessage = latestMessageByConversationId.get(conversation.id) ?? null;
 
       return {
         id: conversation.id,
