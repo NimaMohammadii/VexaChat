@@ -6,9 +6,14 @@ import { getSignedMediaReadUrl } from "@/lib/storage";
 const PAGE_SIZE = 30;
 const INCREMENTAL_PAGE_SIZE = 50;
 
-async function withSignedMediaUrl<T extends { media: { id: string; type: string; storageKey: string; expiresAt: Date } | null }>(
-  rows: T[]
-) {
+type MessageRow = {
+  id?: string;
+  text?: string | null;
+  media: { id: string; type: string; storageKey: string; expiresAt: Date } | null;
+  [key: string]: unknown;
+};
+
+async function withSignedMediaUrl(rows: MessageRow[]) {
   return Promise.all(
     rows.map(async (row) => {
       if (!row.media) return row;
@@ -58,7 +63,7 @@ export async function GET(request: Request, { params }: { params: { conversation
           select: { id: true, type: true, storageKey: true, expiresAt: true }
         }
       }
-    });
+    }) as MessageRow[];
 
     const messages = (await withSignedMediaUrl(records)).filter((item) => item.text || item.media);
     return NextResponse.json({
@@ -80,7 +85,7 @@ export async function GET(request: Request, { params }: { params: { conversation
       }
     },
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {})
-  });
+  }) as MessageRow[];
 
   const nextCursor = records.length === PAGE_SIZE ? records[records.length - 1]?.id ?? null : null;
   const messages = (await withSignedMediaUrl(records)).filter((item) => item.text || item.media);
