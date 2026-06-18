@@ -8,21 +8,47 @@ Do **not** create or alter app tables manually in the Supabase SQL editor.
 Core Prisma models include:
 `Profile`, `Favorite`, `UserProfile`, `FriendRequest`, `UserBlock`, `Notification`, `Conversation`, `Message`, `ChatMedia`, `VerificationRequest`, `MeetCard`, `MeetLikeRequest`, `MeetMatch`, `MeetNotification`, `MeetPass`, `MeetBlock`, `HomeSection`, `HomePageConfig`, `HomepageImage`.
 
-## Production database configuration (Supabase Postgres)
+## Production database configuration
 
-- `DATABASE_URL` must point to your **Supabase Postgres connection string** in production.
+### Cloudflare Workers
+
+Cloudflare Workers uses the Prisma edge client. Set `DATABASE_URL` to a Prisma Accelerate / edge-compatible URL for the deployed Worker.
+
+Do **not** run `next start` on Cloudflare Workers. Use OpenNext:
+
+```bash
+npm run cf:build
+npm run cf:deploy
+```
+
+Full Cloudflare deployment notes are in [`docs/cloudflare-deploy.md`](docs/cloudflare-deploy.md).
+
+### Render / Node server
+
+For a normal Node server, `DATABASE_URL` can point to your **Supabase Postgres connection string**.
+
 - On Render, prefer Supabase **Session pooler** host (port `6543`) with `?sslmode=require` to avoid `PrismaClientInitializationError: Can't reach database server`.
 - `DATABASE_URL` must use the Supabase pooler username format `<db_role>.<project_ref>` when using `*.pooler.supabase.com`.
   - Example: `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require`
   - If you use only `postgres` as username against pooler, Postgres can return `FATAL: Tenant or user not found`.
 
-- Prisma runtime and migrations use only `DATABASE_URL`.
-- Keep using production-safe Prisma flow:
+- Prisma migrations should be run from a Node environment:
   - `prisma migrate deploy`
-  - `npm run start:prod` or `npm run start:prod:safe`
+  - `npm run db:deploy`
 - Do **not** use `prisma migrate dev` or `prisma db push` in production.
 
 ## Deployment commands
+
+### Cloudflare Workers
+
+```bash
+npm install
+npm run db:deploy
+npm run cf:build
+npm run cf:deploy
+```
+
+### Render / Node server
 
 - Build Command:
 
@@ -102,7 +128,7 @@ Storage diagnostics endpoint (protected by `CRON_SECRET`):
 
 Supabase is used only for auth/session and Postgres. Supabase Storage is no longer supported. All user-uploaded files (avatars, profile images, meet images, verification docs, chat media, homepage section images, homepage hero images) must be stored as **R2 object keys** in the database, and http(s) values are rejected by API validation.
 
-### Required storage environment variables (Render)
+### Required storage environment variables
 
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
@@ -128,33 +154,3 @@ Script requirements:
 
 - `DATABASE_URL`
 - `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`)
-- `SUPABASE_SERVICE_ROLE_KEY`
-- all `R2_*` vars above
-
-What the script migrates:
-
-- `userProfile.avatarUrl`
-- `profile.imageUrl`, `profile.images[]`
-- `meetCard.imageUrl`
-- `verificationRequest.docUrls[]`
-- `homeSection.imageUrl`
-- `homepageImage.url` and `homepageImage.data` -> `homepageImage.storagePath` (R2 key)
-- `chatMedia.storageKey` / `chatMedia.url` if legacy URLs are found
-
-3. Deploy with R2 vars present in production.
-
-4. Confirm cleanup using script report:
-
-- verification counts for `storage/v1/object` and `supabase` references should be `0`.
-- all migrated DB values should now be R2 keys (not URLs).
-
-
-### Storage integrity check
-
-Run this check in CI/local to enforce R2-only storage invariants:
-
-```bash
-npm run storage:assert-r2-only
-```
-
-This verifies there are no forbidden Supabase Storage code references and that storage resolvers validate keys-only semantics.
