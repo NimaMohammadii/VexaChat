@@ -33,26 +33,18 @@ Use the existing optional app secrets too if those features are enabled, such as
 
 ## Telegram Mini App
 
-Set the bot token as a Worker secret:
+Only one Telegram secret is required:
 
 ```bash
 npx wrangler secret put BOT_TOKEN
 ```
 
-Optional settings:
-
-```bash
-npx wrangler secret put TELEGRAM_SETUP_SECRET
-npx wrangler secret put TELEGRAM_MINI_APP_URL
-npx wrangler secret put TELEGRAM_MENU_BUTTON_TEXT
-```
-
-If `TELEGRAM_MINI_APP_URL` is not set, the setup endpoint uses the current Worker origin, for example `https://chaty.vexaagent.workers.dev`.
+The Mini App URL, menu button text, and setup code are hardcoded in `app/api/telegram/setup-mini-app/route.ts`.
 
 After deploy, call the setup endpoint once:
 
 ```bash
-curl -X POST "https://chaty.vexaagent.workers.dev/api/telegram/setup-mini-app?secret=<TELEGRAM_SETUP_SECRET_OR_CRON_SECRET>"
+curl -X POST "https://chaty.vexaagent.workers.dev/api/telegram/setup-mini-app?code=vexa-mini-app-setup"
 ```
 
 This calls Telegram `setChatMenuButton` and sets the bot menu button to open the deployed VexaChat app as a Telegram Mini App.
