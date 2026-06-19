@@ -1,6 +1,7 @@
 type CloudflareRealtimeResponse<T> = {
   success?: boolean;
   data?: T;
+  result?: T;
   errors?: Array<{ message?: string }>;
 };
 
@@ -53,11 +54,13 @@ async function realtimeKitFetch<T>(path: string, init: RequestInit = {}) {
     throw new Error(message);
   }
 
-  if (!payload.data) {
+  const body = payload.data ?? payload.result;
+
+  if (!body) {
     throw new Error("Cloudflare RealtimeKit returned an empty response.");
   }
 
-  return payload.data;
+  return body;
 }
 
 export async function createRealtimeKitMeeting(title: string) {
