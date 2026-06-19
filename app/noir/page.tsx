@@ -79,10 +79,14 @@ function loadExternalScript(id: string, src: string) {
     script.src = src;
     script.async = true;
     script.dataset.loaded = "false";
-    script.addEventListener("load", () => {
-      script.dataset.loaded = "true";
-      resolve();
-    }, { once: true });
+    script.addEventListener(
+      "load",
+      () => {
+        script.dataset.loaded = "true";
+        resolve();
+      },
+      { once: true }
+    );
     script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
     document.head.appendChild(script);
   });
@@ -100,37 +104,26 @@ async function loadRealtimeKit() {
   }
 }
 
-function CircleButton({ children, active = false, onClick }: { children: ReactNode; active?: boolean; onClick?: () => void }) {
+function IconButton({ children, active = false, danger = false, onClick, label }: { children: ReactNode; active?: boolean; danger?: boolean; onClick?: () => void; label: string }) {
   return (
     <button
       type="button"
+      aria-label={label}
       onClick={onClick}
-      className={`h-13 w-13 rounded-full border bg-white/[0.05] backdrop-blur transition-all duration-200 active:scale-[0.98] ${
-        active ? "border-[#FF2E63]/50 text-[#FF2E63]" : "border-white/10 text-white"
+      className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-all duration-200 active:scale-[0.96] ${
+        danger
+          ? "border-[#FF3B5F]/35 bg-[#5A0618]/70 text-white shadow-[0_0_24px_rgba(121,12,39,0.42)]"
+          : active
+            ? "border-[#B91646]/60 bg-[#2A0712]/85 text-[#FF6B8F] shadow-[0_0_22px_rgba(121,12,39,0.32)]"
+            : "border-white/[0.10] bg-white/[0.055] text-white/90 shadow-[0_10px_24px_rgba(0,0,0,0.22)]"
       }`}
     >
-      <span className="flex items-center justify-center">{children}</span>
+      {children}
     </button>
   );
 }
 
-function PillButton({ children, variant = "skip", onClick }: { children: ReactNode; variant?: "skip" | "stop"; onClick?: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`h-13 rounded-full px-6 transition-all duration-200 active:scale-[0.98] ${
-        variant === "skip"
-          ? "border border-[#FF2E63]/40 bg-white/[0.06] text-white shadow-[0_0_20px_rgba(255,46,99,0.24)]"
-          : "border border-white/15 bg-white/[0.06] text-white shadow-[0_0_14px_rgba(255,46,99,0.14)]"
-      }`}
-    >
-      <span className="flex items-center justify-center">{children}</span>
-    </button>
-  );
-}
-
-function RealtimeKitTile({ label, meeting, participant }: { label: string; meeting: RealtimeKitMeeting | null; participant: unknown }) {
+function RealtimeKitTile({ meeting, participant, variant }: { meeting: RealtimeKitMeeting | null; participant: unknown; variant: "main" | "self" }) {
   const tileRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -140,12 +133,28 @@ function RealtimeKitTile({ label, meeting, participant }: { label: string; meeti
     tile.participant = participant;
   }, [meeting, participant]);
 
+  const isMain = variant === "main";
+
   return (
-    <div className="relative flex-1 min-h-0 overflow-hidden rounded-[28px] border border-white/[0.08] bg-black shadow-[0_0_24px_rgba(255,46,99,0.16)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_25%,rgba(255,46,99,0.2),rgba(0,0,0,0)_58%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_75%,rgba(255,255,255,0.1),rgba(0,0,0,0)_60%)]" />
-      {meeting && participant ? React.createElement("rtk-participant-tile", { ref: tileRef, className: "absolute inset-0 h-full w-full object-cover" }) : null}
-      <span className="absolute left-3 top-3 z-10 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[11px] tracking-[0.16em] text-white/80">{label}</span>
+    <div
+      className={`relative overflow-hidden border bg-[#070506] ${
+        isMain
+          ? "h-full rounded-[34px] border-white/[0.075] shadow-[0_0_60px_rgba(69,7,22,0.46)]"
+          : "h-full rounded-[24px] border-white/[0.12] shadow-[0_16px_50px_rgba(0,0,0,0.5)]"
+      }`}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(116,12,38,0.42),rgba(0,0,0,0)_52%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(0,0,0,0)_22%,rgba(0,0,0,0.54))]" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+      {meeting && participant ? React.createElement("rtk-participant-tile", { ref: tileRef, className: "absolute inset-0 h-full w-full" }) : null}
+      {!participant ? (
+        <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
+          <div>
+            <div className="mx-auto h-14 w-14 rounded-full border border-[#6F102A]/50 bg-[#16050B]/80 shadow-[0_0_34px_rgba(121,12,39,0.32)]" />
+            {isMain ? <p className="mt-4 text-xs uppercase tracking-[0.26em] text-white/35">No partner yet</p> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -155,17 +164,23 @@ function CountrySheet({ open, countries, selected, onClose, onSelect, query, onQ
     <AnimatePresence>
       {open ? (
         <>
-          <motion.button type="button" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30 bg-black/70" />
-          <motion.div initial={{ y: "100%", opacity: 0.8 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0.8 }} transition={{ duration: 0.32 }} className="absolute inset-x-0 bottom-0 z-40 max-h-[70svh] rounded-t-3xl border-t border-white/10 bg-black/95 px-4 pb-4 pt-3 backdrop-blur">
-            <div className="mx-auto mb-3 h-1 w-12 rounded-full bg-white/20" />
-            <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="Search country" className="mb-3 h-12 w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white placeholder:text-white/45 outline-none" />
+          <motion.button type="button" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 bg-black/75" />
+          <motion.div
+            initial={{ y: "100%", opacity: 0.8 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0.8 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-x-0 bottom-0 z-50 max-h-[72svh] rounded-t-[32px] border-t border-white/10 bg-[#070506]/95 px-4 pb-5 pt-3 shadow-[0_-20px_70px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+          >
+            <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-white/18" />
+            <input value={query} onChange={(event) => onQuery(event.target.value)} placeholder="Search country" className="mb-3 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#8A1636]/60" />
             <div className="max-h-[52svh] space-y-2 overflow-y-auto pr-1">
               {countries.map((country) => {
                 const isSelected = selected === country.code;
                 return (
-                  <button key={country.code} type="button" onClick={() => { onSelect(country); onClose(); }} className={`flex h-12 w-full items-center justify-between rounded-xl px-3 text-left transition-all ${isSelected ? "border border-[#FF2E63]/35 bg-white/[0.05] shadow-[0_0_14px_rgba(255,46,99,0.2)]" : "border border-transparent bg-transparent"}`}>
+                  <button key={country.code} type="button" onClick={() => { onSelect(country); onClose(); }} className={`flex h-12 w-full items-center justify-between rounded-2xl px-3 text-left transition-all ${isSelected ? "border border-[#8A1636]/45 bg-[#2A0712]/70 shadow-[0_0_18px_rgba(121,12,39,0.24)]" : "border border-transparent bg-transparent active:bg-white/[0.05]"}`}>
                     <span className="text-sm text-white/90">{country.name}</span>
-                    {isSelected ? <span className="h-2 w-2 rounded-full bg-[#FF2E63]" /> : null}
+                    {isSelected ? <span className="h-2 w-2 rounded-full bg-[#C51D4D]" /> : null}
                   </button>
                 );
               })}
@@ -295,54 +310,62 @@ export default function NoirPage() {
   }, [countryQuery]);
 
   return (
-    <main className="relative h-[100svh] w-full overflow-hidden bg-black text-white" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <motion.div initial={{ opacity: 0.7, scale: 0.985 }} animate={{ opacity: started ? 1 : 0.62, scale: started ? 1 : 0.992 }} transition={{ duration: 0.4 }} className="flex h-full min-h-0 flex-col pb-3">
-        <header className="flex h-14 shrink-0 items-center justify-between px-4">
-          <button type="button" aria-label="Back" onClick={() => void stopSession()} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white backdrop-blur transition-all">
+    <main className="relative h-[100svh] w-full overflow-hidden bg-[#020102] text-white" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(104,10,35,0.34),rgba(0,0,0,0)_38%),radial-gradient(circle_at_0%_100%,rgba(78,5,25,0.22),rgba(0,0,0,0)_42%)]" />
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/70 to-transparent" />
+
+      <motion.div initial={{ opacity: 0.7, scale: 0.985 }} animate={{ opacity: started ? 1 : 0.72, scale: started ? 1 : 0.992 }} transition={{ duration: 0.4 }} className="relative flex h-full min-h-0 flex-col px-4 pb-4">
+        <header className="z-20 flex h-16 shrink-0 items-center justify-between">
+          <button type="button" aria-label="Back" onClick={() => void stopSession()} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.055] text-white backdrop-blur-xl">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M14.5 5.5 8 12l6.5 6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
-          <button type="button" onClick={() => setCountrySheetOpen(true)} className="flex h-10 max-w-[58vw] items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 text-sm text-white/90 backdrop-blur">
+
+          <button type="button" onClick={() => setCountrySheetOpen(true)} className="flex h-11 max-w-[58vw] items-center gap-2 rounded-full border border-white/[0.10] bg-[#090507]/80 px-5 text-sm text-white/92 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-xl">
             <span className="truncate">{selectedCountry.name}</span>
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0"><path d="m7 10 5 5 5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#D44B72]"><path d="m7 10 5 5 5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
-          <button type="button" aria-label="Settings" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/85 backdrop-blur transition-all">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M10.9 3.5h2.2l.5 1.8c.5.2 1 .4 1.5.6l1.7-.9 1.6 1.6-.9 1.7c.3.5.5 1 .6 1.5l1.8.5v2.2l-1.8.5c-.2.5-.4 1-.6 1.5l.9 1.7-1.6 1.6-1.7-.9c-.5.3-1 .5-1.5.6l-.5 1.8h-2.2l-.5-1.8c-.5-.2-1-.4-1.5-.6l-1.7.9-1.6-1.6.9-1.7c-.3-.5-.5-1-.6-1.5l-1.8-.5v-2.2l1.8-.5c.2-.5.4-1 .6-1.5l-.9-1.7 1.6-1.6 1.7.9c.5-.3 1-.5 1.5-.6l.5-1.8Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" /></svg>
+
+          <button type="button" aria-label="Settings" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.10] bg-white/[0.055] text-white/85 backdrop-blur-xl">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.35" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" /></svg>
           </button>
         </header>
 
-        <section className="min-h-0 flex-1 px-4">
-          <div className="flex h-full min-h-0 flex-col gap-3">
-            <RealtimeKitTile label="PARTNER" meeting={meeting} participant={remoteParticipant} />
-            <RealtimeKitTile label="YOU" meeting={meeting} participant={localParticipant} />
+        <section className="relative min-h-0 flex-1 pb-[92px]">
+          <RealtimeKitTile meeting={meeting} participant={remoteParticipant} variant="main" />
+
+          <div className="absolute bottom-[108px] right-4 h-[160px] w-[112px] overflow-hidden rounded-[26px] bg-[#080506] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/10">
+            <RealtimeKitTile meeting={meeting} participant={localParticipant} variant="self" />
+            <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/72 backdrop-blur">You</span>
+          </div>
+
+          <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-[#7B1533]/35 bg-black/45 px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-white/58 backdrop-blur-xl">
+            {started ? (remoteParticipant ? "Connected" : "Live") : "Noir"}
           </div>
         </section>
 
-        <footer className="shrink-0 px-4 pt-3">
-          <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2">
-            <PillButton variant="skip" onClick={() => void skipSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></PillButton>
-            <CircleButton active={micOff} onClick={() => { const next = !micOff; setMicOff(next); void (next ? meetingRef.current?.self?.disableAudio?.() : meetingRef.current?.self?.enableAudio?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />{micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></CircleButton>
-            <CircleButton active={camOff} onClick={() => { const next = !camOff; setCamOff(next); void (next ? meetingRef.current?.self?.disableVideo?.() : meetingRef.current?.self?.enableVideo?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />{camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></CircleButton>
-            <CircleButton active={friendPending} onClick={() => setFriendPending((value) => !value)}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">{friendPending ? <path d="M6 12.5 10.2 17 18 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /> : <><circle cx="10" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M4.5 18a5.5 5.5 0 0 1 11 0M18.5 8v6M15.5 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>}</svg></CircleButton>
-            <CircleButton><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 15v-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /><circle cx="12" cy="18" r="0.9" fill="currentColor" /><path d="m12 4 8 14H4L12 4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></CircleButton>
-            <PillButton variant="stop" onClick={() => void stopSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="7" y="7" width="10" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.8" /></svg></PillButton>
+        <footer className="absolute inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
+          <div className="mx-auto flex max-w-[390px] items-center justify-between rounded-[32px] border border-white/[0.10] bg-[#080405]/88 p-2.5 shadow-[0_20px_70px_rgba(0,0,0,0.62),0_0_38px_rgba(76,5,25,0.26)] backdrop-blur-2xl">
+            <IconButton label="Skip" onClick={() => void skipSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
+            <IconButton label="Microphone" active={micOff} onClick={() => { const next = !micOff; setMicOff(next); void (next ? meetingRef.current?.self?.disableAudio?.() : meetingRef.current?.self?.enableAudio?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />{micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
+            <IconButton label="Camera" active={camOff} onClick={() => { const next = !camOff; setCamOff(next); void (next ? meetingRef.current?.self?.disableVideo?.() : meetingRef.current?.self?.enableVideo?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />{camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
+            <IconButton label="Add friend" active={friendPending} onClick={() => setFriendPending((value) => !value)}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">{friendPending ? <path d="M6 12.5 10.2 17 18 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /> : <><circle cx="10" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M4.5 18a5.5 5.5 0 0 1 11 0M18.5 8v6M15.5 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>}</svg></IconButton>
+            <IconButton label="Stop" danger onClick={() => void stopSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" /></svg></IconButton>
           </div>
         </footer>
       </motion.div>
 
       <AnimatePresence>
         {!started ? (
-          <motion.div key="overlay" initial={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.965 }} transition={{ duration: 0.4 }} className="absolute inset-0 z-20 flex items-center justify-center bg-black px-7">
-            <div className="w-full max-w-sm text-center">
-              <h1 className="text-4xl font-semibold tracking-[0.34em] text-white">NOIR</h1>
-              <p className="mt-4 text-sm leading-6 text-white/55">Random video encounters in a refined space.</p>
-              <p className="text-sm leading-6 text-white/55">Private. Minimal. Instant.</p>
+          <motion.div key="overlay" initial={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.965 }} transition={{ duration: 0.42, ease: [0.32, 0.72, 0, 1] }} className="absolute inset-0 z-30 flex items-center justify-center bg-[#020102] px-7">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,rgba(121,12,39,0.28),rgba(0,0,0,0)_44%)]" />
+            <div className="relative w-full max-w-sm text-center">
+              <div className="mx-auto mb-7 flex h-20 w-20 items-center justify-center rounded-[28px] border border-[#7B1533]/35 bg-[#12050A] shadow-[0_0_48px_rgba(121,12,39,0.28)]">
+                <span className="text-3xl font-semibold tracking-[-0.08em] text-white">N</span>
+              </div>
+              <h1 className="text-5xl font-semibold tracking-[0.34em] text-white">NOIR</h1>
+              <p className="mt-4 text-sm leading-6 text-white/50">Random video encounters in a refined dark space.</p>
               {error ? <p className="mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-100/80">{error}</p> : null}
-              <ul className="mx-auto mt-6 w-fit space-y-2 text-left text-sm text-white/45">
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-white/45" />Choose country</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-white/45" />Skip &amp; stop instantly</li>
-                <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-white/45" />Add friend after a vibe</li>
-              </ul>
-              <button type="button" onClick={() => void startSession()} disabled={starting} className="mt-8 h-[52px] w-full rounded-full border border-[#FF2E63]/45 bg-[#FF2E63]/10 px-8 text-sm font-medium tracking-[0.08em] text-white shadow-[0_0_30px_rgba(255,46,99,0.25)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60">
+              <button type="button" onClick={() => void startSession()} disabled={starting} className="mt-8 h-[54px] w-full rounded-full border border-[#8A1636]/55 bg-[#240813] px-8 text-sm font-semibold tracking-[0.12em] text-white shadow-[0_0_34px_rgba(121,12,39,0.36)] transition-all duration-200 active:scale-[0.98] disabled:opacity-60">
                 {starting ? "Starting..." : "Start"}
               </button>
             </div>
