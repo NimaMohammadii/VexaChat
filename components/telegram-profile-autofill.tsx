@@ -13,6 +13,14 @@ function cleanUsername(value: string) {
   return value.replace(/^@+/, "").trim().toLowerCase();
 }
 
+function lockInput(input: HTMLInputElement) {
+  input.readOnly = true;
+  input.setAttribute("aria-readonly", "true");
+  input.style.pointerEvents = "none";
+  input.style.opacity = "0.72";
+  input.style.cursor = "not-allowed";
+}
+
 function applyTelegramProfile() {
   if (!window.location.pathname.startsWith("/me")) {
     return;
@@ -29,12 +37,18 @@ function applyTelegramProfile() {
   const nameInput = document.querySelector<HTMLInputElement>('input[placeholder="Your name"]');
   const usernameInput = document.querySelector<HTMLInputElement>('input[placeholder="username"]');
 
-  if (nameInput && fullName && !nameInput.value.trim()) {
-    setNativeInputValue(nameInput, fullName);
+  if (nameInput && fullName) {
+    if (nameInput.value !== fullName) {
+      setNativeInputValue(nameInput, fullName);
+    }
+    lockInput(nameInput);
   }
 
-  if (usernameInput && username && !usernameInput.value.trim()) {
-    setNativeInputValue(usernameInput, username);
+  if (usernameInput && username) {
+    if (usernameInput.value !== username) {
+      setNativeInputValue(usernameInput, username);
+    }
+    lockInput(usernameInput);
   }
 }
 
@@ -42,7 +56,12 @@ export function TelegramProfileAutofill() {
   useEffect(() => {
     applyTelegramProfile();
     const timers = [250, 700, 1400, 2400].map((delay) => window.setTimeout(applyTelegramProfile, delay));
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    const interval = window.setInterval(applyTelegramProfile, 1500);
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.clearInterval(interval);
+    };
   }, []);
 
   return null;
