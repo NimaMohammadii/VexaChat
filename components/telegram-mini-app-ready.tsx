@@ -8,6 +8,10 @@ declare global {
       WebApp?: {
         ready?: () => void;
         expand?: () => void;
+        requestFullscreen?: () => void;
+        disableVerticalSwipes?: () => void;
+        setHeaderColor?: (color: string) => void;
+        setBackgroundColor?: (color: string) => void;
       };
     };
   }
@@ -20,6 +24,18 @@ function notifyTelegramReady() {
   const webApp = window.Telegram?.WebApp;
   webApp?.ready?.();
   webApp?.expand?.();
+  webApp?.disableVerticalSwipes?.();
+  webApp?.setHeaderColor?.("#000000");
+  webApp?.setBackgroundColor?.("#000000");
+
+  const requestFullscreen = () => {
+    webApp?.expand?.();
+    webApp?.requestFullscreen?.();
+  };
+
+  requestFullscreen();
+  window.requestAnimationFrame(requestFullscreen);
+  window.setTimeout(requestFullscreen, 300);
 }
 
 export function TelegramMiniAppReady() {
