@@ -2,6 +2,7 @@ import { Prisma, UserProfile } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/supabase-server";
+import { getTelegramAuthenticatedUser } from "@/lib/telegram-auth";
 import { isLegacyUrl, resolveStoredFileUrl } from "@/lib/storage/object-storage";
 
 type MePayload = {
@@ -21,6 +22,38 @@ type ValidatedProfileData = {
   country?: string;
   city?: string;
 };
+
+type AppUser = {
+  id: string;
+  email?: string | null;
+  user_metadata: Record<string, any>;
+};
+
+async function getCurrentUser(request: Request): Promise<AppUser | null> {
+  const telegramUser = await getTelegramAuthenticatedUser(request);
+
+  if (telegramUser) {
+    return telegramUser;
+  }
+
+  const supabaseUser = await getAuthenticatedUser({ canSetCookies: true }).catch(() => null);
+  return supabaseUser as AppUser | null;
+}
+
+function getTelegramProfileData(user: AppUser) {
+  if (!user.id.startsWith("telegram-")) {
+    return null;
+  }
+
+  const fullName = `${user.user_metadata.full_name ?? user.user_metadata.name ?? ""}`.trim();
+  const username = `${user.user_metadata.user_name ?? ""}`.replace(/^@+/, "").trim().toLowerCase();
+
+  return {
+    name: fullName,
+    username,
+    avatarUrl: `${user.user_metadata.avatar_url ?? ""}`
+  };
+}
 
 async function serializeProfile(profile: UserProfile | null) {
   if (!profile) {
@@ -92,16 +125,37 @@ function validateProfileBody(body: MePayload, mode: "full" | "partial") {
   return { data };
 }
 
-export async function GET() {
-  const user = await getAuthenticatedUser({ canSetCookies: true });
+export async function GET(request: Request) {
+  const user = await getCurrentUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const profile = await prisma.userProfile.findUnique({
+  const telegramProfile = getTelegramProfileData(user);
+  let profile = await prisma.userProfile.findUnique({
     where: { userId: user.id }
   });
+
+  if (telegramProfile && telegramProfile.name && telegramProfile.username) {
+    profile = await prisma.userProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        name: telegramProfile.name,
+        username: telegramProfile.username,
+        bio: "",
+        avatarUrl: telegramProfile.avatarUrl,
+        country: "",
+        city: ""
+      },
+      update: {
+        name: telegramProfile.name,
+        username: telegramProfile.username,
+        ...(telegramProfile.avatarUrl ? { avatarUrl: telegramProfile.avatarUrl } : {})
+      }
+    });
+  }
 
   return NextResponse.json({
     user: {
@@ -115,13 +169,23 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getAuthenticatedUser({ canSetCookies: true });
+  const user = await getCurrentUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = (await request.json()) as MePayload;
+  const telegramProfile = getTelegramProfileData(user);
+
+  if (telegramProfile) {
+    body.name = telegramProfile.name;
+    body.username = telegramProfile.username;
+    if (!body.avatarUrl && telegramProfile.avatarUrl) {
+      body.avatarUrl = telegramProfile.avatarUrl;
+    }
+  }
+
   const validated = validateProfileBody(body, "full");
 
   if ("error" in validated) {
@@ -162,13 +226,23 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const user = await getAuthenticatedUser({ canSetCookies: true });
+  const user = await getCurrentUser(request);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = (await request.json()) as MePayload;
+  const telegramProfile = getTelegramProfileData(user);
+
+  if (telegramProfile) {
+    body.name = telegramProfile.name;
+    body.username = telegramProfile.username;
+    if (!body.avatarUrl && telegramProfile.avatarUrl) {
+      body.avatarUrl = telegramProfile.avatarUrl;
+    }
+  }
+
   const validated = validateProfileBody(body, "partial");
 
   if ("error" in validated) {
