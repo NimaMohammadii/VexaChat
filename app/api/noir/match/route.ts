@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
 
     return setSessionCookie(NextResponse.json({ meetingId: meeting.id, authToken, matched: false }), request, sessionId);
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to find match";
     console.error("Failed to match noir session", error);
-    return NextResponse.json({ error: "Unable to find match" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
