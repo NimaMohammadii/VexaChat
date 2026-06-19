@@ -20,7 +20,7 @@ type RealtimeKitParticipant = {
 };
 
 const API_BASE = "https://api.cloudflare.com/client/v4";
-const DEFAULT_PRESET_NAME = "group_call_guest";
+const DEFAULT_PRESET_NAME = "group_call_participant";
 
 function getRealtimeKitConfig() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
