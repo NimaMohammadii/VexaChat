@@ -8,6 +8,7 @@
   --telegram-safe-area-right: 0px;
   --telegram-safe-area-bottom: 0px;
   --telegram-safe-area-left: 0px;
+  --telegram-top-offset: calc(var(--telegram-safe-area-top, 0px) + 28px);
 }
 
 body {
@@ -17,7 +18,12 @@ body {
 }
 
 body[data-platform="telegram"] {
-  padding-top: calc(var(--telegram-safe-area-top, 0px) + 28px);
+  padding-top: var(--telegram-top-offset);
+}
+
+body[data-platform="telegram"] .app-menu-drawer {
+  top: var(--telegram-top-offset);
+  height: calc(100% - var(--telegram-top-offset));
 }
 
 @layer components {
