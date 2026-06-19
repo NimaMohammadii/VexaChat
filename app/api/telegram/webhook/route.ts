@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const MINI_APP_URL = "https://chaty.vexaagent.workers.dev";
-const MINI_APP_TEXT = "Open Vexa";
+const MINI_APP_URL = "https://seenly.veznoir.workers.dev";
+const MINI_APP_TEXT = "Open Seenly";
 
 type TelegramUpdate = {
   message?: {
@@ -52,11 +52,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (text.startsWith("/start")) {
-    await sendTelegramMessage(botToken, chatId, `Hi ${firstName}, welcome to Vexa. Tap the button below to open the app.`);
+    await sendTelegramMessage(botToken, chatId, `Hi ${firstName}, welcome to Seenly. Tap the button below to open the app.`);
     return NextResponse.json({ ok: true });
   }
 
-  await sendTelegramMessage(botToken, chatId, "Tap the button below to open Vexa.");
+  await sendTelegramMessage(botToken, chatId, "Tap the button below to open Seenly.");
   return NextResponse.json({ ok: true });
 }
 
