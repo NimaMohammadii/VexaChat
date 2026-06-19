@@ -219,13 +219,13 @@ export default function NoirPage() {
         body: JSON.stringify({ countryCode: selectedCountry.code })
       });
 
-      if (!response.ok) throw new Error("Unable to start Cloudflare call.");
-      const payload = (await response.json()) as NoirMatchResponse;
-      if (!payload.authToken || !payload.meetingId) throw new Error("Invalid Cloudflare call response.");
+      const payload = (await response.json().catch(() => ({}))) as Partial<NoirMatchResponse> & { error?: string };
+      if (!response.ok) throw new Error(payload.error || "Unable to start Cloudflare call.");
+      if (!payload.authToken || !payload.meetingId) throw new Error(payload.error || "Invalid Cloudflare call response.");
 
-      setMatch(payload);
+      setMatch(payload as NoirMatchResponse);
       setStarted(true);
-      setSearching(!payload.matched);
+      setSearching(false);
     } catch (startError) {
       console.error("Failed to start Noir session", startError);
       setError(startError instanceof Error ? startError.message : "Unable to start call.");
@@ -325,17 +325,6 @@ export default function NoirPage() {
       </AnimatePresence>
 
       <CountrySheet open={countrySheetOpen} countries={filteredCountries} selected={selectedCountry.code} onClose={() => setCountrySheetOpen(false)} onSelect={setSelectedCountry} query={countryQuery} onQuery={setCountryQuery} />
-
-      <AnimatePresence>
-        {started && searching ? (
-          <motion.div key="searching" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/45 px-8">
-            <div className="rounded-2xl border border-white/10 bg-black/65 px-6 py-4 text-center backdrop-blur">
-              <p className="text-xs tracking-[0.2em] text-white/55">SEARCHING</p>
-              <p className="mt-2 text-sm text-white/80">Waiting for someone to join...</p>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
     </main>
   );
 }
