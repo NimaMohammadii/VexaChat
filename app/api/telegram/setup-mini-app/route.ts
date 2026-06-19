@@ -19,7 +19,7 @@ async function callTelegramApi(botToken: string, method: string, payload: unknow
   return { response, result };
 }
 
-export async function POST(request: NextRequest) {
+async function setupTelegram(request: NextRequest) {
   const botToken = process.env.BOT_TOKEN;
   const setupCode = request.nextUrl.searchParams.get("code") || "";
 
@@ -67,4 +67,12 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, miniAppUrl: MINI_APP_URL, buttonText: MENU_BUTTON_TEXT, webhookUrl: WEBHOOK_URL });
+}
+
+export async function POST(request: NextRequest) {
+  return setupTelegram(request);
+}
+
+export async function GET(request: NextRequest) {
+  return setupTelegram(request);
 }
