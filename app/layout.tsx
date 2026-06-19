@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MenuAccessGuard } from "@/components/menu-access-guard";
 import { TelegramMiniAppReady } from "@/components/telegram-mini-app-ready";
+import { TelegramProfileAutofill } from "@/components/telegram-profile-autofill";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className="bg-ink text-paper antialiased">
         <TelegramMiniAppReady />
+        <TelegramProfileAutofill />
         <MenuAccessGuard />
         {children}
       </body>
