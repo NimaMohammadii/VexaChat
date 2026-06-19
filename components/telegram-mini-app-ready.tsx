@@ -12,6 +12,18 @@ declare global {
         disableVerticalSwipes?: () => void;
         setHeaderColor?: (color: string) => void;
         setBackgroundColor?: (color: string) => void;
+        safeAreaInset?: {
+          top?: number;
+          right?: number;
+          bottom?: number;
+          left?: number;
+        };
+        contentSafeAreaInset?: {
+          top?: number;
+          right?: number;
+          bottom?: number;
+          left?: number;
+        };
       };
     };
   }
@@ -20,17 +32,41 @@ declare global {
 const TELEGRAM_SDK_ID = "telegram-web-app-sdk";
 const TELEGRAM_SDK_SRC = "https://telegram.org/js/telegram-web-app.js";
 
+function setPlatform(platform: "telegram" | "web") {
+  document.documentElement.dataset.platform = platform;
+  document.body.dataset.platform = platform;
+}
+
+function setTelegramSafeAreaVars() {
+  const webApp = window.Telegram?.WebApp;
+  const safeArea = webApp?.contentSafeAreaInset ?? webApp?.safeAreaInset;
+
+  document.documentElement.style.setProperty("--telegram-safe-area-top", `${safeArea?.top ?? 0}px`);
+  document.documentElement.style.setProperty("--telegram-safe-area-right", `${safeArea?.right ?? 0}px`);
+  document.documentElement.style.setProperty("--telegram-safe-area-bottom", `${safeArea?.bottom ?? 0}px`);
+  document.documentElement.style.setProperty("--telegram-safe-area-left", `${safeArea?.left ?? 0}px`);
+}
+
 function notifyTelegramReady() {
   const webApp = window.Telegram?.WebApp;
-  webApp?.ready?.();
-  webApp?.expand?.();
-  webApp?.disableVerticalSwipes?.();
-  webApp?.setHeaderColor?.("#000000");
-  webApp?.setBackgroundColor?.("#000000");
+
+  if (!webApp) {
+    setPlatform("web");
+    return;
+  }
+
+  setPlatform("telegram");
+  setTelegramSafeAreaVars();
+  webApp.ready?.();
+  webApp.expand?.();
+  webApp.disableVerticalSwipes?.();
+  webApp.setHeaderColor?.("#000000");
+  webApp.setBackgroundColor?.("#000000");
 
   const requestFullscreen = () => {
-    webApp?.expand?.();
-    webApp?.requestFullscreen?.();
+    setTelegramSafeAreaVars();
+    webApp.expand?.();
+    webApp.requestFullscreen?.();
   };
 
   requestFullscreen();
@@ -40,6 +76,8 @@ function notifyTelegramReady() {
 
 export function TelegramMiniAppReady() {
   useEffect(() => {
+    setPlatform("web");
+
     if (window.Telegram?.WebApp) {
       notifyTelegramReady();
       return;
