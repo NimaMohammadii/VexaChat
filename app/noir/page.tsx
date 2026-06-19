@@ -129,12 +129,13 @@ function IconButton({ children, active = false, danger = false, onClick, label }
   );
 }
 
-function TextButton({ children, danger = false, onClick }: { children: ReactNode; danger?: boolean; onClick?: () => void }) {
+function TextButton({ children, danger = false, disabled = false, onClick }: { children: ReactNode; danger?: boolean; disabled?: boolean; onClick?: () => void }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`h-12 rounded-full border px-6 text-sm font-semibold tracking-[0.08em] transition-all active:scale-[0.98] ${
+      className={`h-12 rounded-full border px-7 text-sm font-semibold tracking-[0.08em] transition-all active:scale-[0.98] disabled:opacity-45 ${
         danger
           ? "border-[#6B102A]/65 bg-[#3A0917]/92 text-white"
           : "border-white/[0.10] bg-[#0A0708]/82 text-white/88"
@@ -165,7 +166,7 @@ function RealtimeKitTile({ meeting, participant, variant }: { meeting: RealtimeK
         <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
           <div>
             <div className="mx-auto h-14 w-14 rounded-full border border-[#5A1027]/45 bg-[#11070B]" />
-            {isMain ? <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/30">{meeting ? "No partner yet" : "Starting..."}</p> : null}
+            {isMain ? <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/30">{meeting ? "No partner yet" : "Ready"}</p> : null}
           </div>
         </div>
       ) : null}
@@ -264,7 +265,6 @@ export default function NoirPage() {
   const [remoteParticipant, setRemoteParticipant] = useState<unknown>(null);
   const meetingRef = useRef<RealtimeKitMeeting | null>(null);
   const startInProgressRef = useRef(false);
-  const autoStartedRef = useRef(false);
 
   const leaveWaitingQueue = useCallback(async () => {
     try {
@@ -352,14 +352,9 @@ export default function NoirPage() {
   }, [resetCallState, selectedCountry.code, stopSession]);
 
   const skipSession = useCallback(async () => {
+    if (!started && !starting) return;
     await startSession();
-  }, [startSession]);
-
-  useEffect(() => {
-    if (autoStartedRef.current) return;
-    autoStartedRef.current = true;
-    void startSession();
-  }, [startSession]);
+  }, [startSession, started, starting]);
 
   useEffect(() => {
     const backButton = window.Telegram?.WebApp?.BackButton;
@@ -397,7 +392,7 @@ export default function NoirPage() {
     <main className="fixed inset-0 h-[100svh] w-full overflow-hidden overscroll-none bg-[#020102] text-white touch-none" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(58,7,24,0.18),rgba(0,0,0,0)_34%)]" />
 
-      <div className="relative flex h-full w-full flex-col overflow-hidden">
+      <div className="relative flex h-full w-full flex-col overflow-hidden pt-5">
         <section className="relative aspect-square w-full shrink-0 overflow-hidden bg-[#050304]">
           <RealtimeKitTile meeting={meeting} participant={remoteParticipant} variant="main" />
 
@@ -418,13 +413,14 @@ export default function NoirPage() {
         <section className="relative min-h-0 flex-1 px-5 py-5">
           <div className="flex h-full min-h-0 flex-col justify-between">
             <div className="flex items-center justify-between gap-3">
-              <TextButton onClick={() => void skipSession()}>Skip</TextButton>
-              <TextButton danger onClick={() => void stopSession()}>Stop</TextButton>
+              <TextButton disabled={starting || started} onClick={() => void startSession()}>{starting ? "Starting" : "Start"}</TextButton>
+              <TextButton danger disabled={!started && !starting} onClick={() => void stopSession()}>Stop</TextButton>
             </div>
 
             {error ? <p className="mx-auto max-w-[360px] rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-center text-sm text-red-100/80">{error}</p> : null}
 
             <div className="mx-auto flex w-full max-w-[360px] items-center justify-between rounded-[32px] border border-white/[0.10] bg-[#080506]/88 p-3 shadow-[0_14px_42px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+              <IconButton label="Skip" active={false} onClick={() => void skipSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
               <IconButton label="Microphone" active={micOff} onClick={() => { const next = !micOff; setMicOff(next); void (next ? meetingRef.current?.self?.disableAudio?.() : meetingRef.current?.self?.enableAudio?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />{micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
               <IconButton label="Camera" active={camOff} onClick={() => { const next = !camOff; setCamOff(next); void (next ? meetingRef.current?.self?.disableVideo?.() : meetingRef.current?.self?.enableVideo?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />{camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
               <IconButton label="Chat" active={chatOpen} onClick={() => { setChatOpen((value) => !value); setReportOpen(false); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M5 7.5A3.5 3.5 0 0 1 8.5 4h7A3.5 3.5 0 0 1 19 7.5v4A3.5 3.5 0 0 1 15.5 15H11l-4.5 4v-4A3.5 3.5 0 0 1 5 11.5v-4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
