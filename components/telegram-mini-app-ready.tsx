@@ -6,6 +6,7 @@ declare global {
   interface Window {
     Telegram?: {
       WebApp?: {
+        initData?: string;
         ready?: () => void;
         expand?: () => void;
         requestFullscreen?: () => void;
@@ -31,10 +32,21 @@ declare global {
 
 const TELEGRAM_SDK_ID = "telegram-web-app-sdk";
 const TELEGRAM_SDK_SRC = "https://telegram.org/js/telegram-web-app.js";
+const TELEGRAM_AUTH_COOKIE = "vexa_telegram_init_data";
 
 function setPlatform(platform: "telegram" | "web") {
   document.documentElement.dataset.platform = platform;
   document.body.dataset.platform = platform;
+}
+
+function saveTelegramAuthCookie() {
+  const initData = window.Telegram?.WebApp?.initData;
+
+  if (!initData) {
+    return;
+  }
+
+  document.cookie = `${TELEGRAM_AUTH_COOKIE}=${encodeURIComponent(initData)}; path=/; max-age=86400; SameSite=Lax; Secure`;
 }
 
 function setTelegramSafeAreaVars() {
@@ -56,6 +68,7 @@ function notifyTelegramReady() {
   }
 
   setPlatform("telegram");
+  saveTelegramAuthCookie();
   setTelegramSafeAreaVars();
   webApp.ready?.();
   webApp.expand?.();
@@ -64,6 +77,7 @@ function notifyTelegramReady() {
   webApp.setBackgroundColor?.("#000000");
 
   const requestFullscreen = () => {
+    saveTelegramAuthCookie();
     setTelegramSafeAreaVars();
     webApp.expand?.();
     webApp.requestFullscreen?.();
