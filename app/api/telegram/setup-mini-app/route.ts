@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const MINI_APP_URL = "https://chaty.vexaagent.workers.dev";
-const MENU_BUTTON_TEXT = "Open Vexa";
+const MINI_APP_URL = "https://seenly.veznoir.workers.dev";
+const MENU_BUTTON_TEXT = "Open Seenly";
 const SETUP_CODE = "vexa-mini-app-setup";
 const WEBHOOK_URL = `${MINI_APP_URL}/api/telegram/webhook`;
 
