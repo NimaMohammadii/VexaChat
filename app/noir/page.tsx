@@ -118,10 +118,26 @@ function IconButton({ children, active = false, danger = false, onClick, label }
       onClick={onClick}
       className={`flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-all duration-200 active:scale-[0.96] ${
         danger
-          ? "border-[#7B1533]/55 bg-[#3A0917]/88 text-white shadow-[0_8px_24px_rgba(0,0,0,0.32)]"
+          ? "border-[#6B102A]/60 bg-[#3A0917]/90 text-white shadow-[0_8px_22px_rgba(0,0,0,0.34)]"
           : active
-            ? "border-[#7B1533]/60 bg-[#220811]/90 text-[#E56886] shadow-[0_8px_22px_rgba(0,0,0,0.28)]"
-            : "border-white/[0.10] bg-[#090607]/78 text-white/88 shadow-[0_8px_20px_rgba(0,0,0,0.22)]"
+            ? "border-[#7B1533]/70 bg-[#251019]/90 text-[#E07791] shadow-[0_8px_20px_rgba(0,0,0,0.28)]"
+            : "border-white/[0.10] bg-[#0A0708]/82 text-white/88 shadow-[0_8px_18px_rgba(0,0,0,0.22)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function TextButton({ children, danger = false, onClick }: { children: ReactNode; danger?: boolean; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-12 rounded-full border px-6 text-sm font-semibold tracking-[0.08em] transition-all active:scale-[0.98] ${
+        danger
+          ? "border-[#6B102A]/65 bg-[#3A0917]/92 text-white"
+          : "border-white/[0.10] bg-[#0A0708]/82 text-white/88"
       }`}
     >
       {children}
@@ -141,15 +157,15 @@ function RealtimeKitTile({ meeting, participant, variant }: { meeting: RealtimeK
   }, [meeting, participant]);
 
   return (
-    <div className={`relative h-full overflow-hidden border bg-[#070506] ${isMain ? "rounded-[32px] border-white/[0.08] shadow-[0_18px_48px_rgba(0,0,0,0.36)]" : "rounded-[24px] border-white/[0.12] shadow-[0_12px_34px_rgba(0,0,0,0.42)]"}`}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_38%_18%,rgba(84,8,30,0.28),rgba(0,0,0,0)_52%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(0,0,0,0)_24%,rgba(0,0,0,0.42))]" />
+    <div className={`relative h-full w-full overflow-hidden bg-[#050304] ${isMain ? "" : "rounded-[22px] border border-white/[0.12] shadow-[0_12px_32px_rgba(0,0,0,0.42)]"}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_22%,rgba(70,8,28,0.24),rgba(0,0,0,0)_52%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(0,0,0,0)_24%,rgba(0,0,0,0.34))]" />
       {meeting && participant ? React.createElement("rtk-participant-tile", { ref: tileRef, className: "absolute inset-0 h-full w-full" }) : null}
       {!participant ? (
         <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
           <div>
-            <div className="mx-auto h-14 w-14 rounded-full border border-[#5A1027]/45 bg-[#12070B]" />
-            {isMain ? <p className="mt-4 text-xs uppercase tracking-[0.22em] text-white/32">No partner yet</p> : null}
+            <div className="mx-auto h-14 w-14 rounded-full border border-[#5A1027]/45 bg-[#11070B]" />
+            {isMain ? <p className="mt-4 text-xs uppercase tracking-[0.2em] text-white/30">No partner yet</p> : null}
           </div>
         </div>
       ) : null}
@@ -190,7 +206,7 @@ function ChatSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       {open ? (
         <>
           <motion.button type="button" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 bg-black/56" />
-          <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-4 bottom-[108px] z-50 rounded-[30px] border border-white/10 bg-[#070506]/94 p-4 shadow-[0_18px_54px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-4 bottom-[118px] z-50 rounded-[30px] border border-white/10 bg-[#070506]/94 p-4 shadow-[0_18px_54px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">Chat</span>
               <button type="button" onClick={onClose} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/70">Close</button>
@@ -214,7 +230,7 @@ function ReportSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
       {open ? (
         <>
           <motion.button type="button" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 bg-black/60" />
-          <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-4 bottom-[108px] z-50 rounded-[30px] border border-[#5A1027]/40 bg-[#070506]/94 p-4 shadow-[0_18px_54px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} transition={{ duration: 0.25 }} className="absolute inset-x-4 bottom-[118px] z-50 rounded-[30px] border border-[#5A1027]/40 bg-[#070506]/94 p-4 shadow-[0_18px_54px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">Report</span>
               <button type="button" onClick={onClose} className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/70">Close</button>
@@ -372,50 +388,43 @@ export default function NoirPage() {
   }, [countryQuery]);
 
   return (
-    <main className="relative h-[100svh] w-full overflow-hidden bg-[#020102] text-white" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(72,8,28,0.2),rgba(0,0,0,0)_36%)]" />
+    <main className="fixed inset-0 h-[100svh] w-full overflow-hidden overscroll-none bg-[#020102] text-white touch-none" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(58,7,24,0.18),rgba(0,0,0,0)_34%)]" />
 
-      <motion.div initial={{ opacity: 0.7, scale: 0.985 }} animate={{ opacity: started ? 1 : 0.74, scale: started ? 1 : 0.992 }} transition={{ duration: 0.4 }} className="relative flex h-full min-h-0 flex-col px-4 pb-4">
-        <header className="z-20 flex h-14 shrink-0 items-center justify-between">
-          <div className="flex min-w-[72px] items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#7B1533]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/48">Noir</span>
-          </div>
-
-          <button type="button" onClick={() => setCountrySheetOpen(true)} className="flex h-11 max-w-[62vw] items-center gap-2 rounded-full border border-white/[0.10] bg-[#090607]/78 px-5 text-sm text-white/88 shadow-[0_10px_26px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-            <span className="truncate">{selectedCountry.name}</span>
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#A64663]"><path d="m7 10 5 5 5-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </button>
-
-          <button type="button" aria-label="Settings" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/[0.10] bg-[#090607]/78 text-white/82 backdrop-blur-xl">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.35" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" /></svg>
-          </button>
-        </header>
-
-        <section className="relative min-h-0 flex-1 pb-[104px]">
+      <div className="relative flex h-full w-full flex-col overflow-hidden">
+        <section className="relative aspect-square w-full shrink-0 overflow-hidden bg-[#050304]">
           <RealtimeKitTile meeting={meeting} participant={remoteParticipant} variant="main" />
 
           <button type="button" onClick={() => setReportOpen(true)} className="absolute left-4 top-4 rounded-full border border-white/10 bg-black/42 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white/55 backdrop-blur-xl">
             Report
           </button>
 
-          <div className="absolute bottom-[124px] right-4 h-[178px] w-[126px] overflow-hidden rounded-[26px] bg-[#080506] p-1 shadow-[0_16px_42px_rgba(0,0,0,0.46)] ring-1 ring-white/10">
+          <button type="button" onClick={() => setCountrySheetOpen(true)} className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/42 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white/60 backdrop-blur-xl">
+            {selectedCountry.name}
+          </button>
+
+          <div className="absolute bottom-4 right-4 h-[34%] max-h-[172px] min-h-[132px] w-[28%] min-w-[104px] max-w-[134px] overflow-hidden rounded-[24px] bg-[#080506] p-1 shadow-[0_14px_34px_rgba(0,0,0,0.48)] ring-1 ring-white/10">
             <RealtimeKitTile meeting={meeting} participant={localParticipant} variant="self" />
             <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/72 backdrop-blur">You</span>
           </div>
         </section>
 
-        <footer className="absolute inset-x-0 bottom-0 z-30 px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
-          <div className="mx-auto flex max-w-[390px] items-center justify-between rounded-[32px] border border-white/[0.10] bg-[#080506]/88 p-3 shadow-[0_16px_52px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
-            <IconButton label="Skip" onClick={() => void skipSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M4 7l6 5-6 5V7Zm8 0 6 5-6 5V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
-            <IconButton label="Microphone" active={micOff} onClick={() => { const next = !micOff; setMicOff(next); void (next ? meetingRef.current?.self?.disableAudio?.() : meetingRef.current?.self?.enableAudio?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />{micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
-            <IconButton label="Camera" active={camOff} onClick={() => { const next = !camOff; setCamOff(next); void (next ? meetingRef.current?.self?.disableVideo?.() : meetingRef.current?.self?.enableVideo?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />{camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
-            <IconButton label="Chat" active={chatOpen} onClick={() => { setChatOpen((value) => !value); setReportOpen(false); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M5 7.5A3.5 3.5 0 0 1 8.5 4h7A3.5 3.5 0 0 1 19 7.5v4A3.5 3.5 0 0 1 15.5 15H11l-4.5 4v-4A3.5 3.5 0 0 1 5 11.5v-4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
-            <IconButton label="Add friend" active={friendPending} onClick={() => setFriendPending((value) => !value)}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">{friendPending ? <path d="M6 12.5 10.2 17 18 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /> : <><circle cx="10" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M4.5 18a5.5 5.5 0 0 1 11 0M18.5 8v6M15.5 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>}</svg></IconButton>
-            <IconButton label="Stop" danger onClick={() => void stopSession()}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" /></svg></IconButton>
+        <section className="relative min-h-0 flex-1 px-5 py-5">
+          <div className="flex h-full min-h-0 flex-col justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <TextButton onClick={() => void skipSession()}>Skip</TextButton>
+              <TextButton danger onClick={() => void stopSession()}>Stop</TextButton>
+            </div>
+
+            <div className="mx-auto flex w-full max-w-[360px] items-center justify-between rounded-[32px] border border-white/[0.10] bg-[#080506]/88 p-3 shadow-[0_14px_42px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+              <IconButton label="Microphone" active={micOff} onClick={() => { const next = !micOff; setMicOff(next); void (next ? meetingRef.current?.self?.disableAudio?.() : meetingRef.current?.self?.enableAudio?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M12 4a2.5 2.5 0 0 1 2.5 2.5V12A2.5 2.5 0 1 1 9.5 12V6.5A2.5 2.5 0 0 1 12 4Z" stroke="currentColor" strokeWidth="1.6" /><path d="M7 11.5a5 5 0 1 0 10 0M12 17v3M9.5 20h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />{micOff ? <path d="M5 5l14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
+              <IconButton label="Camera" active={camOff} onClick={() => { const next = !camOff; setCamOff(next); void (next ? meetingRef.current?.self?.disableVideo?.() : meetingRef.current?.self?.enableVideo?.()); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><rect x="4" y="7" width="11" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M15 10l5-2v8l-5-2" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />{camOff ? <path d="M4 4l16 16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}</svg></IconButton>
+              <IconButton label="Chat" active={chatOpen} onClick={() => { setChatOpen((value) => !value); setReportOpen(false); }}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5"><path d="M5 7.5A3.5 3.5 0 0 1 8.5 4h7A3.5 3.5 0 0 1 19 7.5v4A3.5 3.5 0 0 1 15.5 15H11l-4.5 4v-4A3.5 3.5 0 0 1 5 11.5v-4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></IconButton>
+              <IconButton label="Add friend" active={friendPending} onClick={() => setFriendPending((value) => !value)}><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">{friendPending ? <path d="M6 12.5 10.2 17 18 8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /> : <><circle cx="10" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" /><path d="M4.5 18a5.5 5.5 0 0 1 11 0M18.5 8v6M15.5 11h6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></>}</svg></IconButton>
+            </div>
           </div>
-        </footer>
-      </motion.div>
+        </section>
+      </div>
 
       <AnimatePresence>
         {!started ? (
