@@ -23,7 +23,6 @@ body[data-platform="telegram"] {
 
 body[data-platform="telegram"] .app-menu-drawer {
   top: var(--telegram-top-offset);
-  height: calc(100% - var(--telegram-top-offset));
 }
 
 @layer components {
