@@ -19,12 +19,13 @@ type RealtimeKitParticipant = {
 };
 
 const API_BASE = "https://api.cloudflare.com/client/v4";
+const DEFAULT_PRESET_NAME = "group_call_guest";
 
 function getRealtimeKitConfig() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const appId = process.env.CLOUDFLARE_REALTIMEKIT_APP_ID;
   const apiToken = process.env.CLOUDFLARE_REALTIMEKIT_API_TOKEN;
-  const presetName = process.env.CLOUDFLARE_REALTIMEKIT_PRESET_NAME || "group_call_participant";
+  const presetName = process.env.CLOUDFLARE_REALTIMEKIT_PRESET_NAME || DEFAULT_PRESET_NAME;
 
   if (!accountId || !appId || !apiToken) {
     throw new Error("Cloudflare RealtimeKit is not configured.");
