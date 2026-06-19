@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "opennextjs-cloudflare build",
     "start": "next start",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "npm run cf:build && wrangler dev",
@@ -12,21 +12,21 @@
     "preview": "npm run cf:preview"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.883.0",
-    "@aws-sdk/s3-request-presigner": "^3.883.0",
-    "@prisma/client": "^6.3.1",
-    "@prisma/extension-accelerate": "2.0.2",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.49.8",
-    "agora-access-token": "^2.0.4",
-    "agora-rtc-sdk-ng": "^4.23.2",
-    "framer-motion": "^11.18.2",
+    "@opennextjs/cloudflare": "1.8.3",
     "next": "14.2.35",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "framer-motion": "11.18.2",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "2.49.8",
+    "@prisma/client": "6.3.1",
+    "@prisma/extension-accelerate": "2.0.2",
+    "@aws-sdk/client-s3": "3.883.0",
+    "@aws-sdk/s3-request-presigner": "3.883.0",
+    "agora-access-token": "2.0.4",
+    "agora-rtc-sdk-ng": "4.23.2"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "1.8.3",
     "@types/node": "20.14.10",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -36,7 +36,7 @@
     "postcss": "8.4.39",
     "tailwindcss": "3.4.4",
     "typescript": "5.5.3",
-    "prisma": "^6.3.1",
+    "prisma": "6.3.1",
     "wrangler": "4.20.5"
   }
 }
