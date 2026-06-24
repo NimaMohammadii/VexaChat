@@ -392,7 +392,7 @@ export default function NoirPage() {
     <main className="fixed inset-0 h-[100svh] w-full overflow-hidden overscroll-none bg-[#020102] text-white touch-none" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(58,7,24,0.18),rgba(0,0,0,0)_34%)]" />
 
-      <div className="relative flex h-full w-full flex-col overflow-hidden pt-20">
+      <div className="relative flex h-full w-full flex-col overflow-hidden pt-5">
         <section className="relative aspect-square w-full shrink-0 overflow-hidden bg-[#050304]">
           <RealtimeKitTile meeting={meeting} participant={remoteParticipant} variant="main" />
 
