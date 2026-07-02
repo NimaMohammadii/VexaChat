@@ -1,4 +1,4 @@
-# VexaChat
+# VexaChat 
 
 ## Prisma is the source of truth for database schema
 
