@@ -154,6 +154,7 @@ You
 function CreateWizard({ friends, onCreated, onClose }: {
 friends: Friend[]; onCreated: (roomId: string) => void; onClose: () => void;
 }) {
+const STEP_TITLES = ["Name & cover", "Description", "Settings", "Invite friends"] as const;
 const [step, setStep]               = useState(1);
 const [roomName, setRoomName]       = useState("");
 const [description, setDescription] = useState("");
@@ -169,7 +170,7 @@ const [loading, setLoading]         = useState(false);
 const [error, setError]             = useState<string | null>(null);
 const [uploading, setUploading]     = useState(false);
 const fileInputRef = useRef<HTMLInputElement>(null);
-const TOTAL = 4;
+const TOTAL = STEP_TITLES.length;
 
 const filteredFriends = useMemo(() => {
 const q = friendQ.toLowerCase();
@@ -228,7 +229,6 @@ setError(err instanceof Error ? err.message : "Something went wrong");
 } finally { setLoading(false); }
 };
 
-const stepTitles = ["", "Name & cover", "Description", "Settings", "Invite friends"];
 const spring = { duration: 0.38, ease: [0.34, 1.15, 0.64, 1] as const };
 
 const ToggleRow = ({ id, icon, label, desc, value, onChange }: {
@@ -263,15 +263,25 @@ style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,2
 </button>
 <div>
 <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-.2px" }}>New Room</div>
-<div style={{ fontSize: 11, color: "rgba(232,232,232,0.4)", marginTop: 1 }}>Step {step} of {TOTAL} · {stepTitles[step]}</div>
+<div style={{ fontSize: 11, color: "rgba(232,232,232,0.55)", marginTop: 1 }}>Step {step} of {TOTAL} · {STEP_TITLES[step - 1]}</div>
 </div>
 </div>
 
   {/* step dots */}
   <div className="flex gap-[5px] px-5 flex-shrink-0" style={{ paddingTop: 14 }}>
     {Array.from({ length: TOTAL }, (_, i) => (
-      <div key={i} className="h-[4px] rounded-[2px] transition-all duration-300"
-        style={{ width: i + 1 === step ? 24 : 8, background: i + 1 === step ? "rgba(138,31,56,0.85)" : i + 1 < step ? "rgba(138,31,56,0.35)" : "rgba(255,255,255,0.1)" }} />
+      <div key={i}
+        className="h-[6px] rounded-[3px] transition-all duration-300"
+        title={`Step ${i + 1}: ${STEP_TITLES[i]}`}
+        style={{
+          width: i + 1 === step ? 26 : 10,
+          background: i + 1 === step
+            ? "rgba(213,126,150,0.95)"
+            : i + 1 < step
+              ? "rgba(138,31,56,0.5)"
+              : "rgba(255,255,255,0.18)",
+          boxShadow: i + 1 === step ? "0 0 0 1px rgba(213,126,150,0.28)" : "none",
+        }} />
     ))}
   </div>
 
