@@ -109,11 +109,17 @@ style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, delay: 0.05 }}
-        className="mb-8"
+        className="mb-8 overflow-hidden rounded-[22px] px-5 py-5"
+        style={glassStyle}
       >
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.35)" }}>
-          Meet · Request-based matching
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Meet · Request-based matching
+          </p>
+          <div className="rounded-full px-2.5 py-1 text-[10px] font-medium" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "rgba(255,255,255,0.55)" }}>
+            Private
+          </div>
+        </div>
         <h1
           className="mb-3 leading-[1.04] text-white"
           style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 48, letterSpacing: "-1.4px", fontWeight: 400 }}
@@ -124,6 +130,20 @@ style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(
         <p className="text-[13.5px] leading-relaxed" style={{ color: "rgba(232,232,232,0.55)" }}>
           Send requests. Wait for acceptance.<br />Matches only after both agree.
         </p>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-[12px] px-2.5 py-2 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.35)" }}>Step 1</p>
+            <p className="mt-1 text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Create</p>
+          </div>
+          <div className="rounded-[12px] px-2.5 py-2 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.35)" }}>Step 2</p>
+            <p className="mt-1 text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Request</p>
+          </div>
+          <div className="rounded-[12px] px-2.5 py-2 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <p className="text-[9px] uppercase tracking-[0.14em]" style={{ color: "rgba(255,255,255,0.35)" }}>Step 3</p>
+            <p className="mt-1 text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.8)" }}>Match</p>
+          </div>
+        </div>
       </motion.div>
 
       {/* card preview / loading / create */}
@@ -158,7 +178,7 @@ style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(
             {/* photo card */}
             <div
               className="relative mb-5 h-56 overflow-hidden rounded-[22px]"
-              style={{ border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 12px 40px rgba(0,0,0,0.5)" }}
+              style={{ border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" }}
             >
               {!imgErr ? (
                 <img src={card.imageUrl} alt={card.displayName} onError={() => setImgErr(true)} className="h-full w-full object-cover" />
@@ -167,6 +187,7 @@ style={{ left: "10%", bottom: "15%", width: 240, height: 240, background: "rgba(
                   <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 48, color: "rgba(255,255,255,0.25)" }}>{card.displayName[0]}</span>
                 </div>
               )}
+              <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(160deg,rgba(255,255,255,0.06),transparent 38%,rgba(255,255,255,0.04) 72%,transparent)" }} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.88) 100%)" }} />
               <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-5">
                 <div>
