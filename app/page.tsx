@@ -4,8 +4,8 @@ import { PublicHeader } from "@/components/public-header";
 
 export default function HomePage() {
   const homeHeroConfig = {
-    heroTitle: "A quieter way to",
-    heroAccentWord: "connect",
+    heroTitle: "Real connection starts",
+    heroAccentWord: "here",
     heroSubtitle: "Vexa brings private conversations, meaningful introductions, and real presence into one beautifully simple space.",
     primaryCtaText: "Enter Vexa",
     secondaryCtaText: "Create Your Profile"
