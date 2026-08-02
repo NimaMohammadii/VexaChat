@@ -8,7 +8,7 @@ export default function HomePage() {
     heroAccentWord: "connect",
     heroSubtitle: "Vexa brings private conversations, meaningful introductions, and real presence into one beautifully simple space.",
     primaryCtaText: "Enter Vexa",
-    secondaryCtaText: "Create Your Profile"
+    secondaryCtaText: "Build Your Profile"
   };
 
   return (
