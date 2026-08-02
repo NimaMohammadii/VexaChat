@@ -154,3 +154,7 @@ Script requirements:
 
 - `DATABASE_URL`
 - `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`)
+
+## Test change
+
+This note was added as a small GitHub integration test.
