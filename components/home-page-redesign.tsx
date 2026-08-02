@@ -69,24 +69,24 @@ function Reveal({ children, className = "", delay = 0, threshold = 0.2 }: { chil
 const placeholderSections: HomeSectionItem[] = [
   {
     id: "placeholder-1",
-    title: "Curated introductions built for calm attention",
-    subtitle: "A quieter way to discover verified people and meaningful chemistry.",
+    title: "Meet people with intention",
+    subtitle: "Discover thoughtful profiles and genuine chemistry without the noise of ordinary social platforms.",
     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80",
     order: 0,
     isActive: true
   },
   {
     id: "placeholder-2",
-    title: "Intentional moments, designed with privacy first",
-    subtitle: "Every touchpoint favors discretion, clarity, and premium simplicity.",
+    title: "Private by design",
+    subtitle: "From one-to-one chats to private rooms, Vexa gives every conversation the space it deserves.",
     imageUrl: "https://images.unsplash.com/photo-1470259078422-826894b933aa?auto=format&fit=crop&w=1600&q=80",
     order: 1,
     isActive: true
   },
   {
     id: "placeholder-3",
-    title: "Editorial quality across every profile surface",
-    subtitle: "Minimal visuals and thoughtful pacing keep the experience refined.",
+    title: "A more human kind of social",
+    subtitle: "Make connections that can become conversations, friendships, collaborations, or something more.",
     imageUrl: "https://images.unsplash.com/photo-1496128858413-b36217c2ce36?auto=format&fit=crop&w=1600&q=80",
     order: 2,
     isActive: true
@@ -116,7 +116,7 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <Reveal delay={80} threshold={0}>
             <p className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
-              Minimal • Modern • Private
+              Private • Human • Vexa
             </p>
           </Reveal>
           <Reveal delay={160} threshold={0}>
@@ -126,7 +126,7 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
           </Reveal>
           <Reveal delay={240} threshold={0}>
             <p className="mx-auto mt-6 max-w-2xl text-sm leading-relaxed tracking-[0.01em] text-[#B2B2B2] md:text-base">
-              Modern design, faster rhythm, and cleaner space to spotlight real people. {homeHeroConfig.heroSubtitle}
+              Less performance. More presence. {homeHeroConfig.heroSubtitle}
             </p>
           </Reveal>
           <Reveal delay={320} threshold={0} className="mt-8 flex justify-center gap-2.5">
@@ -164,7 +164,7 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
 
       <section id="featured-profiles" className="mx-auto w-full max-w-7xl px-6 py-16 md:py-18">
         <Reveal threshold={0.3}>
-          <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">Magnetic Preview</h2>
+          <h2 className="text-3xl font-semibold tracking-[0.03em] md:text-4xl">A glimpse of Vexa</h2>
           <div className="mt-4 h-px w-full bg-white/10" />
         </Reveal>
 
@@ -184,16 +184,16 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
 
       <section className="mx-auto max-w-4xl px-6 py-16 text-center md:py-20">
         <Reveal threshold={0.35}>
-          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">Less noise, more impact.</h2>
+          <h2 className="text-4xl font-semibold tracking-[0.03em] md:text-6xl">Keep it real. Keep it private.</h2>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed tracking-[0.02em] text-[#A1A1A1] md:text-base">
-            Every card, every line, and every motion is intentional—clean, focused, and unmistakably premium.
+            Vexa is built for people who want meaningful interaction without the pressure, clutter, or constant noise.
           </p>
         </Reveal>
       </section>
 
       <section className="px-6 pb-20 pt-4">
         <Reveal className="mx-auto max-w-3xl text-center" threshold={0.35}>
-          <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Ready to stand out?</p>
+          <p className="text-3xl font-semibold tracking-[0.03em] md:text-5xl">Find your people.</p>
           <Link href="/me/create-profile" className="mt-7 inline-flex rounded-full border border-white px-7 py-3 text-sm font-medium tracking-[0.03em] text-white transition-colors duration-300 hover:border-[#FF2E63]/65 hover:bg-white hover:text-black md:text-base">
             Create Your Profile
           </Link>
