@@ -154,3 +154,7 @@ Script requirements:
 
 - `DATABASE_URL`
 - `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`)
+
+## Testing
+
+Run the relevant checks locally before opening a pull request.
