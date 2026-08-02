@@ -116,7 +116,7 @@ export function HomePageRedesign({ profiles, homeSections, homepageImages, homeH
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <Reveal delay={80} threshold={0}>
             <p className="mb-6 inline-flex rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[#d6d6d6]">
-              Private • Human • Vexa
+              Private • Real • Meaningful
             </p>
           </Reveal>
           <Reveal delay={160} threshold={0}>
