@@ -154,3 +154,7 @@ Script requirements:
 
 - `DATABASE_URL`
 - `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`)
+
+## Test change
+
+This line was added as a small README change for testing the GitHub workflow.
